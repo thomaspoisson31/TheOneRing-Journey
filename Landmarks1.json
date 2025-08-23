@@ -1,0 +1,271 @@
+{
+  "locations": [
+    {
+      "id": 0,
+      "name": "La Comté",
+      "description": "La terre verdoyante des Hobbits.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 2869.04,
+        "y": 1581.56
+      }
+    },
+    {
+      "id": 1,
+      "name": "Bree",
+      "description": "Village notable à la croisée des chemins.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 3349.75,
+        "y": 1417.65
+      }
+    },
+    {
+      "id": 2,
+      "name": "Mont Venteux",
+      "description": "Colline solitaire offrant une vue sur la Grande Route de l'Est.",
+      "imageUrl": "/images/weathertop.png",
+      "color": "blue",
+      "coordinates": {
+        "x": 3721.45,
+        "y": 1366.42
+      },
+      "known": true,
+      "visited": false
+    },
+    {
+      "id": 3,
+      "name": "Fornost Erain",
+      "description": "Les ruines de l'ancienne capitale du Nord.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 3214.75,
+        "y": 977.207
+      }
+    },
+    {
+      "id": 4,
+      "name": "Hauts des Galgals",
+      "description": "Une série de tertres anciens et hantés.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 3236.67,
+        "y": 1504.12
+      }
+    },
+    {
+      "id": 5,
+      "name": "Vieille Forêt",
+      "description": "Une forêt ancienne et mystérieuse, aux arbres conscients.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 3129.11,
+        "y": 1514.24
+      }
+    },
+    {
+      "id": 6,
+      "name": "Tharbad",
+      "description": "Les ruines d'une grande cité traversée par la rivière Gwathló.",
+      "imageUrl": "https://tolkiengateway.net/w/images/thumb/8/8f/Rob_Alexander_-_The_Ruins_of_Tharbad.jpg/320px-Rob_Alexander_-_The_Ruins_of_Tharbad.jpg",
+      "color": "blue",
+      "coordinates": {
+        "x": 3635.1,
+        "y": 2234.04
+      }
+    },
+    {
+      "id": 7,
+      "name": "Eregion",
+      "description": "Ancien royaume des Elfes forgerons, aujourd'hui en ruines.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 4232.16,
+        "y": 1994.49
+      }
+    },
+    {
+      "id": 8,
+      "name": "Lindon",
+      "description": "Royaume elfique sur les côtes de la mer.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 1102.8,
+        "y": 1290.28
+      }
+    },
+    {
+      "id": 9,
+      "name": "Annuminas",
+      "description": "Ruines de la première capitale du royaume d'Arnor.",
+      "imageUrl": "",
+      "color": "blue",
+      "coordinates": {
+        "x": 2754.84,
+        "y": 1034.41
+      }
+    },
+    {
+      "id": 10,
+      "name": "Les Anciennes Mines Naines",
+      "description": "Une mine abandonnée au nord des Montagnes Bleues où le dernier roi d'Arnor cacha un trésor avant de périr.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 2400,
+        "y": 450
+      }
+    },
+    {
+      "id": 11,
+      "name": "Les Tours Blanches",
+      "description": "Trois antiques tours elfiques à l'ouest de la Comté. La plus haute abrite un Palantír qui ne regarde que vers l'Ouest.",
+      "imageUrl": "/images/white_towers.png",
+      "color": "blue",
+      "coordinates": {
+        "x": 2237.45,
+        "y": 1491.5
+      },
+      "known": true,
+      "visited": false
+    },
+    {
+      "id": 12,
+      "name": "L'Arbre des Lamentations",
+      "description": "Un arbre sacré et maléfique au coeur de la forêt d'Eryn Vorn, lieu de culte des Hommes Arbres.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 1850,
+        "y": 2850
+      }
+    },
+    {
+      "id": 13,
+      "name": "Les Îles Embrumées",
+      "description": "Des îles mystérieuses au milieu du Lac Evendim, hantées par une ancienne créature.",
+      "imageUrl": "/images/shrouded_islets.png",
+      "color": "green",
+      "coordinates": {
+        "x": 2725.27,
+        "y": 951.434
+      },
+      "known": false,
+      "visited": false
+    },
+    {
+      "id": 14,
+      "name": "Tindailin",
+      "description": "Les vestiges d'un refuge elfe près du Gué de Sarn, dont le lac est hanté par un esprit amer.",
+      "imageUrl": "/images/tindailin.png",
+      "color": "violet",
+      "coordinates": {
+        "x": 3080.66,
+        "y": 1763.75
+      },
+      "known": false,
+      "visited": false
+    },
+    {
+      "id": 15,
+      "name": "Le Palais de la Reine",
+      "description": "Le siège du pouvoir de la nouvelle reine de Lond Daer, bâti sur d'antiques ruines númenóréennes.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 3500,
+        "y": 2800
+      }
+    },
+    {
+      "id": 16,
+      "name": "Les Champs du Massacre",
+      "description": "Le site de la grande bataille de Fornost, une plaine hantée par le chagrin et les esprits des morts.",
+      "imageUrl": "/images/fields_of_slaughter.png",
+      "color": "green",
+      "coordinates": {
+        "x": 3376.32,
+        "y": 999.281
+      },
+      "known": false,
+      "visited": false
+    },
+    {
+      "id": 17,
+      "name": "La Colline de l'Assoupie",
+      "description": "Un palais englouti dans les Noues des Cygnes où une Dame Elfe repose dans un sommeil enchanté.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 3800,
+        "y": 2400
+      }
+    },
+    {
+      "id": 18,
+      "name": "Le Mont Gram",
+      "description": "Un pic redoutable dans les Monts Brumeux, connu pour être un bastion d'Orques.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 4161.84,
+        "y": 601.447
+      }
+    },
+    {
+      "id": 19,
+      "name": "Le Fort Arlas",
+      "description": "Une ancienne forteresse en ruine du Cardolan, aujourd'hui un repaire de bandits et de créatures.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 3500,
+        "y": 1600
+      }
+    },
+    {
+      "id": 20,
+      "name": "Le Refuge des Rôdeurs",
+      "description": "Un campement secret des Rôdeurs du Nord, caché dans les terres sauvages de l'ancien Rhudaur.",
+      "imageUrl": "",
+      "color": "green",
+      "coordinates": {
+        "x": 4197.11,
+        "y": 1738.56
+      }
+    },
+    {
+      "id": 1755621657322,
+      "name": "Mines des Nains",
+      "description": "Immensément profondes, ces Mines des Nains sont un royaume souterrain de pierre brute et de voûtes colossales, jadis polies par mille ans de labeur, désormais noircies par le temps et l'oubli. Des piliers cyclopéens sculptés dans le roc vif s'élèvent vers des plafonds insondables, où l'éclat terne des filons oubliés révèle des veines de gemmes et d'or à peine visibles.\n\nL'atmosphère y est d'un froid glacial, lourd du silence des âges et de l'odeur métallique de la roche humide. Seuls les échos lointains des pas brisent un silence de mort, amplifiant le sentiment d'isolement et de grandeur perdue. Chaque galerie, chaque escalier taillé à même la pierre, semble murmurer des secrets anciens et des légendes oubliées.\n\nCe lieu fut jadis le cœur battant d'un royaume nain prospère, où le pic et le marteau résonnaient sans cesse, extrayant d'incalculables richesses, peut-être même le mythique mithril. Mais l'avidité, ou une calamité obscure surgie des profondeurs, y a attiré des ombres, transformant la gloire en ruines et le labeur incessant en un silence funèbre. C'est aujourd'hui un tombeau de pierre et d'échos, où la magnificence passée côtoie une désolation oppressante.",
+      "imageUrl": "",
+      "color": "red",
+      "type": "custom",
+      "coordinates": {
+        "x": 1768.7187551583365,
+        "y": 944.203042475931
+      }
+    },
+    {
+      "id": 1755777861449,
+      "name": "Fondcombe",
+      "description": "",
+      "imageUrl": "/images/rivendell.png",
+      "color": "blue",
+      "known": true,
+      "visited": false,
+      "type": "custom",
+      "coordinates": {
+        "x": 4645.57,
+        "y": 1388.5
+      }
+    }
+  ]
+}
