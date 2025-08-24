@@ -669,22 +669,26 @@
                 marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 marker.dataset.id = location.id;
                 
-                // Only allow dragging when not in any special mode
-                if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
-                    marker.addEventListener('mousedown', startDragMarker);
-                }
-                
-                marker.addEventListener('click', (e) => { 
-                    if (e.detail > 0) {
-                        if (isDrawingMode) {
-                            // Start drawing from this location
-                            startDrawingFromLocation(e, location);
-                        } else if (!isAddingLocationMode && !isAddingRegionMode) {
-                            // Show info box normally
-                            showInfoBox(e);
-                        }
+                // Configure pointer events based on current mode
+                if (isDrawingMode) {
+                    marker.style.pointerEvents = 'none';
+                } else {
+                    marker.style.pointerEvents = 'auto';
+                    
+                    // Only allow dragging when not in any special mode
+                    if (!isAddingLocationMode && !isAddingRegionMode) {
+                        marker.addEventListener('mousedown', startDragMarker);
                     }
-                });
+                    
+                    marker.addEventListener('click', (e) => { 
+                        if (e.detail > 0) {
+                            if (!isAddingLocationMode && !isAddingRegionMode) {
+                                // Show info box normally
+                                showInfoBox(e);
+                            }
+                        }
+                    });
+                }
                 
                 locationsLayer.appendChild(marker);
             });
@@ -1255,7 +1259,7 @@
             isDrawingMode = !isDrawingMode; 
             viewport.classList.toggle('drawing', isDrawingMode); 
             e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
-            // Re-render locations to update event handlers
+            // Re-render locations to update pointer events
             renderLocations();
         });
         document.getElementById('add-location-mode').addEventListener('click', (e) => { 
