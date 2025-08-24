@@ -645,32 +645,60 @@
                                         marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                                         marker.dataset.id = location.id;
 
-                                        // Always add mousedown for dragging, but check modes inside the handler
-                                        marker.addEventListener('mousedown', (e) => {
-                                            if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
-                                                startDragMarker(e);
-                                            }
-                                        });
+                                        // Add mousedown handler for dragging
+                                        marker.addEventListener('mousedown', handleMarkerMouseDown);
 
-                                        marker.addEventListener('click', (e) => { 
-                                            e.stopPropagation(); // Prevent viewport click events
-                                            if (e.detail > 0) {
-                                                if (isDrawingMode) {
-                                                    // Start drawing from this location
-                                                    startDrawingFromLocation(e, location);
-                                                } else if (isAddingLocationMode || isAddingRegionMode) {
-                                                    // In adding modes, don't interact with existing locations
-                                                    return;
-                                                } else {
-                                                    // Normal mode - show info box
-                                                    showInfoBox(e);
-                                                }
-                                            }
-                                        });
+                                        // Add click handler for info box
+                                        marker.addEventListener('click', handleMarkerClick);
 
                                         locationsLayer.appendChild(marker);
                                     }
                                 });
+                            }
+
+                            function handleMarkerMouseDown(e) {
+                                if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
+                                    startDragMarker(e);
+                                }
+                            }
+
+                            function handleMarkerClick(e) {
+                                e.stopPropagation();
+                                if (e.detail > 0) {
+                                    const locationId = parseInt(e.currentTarget.dataset.id, 10);
+                                    const location = locationsData.locations.find(loc => loc.id === locationId);
+                                    
+                                    if (isDrawingMode) {
+                                        startDrawingFromLocation(e, location);
+                                    } else if (!isAddingLocationMode && !isAddingRegionMode) {
+                                        showInfoBox(e);
+                                    }
+                                }
+                            }
+
+                            function handleRegionClick(e) {
+                                e.stopPropagation();
+                                if (e.detail > 0 && !isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
+                                    const locationId = parseInt(e.currentTarget.dataset.id, 10);
+                                    const location = locationsData.locations.find(loc => loc.id === locationId);
+                                    if (location) {
+                                        showInfoBox(e, location);
+                                    }
+                                }
+                            }
+
+                            function updateCursorClasses() {
+                                // Remove all cursor classes
+                                viewport.classList.remove('drawing', 'adding-location', 'adding-region');
+                                
+                                // Add the appropriate class based on current mode
+                                if (isDrawingMode) {
+                                    viewport.classList.add('drawing');
+                                } else if (isAddingLocationMode) {
+                                    viewport.classList.add('adding-location');
+                                } else if (isAddingRegionMode) {
+                                    viewport.classList.add('adding-region');
+                                }
                             }
 
                             function showInfoBox(event, locationParam = null) {
@@ -798,18 +826,7 @@
                                 svg.appendChild(polygon);
 
                                 // Add click event for info box
-                                svg.addEventListener('click', (e) => {
-                                    e.stopPropagation(); // Prevent viewport click events
-                                    if (e.detail > 0) {
-                                        if (isDrawingMode || isAddingLocationMode || isAddingRegionMode) {
-                                            // In special modes, no interaction with existing regions
-                                            return;
-                                        } else {
-                                            // Normal mode - show info box
-                                            showInfoBox(e, location);
-                                        }
-                                    }
-                                });
+                                svg.addEventListener('click', handleRegionClick);
 
                                 locationsLayer.appendChild(svg);
                             }
@@ -1271,13 +1288,8 @@
                                 viewport.classList.toggle('drawing', isDrawingMode); 
                                 e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
                                 
-                                // Force cursor update
-                                if (!isDrawingMode) {
-                                    viewport.style.cursor = '';
-                                }
-                                
-                                // Re-render locations to update event handlers
-                                renderLocations();
+                                // Update cursor classes properly
+                                updateCursorClasses();
                             });
                             document.getElementById('add-location-mode').addEventListener('click', (e) => { 
                                 // Reset all other modes
