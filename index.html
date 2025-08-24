@@ -1228,34 +1228,56 @@
             updateFilters();
         }
         viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
-        viewport.addEventListener('mousedown', (event) => { 
+        // Gestionnaire mousedown principal du viewport (géré plus haut pour le mode dessin)
+        function handleViewportMouseDown(event) {
+            console.log("🖱️ Main viewport mousedown, mode:", {drawing: isDrawingMode, adding: isAddingLocationMode, region: isAddingRegionMode});
+            
             if (event.target.closest('.location-marker, #info-box')) return; 
             hideInfoBox(); 
+            
             if (isAddingLocationMode) { 
                 addLocation(event); 
                 return; 
             } 
+            
             if (isAddingRegionMode) {
                 const coords = getCanvasCoordinates(event);
                 addRegionPoint(coords);
                 return;
             }
-            if (isDrawingMode) return; 
+            
+            if (isDrawingMode) {
+                console.log("🎨 Drawing mode active, mousedown handled by drawing handler");
+                return; 
+            }
+            
             event.preventDefault(); 
             isPanning = true; 
             startPanX = event.clientX - panX; 
             startPanY = event.clientY - panY; 
-            viewport.classList.add('panning'); 
-        });
+            viewport.classList.add('panning');
+        }
         viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
         ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
-        drawingCanvas.addEventListener('mousedown', (event) => { 
-            console.log("🖱️ Canvas mousedown event fired, isDrawingMode:", isDrawingMode);
+        // Gestionnaires d'événements pour le dessin - attachés au viewport au lieu du canvas
+        viewport.addEventListener('mousedown', (event) => {
+            console.log("🖱️ Viewport mousedown event fired, isDrawingMode:", isDrawingMode);
+            
             if (!isDrawingMode) {
                 console.log("❌ Drawing mode not active, ignoring mousedown");
                 return;
             }
+            
+            // Vérifier qu'on ne clique pas sur un marqueur ou autre élément
+            if (event.target.closest('.location-marker, #info-box')) {
+                console.log("❌ Clicked on marker or info box, ignoring");
+                return;
+            }
+            
             console.log("🎨 Starting drawing...");
+            event.preventDefault();
+            event.stopPropagation();
+            
             ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
             isDrawing = true; 
             totalPathPixels = 0; 
@@ -1265,10 +1287,14 @@
             ctx.beginPath(); 
             ctx.moveTo(lastPoint.x, lastPoint.y); 
             updateDistanceDisplay(); 
+            distanceContainer.classList.remove('hidden');
             console.log("✅ Drawing initialized");
         });
-        drawingCanvas.addEventListener('mousemove', (event) => { 
+        
+        viewport.addEventListener('mousemove', (event) => { 
             if (!isDrawing || !isDrawingMode) return; 
+            
+            console.log("✏️ Mouse move during drawing");
             const currentPoint = getCanvasCoordinates(event); 
             const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2)); 
             totalPathPixels += segmentLength; 
@@ -1278,9 +1304,10 @@
             updateDistanceDisplay(); 
             console.log("✏️ Drawing segment, total pixels:", totalPathPixels.toFixed(1));
         });
-        ['mouseup', 'mouseleave'].forEach(event => drawingCanvas.addEventListener(event, () => {
+        
+        ['mouseup', 'mouseleave'].forEach(eventType => viewport.addEventListener(eventType, (event) => {
             if (isDrawing) {
-                console.log("🛑 Drawing stopped on", event);
+                console.log("🛑 Drawing stopped on", eventType);
                 isDrawing = false;
             }
         }));
