@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voyages en Terre du Milieu v1.1.1</title>
+    <title>Voyages en Terre du Milieu v1.0.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -15,7 +15,7 @@
         #viewport {
             cursor: grab;
         }
-        #viewport.drawing, #viewport.adding-location, #viewport.adding-region {
+        #viewport.drawing, #viewport.adding-location {
             cursor: crosshair;
         }
         #viewport.panning {
@@ -27,7 +27,7 @@
             transform-origin: 0 0;
             transition: transform 0.1s ease-out;
         }
-        #map-image, #loremaster-map-image, #drawing-canvas, #locations-layer, #regions-layer {
+        #map-image, #loremaster-map-image, #drawing-canvas, #locations-layer {
             position: absolute;
             top: 0;
             left: 0;
@@ -296,31 +296,6 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        /* Region styles */
-        .region {
-            pointer-events: auto;
-            fill: rgba(34, 197, 94, 0.1);
-            stroke: rgba(34, 197, 94, 0.8);
-            stroke-width: 2;
-            cursor: pointer;
-            transition: fill 0.3s, stroke-width 0.3s;
-        }
-        .region:hover {
-            fill: rgba(34, 197, 94, 0.2);
-            stroke-width: 3;
-        }
-        .region-temp {
-            fill: rgba(34, 197, 94, 0.1);
-            stroke: rgba(34, 197, 94, 0.8);
-            stroke-width: 2;
-            stroke-dasharray: 5,5;
-        }
-        .region-point {
-            fill: rgba(34, 197, 94, 0.8);
-            stroke: white;
-            stroke-width: 2;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
@@ -341,8 +316,7 @@
             <button id="erase" title="Effacer le tracé" class="w-10 h-10 bg-gray-700 hover:bg-red-600 rounded transition-colors"><i class="fas fa-eraser"></i></button>
             <hr class="border-gray-600">
             <button id="add-location-mode" title="Ajouter un lieu" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-map-marker-alt"></i></button>
-            <button id="add-region-mode" title="Créer une région" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-draw-polygon"></i></button>
-            <hr class="border-gray-600"></hr>
+            <hr class="border-gray-600">
             <button id="filter-toggle" title="Filtrer les lieux" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-filter"></i></button>
             <button id="map-switch" title="Changer de carte" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors hidden"><i id="map-switch-icon" class="fas fa-users"></i></button>
             <hr class="border-gray-600">
@@ -424,7 +398,6 @@
                 <img id="map-image" src="" alt="Carte Joueur" class="opacity-0">
                 <img id="loremaster-map-image" src="" alt="Carte Gardien" class="opacity-0">
                 <canvas id="drawing-canvas"></canvas>
-                <svg id="regions-layer" xmlns="http://www.w3.org/2000/svg"></svg>
                 <div id="locations-layer"></div>
             </div>
         </div>
@@ -485,31 +458,6 @@
             </div>
         </div>
         
-        <!-- Add Region Modal -->
-        <div id="add-region-modal" class="hidden absolute inset-0 z-40 bg-black bg-opacity-70 flex items-center justify-center">
-            <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-sm">
-                <h3 class="text-lg font-bold mb-4">Créer une nouvelle région</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label for="region-name-input" class="block text-sm font-medium text-gray-300">Nom de la région</label>
-                        <input type="text" id="region-name-input" class="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="region-desc-input" class="block text-sm font-medium text-gray-300">Description</label>
-                        <textarea id="region-desc-input" rows="3" class="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300">Couleur</label>
-                        <div id="region-color-picker" class="flex space-x-2 mt-1"></div>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end space-x-4">
-                    <button id="cancel-add-region" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">Annuler</button>
-                    <button id="confirm-add-region" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Créer</button>
-                </div>
-            </div>
-        </div>
-        
         <!-- Loader Overlay -->
         <div id="loader-overlay" class="absolute inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center">
             <div class="text-2xl mb-4">Chargement de la carte...</div>
@@ -523,11 +471,8 @@
     <script>
         // --- DATA ---
         const colorMap = { red: 'rgba(239, 68, 68, 0.8)', blue: 'rgba(59, 130, 246, 0.8)', green: 'rgba(34, 197, 94, 0.8)', violet: 'rgba(139, 92, 246, 0.8)', black: 'rgba(17, 24, 39, 0.8)' };
-        const regionColorMap = { red: 'rgba(239, 68, 68, 0.15)', blue: 'rgba(59, 130, 246, 0.15)', green: 'rgba(34, 197, 94, 0.15)', violet: 'rgba(139, 92, 246, 0.15)', black: 'rgba(17, 24, 39, 0.15)' };
         const getDefaultLocations = () => ({ "locations": [] }); // Fallback to empty if fetch fails
-        const getDefaultRegions = () => ({ "regions": [] });
         let locationsData;
-        let regionsData = getDefaultRegions();
 
         // --- DOM Elements ---
         const viewport = document.getElementById('viewport');
@@ -536,13 +481,11 @@
         const loremasterMapImage = document.getElementById('loremaster-map-image');
         const drawingCanvas = document.getElementById('drawing-canvas');
         const locationsLayer = document.getElementById('locations-layer');
-        const regionsLayer = document.getElementById('regions-layer');
         const infoBox = document.getElementById('info-box');
         const infoBoxClose = document.getElementById('info-box-close');
         const ctx = drawingCanvas.getContext('2d');
         const distanceContainer = document.getElementById('distance-container');
         const addLocationModal = document.getElementById('add-location-modal');
-        const addRegionModal = document.getElementById('add-region-modal');
         const loaderOverlay = document.getElementById('loader-overlay');
         const journeyLogModal = document.getElementById('journey-log-modal');
         const filterPanel = document.getElementById('filter-panel');
@@ -564,16 +507,11 @@
         let isPanning = false, startPanX = 0, startPanY = 0;
         let isDrawingMode = false, isDrawing = false;
         let isAddingLocationMode = false;
-        let isAddingRegionMode = false;
         let totalPathPixels = 0, lastPoint = null, startPoint = null;
         let draggedMarker = null, dragStartX = 0, dragStartY = 0;
         let newLocationCoords = null;
         let activeLocationId = null;
         let activeFilters = { known: false, visited: false, colors: [] };
-        
-        // --- Region creation states ---
-        let currentRegionPoints = [];
-        let tempRegionPath = null;
 
         // --- Initialization ---
         async function loadInitialLocations() {
@@ -618,15 +556,11 @@
             mapContainer.style.height = `${MAP_HEIGHT}px`;
             drawingCanvas.width = MAP_WIDTH;
             drawingCanvas.height = MAP_HEIGHT;
-            regionsLayer.setAttribute('width', MAP_WIDTH);
-            regionsLayer.setAttribute('height', MAP_HEIGHT);
-            regionsLayer.setAttribute('viewBox', `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`);
             ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
             ctx.lineWidth = 5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             renderLocations();
-            renderRegions();
             requestAnimationFrame(() => {
                 resetView();
                 mapImage.classList.remove('opacity-0');
@@ -669,8 +603,8 @@
                 marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 marker.dataset.id = location.id;
                 
-                // Only allow dragging when not in any special mode
-                if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
+                // Only allow dragging when not in drawing or adding location mode
+                if (!isDrawingMode && !isAddingLocationMode) {
                     marker.addEventListener('mousedown', startDragMarker);
                 }
                 
@@ -679,7 +613,7 @@
                         if (isDrawingMode) {
                             // Start drawing from this location
                             startDrawingFromLocation(e, location);
-                        } else if (!isAddingLocationMode && !isAddingRegionMode) {
+                        } else if (!isAddingLocationMode) {
                             // Show info box normally
                             showInfoBox(e);
                         }
@@ -998,186 +932,16 @@
         // --- Load data and start the app ---
         async function startApp() {
             await loadInitialLocations();
-            loadRegionsFromLocal();
             setupFilters();
             mapImage.onload = initializeMap;
             mapImage.addEventListener('error', handleImageError);
             mapImage.src = PLAYER_MAP_URL;
             infoBoxClose.addEventListener('click', hideInfoBox);
-            
-            // Region modal handlers
-            document.getElementById('confirm-add-region').addEventListener('click', saveRegion);
-            document.getElementById('cancel-add-region').addEventListener('click', () => {
-                addRegionModal.classList.add('hidden');
-                cancelRegionCreation();
-            });
-            
-            // Double-click to complete region
-            viewport.addEventListener('dblclick', (event) => {
-                if (isAddingRegionMode && currentRegionPoints.length >= 3) {
-                    event.preventDefault();
-                    completeRegion();
-                }
-            });
         }
 
         startApp();
 
         // --- Functions ---
-        // --- Region Functions ---
-        function renderRegions() {
-            regionsLayer.innerHTML = '';
-            
-            regionsData.regions.forEach(region => {
-                if (region.points && region.points.length >= 3) {
-                    const pathData = `M ${region.points.map(p => `${p.x},${p.y}`).join(' L ')} Z`;
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', pathData);
-                    path.classList.add('region');
-                    path.style.fill = regionColorMap[region.color] || regionColorMap.green;
-                    path.style.stroke = colorMap[region.color] || colorMap.green;
-                    path.dataset.regionId = region.id;
-                    
-                    path.addEventListener('click', (e) => {
-                        if (!isAddingRegionMode && !isDrawingMode && !isAddingLocationMode) {
-                            e.stopPropagation();
-                            showRegionInfo(e, region);
-                        }
-                    });
-                    
-                    regionsLayer.appendChild(path);
-                }
-            });
-        }
-        
-        function showRegionInfo(event, region) {
-            alert(`Région: ${region.name}\n${region.description || 'Aucune description.'}`);
-        }
-        
-        function addRegionPoint(coords) {
-            currentRegionPoints.push(coords);
-            
-            // Create or update temporary visual feedback
-            updateTempRegion();
-            
-            // Add visual point indicator
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', coords.x);
-            circle.setAttribute('cy', coords.y);
-            circle.setAttribute('r', 4);
-            circle.classList.add('region-point');
-            circle.dataset.tempPoint = 'true';
-            regionsLayer.appendChild(circle);
-        }
-        
-        function updateTempRegion() {
-            // Remove existing temp path
-            const existingTemp = regionsLayer.querySelector('.region-temp');
-            if (existingTemp) existingTemp.remove();
-            
-            if (currentRegionPoints.length >= 2) {
-                const pathData = `M ${currentRegionPoints.map(p => `${p.x},${p.y}`).join(' L ')}`;
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', pathData);
-                path.classList.add('region-temp');
-                regionsLayer.appendChild(path);
-                tempRegionPath = path;
-            }
-        }
-        
-        function completeRegion() {
-            if (currentRegionPoints.length >= 3) {
-                // Show modal to get region details
-                showAddRegionModal();
-            } else {
-                alert('Une région doit avoir au moins 3 points.');
-            }
-        }
-        
-        function showAddRegionModal() {
-            addRegionModal.classList.remove('hidden');
-            document.getElementById('region-name-input').focus();
-            
-            // Setup color picker
-            const regionColorPicker = document.getElementById('region-color-picker');
-            regionColorPicker.innerHTML = Object.keys(regionColorMap).map((color, index) => 
-                `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${regionColorMap[color]}; border: 2px solid ${colorMap[color]};"></div>`
-            ).join('');
-            
-            regionColorPicker.querySelectorAll('.color-swatch').forEach(swatch => {
-                swatch.addEventListener('click', () => {
-                    regionColorPicker.querySelector('.color-swatch.selected').classList.remove('selected');
-                    swatch.classList.add('selected');
-                });
-            });
-        }
-        
-        function cancelRegionCreation() {
-            currentRegionPoints = [];
-            // Remove temporary visuals
-            regionsLayer.querySelectorAll('[data-temp-point]').forEach(el => el.remove());
-            if (tempRegionPath) {
-                tempRegionPath.remove();
-                tempRegionPath = null;
-            }
-            
-            isAddingRegionMode = false;
-            viewport.classList.remove('adding-region');
-            document.getElementById('add-region-mode').classList.remove('btn-active');
-        }
-        
-        function saveRegion() {
-            const nameInput = document.getElementById('region-name-input');
-            const descInput = document.getElementById('region-desc-input');
-            const selectedColor = document.querySelector('#region-color-picker .selected').dataset.color;
-            
-            if (nameInput.value && currentRegionPoints.length >= 3) {
-                const newRegion = {
-                    id: Date.now(),
-                    name: nameInput.value,
-                    description: descInput.value,
-                    color: selectedColor,
-                    points: [...currentRegionPoints]
-                };
-                
-                regionsData.regions.push(newRegion);
-                saveRegionsToLocal();
-                renderRegions();
-                
-                // Clean up
-                currentRegionPoints = [];
-                regionsLayer.querySelectorAll('[data-temp-point]').forEach(el => el.remove());
-                if (tempRegionPath) {
-                    tempRegionPath.remove();
-                    tempRegionPath = null;
-                }
-                
-                addRegionModal.classList.add('hidden');
-                nameInput.value = '';
-                descInput.value = '';
-                
-                isAddingRegionMode = false;
-                viewport.classList.remove('adding-region');
-                document.getElementById('add-region-mode').classList.remove('btn-active');
-            }
-        }
-        
-        function saveRegionsToLocal() {
-            localStorage.setItem('middleEarthRegions', JSON.stringify(regionsData));
-        }
-        
-        function loadRegionsFromLocal() {
-            const saved = localStorage.getItem('middleEarthRegions');
-            if (saved) {
-                try {
-                    regionsData = JSON.parse(saved);
-                } catch (e) {
-                    console.error('Failed to load regions from localStorage:', e);
-                    regionsData = getDefaultRegions();
-                }
-            }
-        }
-
         function handleImageError() { loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.</div>`; }
         function startDragMarker(e) { e.stopPropagation(); draggedMarker = e.target; dragStartX = e.clientX; dragStartY = e.clientY; document.addEventListener('mousemove', dragMarker); document.addEventListener('mouseup', stopDragMarker); }
         function dragMarker(e) { if (!draggedMarker) return; const deltaX = e.clientX - dragStartX; const deltaY = e.clientY - dragStartY; const newX = parseFloat(draggedMarker.style.left) + (deltaX / scale); const newY = parseFloat(draggedMarker.style.top) + (deltaY / scale); draggedMarker.style.left = `${newX}px`; draggedMarker.style.top = `${newY}px`; dragStartX = e.clientX; dragStartY = e.clientY; }
@@ -1218,25 +982,7 @@
             updateFilters();
         }
         viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
-        viewport.addEventListener('mousedown', (event) => { 
-            if (event.target.closest('.location-marker, #info-box')) return; 
-            hideInfoBox(); 
-            if (isAddingLocationMode) { 
-                addLocation(event); 
-                return; 
-            } 
-            if (isAddingRegionMode) {
-                const coords = getCanvasCoordinates(event);
-                addRegionPoint(coords);
-                return;
-            }
-            if (isDrawingMode) return; 
-            event.preventDefault(); 
-            isPanning = true; 
-            startPanX = event.clientX - panX; 
-            startPanY = event.clientY - panY; 
-            viewport.classList.add('panning'); 
-        });
+        viewport.addEventListener('mousedown', (event) => { if (event.target.closest('.location-marker, #info-box')) return; hideInfoBox(); if (isAddingLocationMode) { addLocation(event); return; } if (isDrawingMode) return; event.preventDefault(); isPanning = true; startPanX = event.clientX - panX; startPanY = event.clientY - panY; viewport.classList.add('panning'); });
         viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
         ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
         drawingCanvas.addEventListener('mousedown', (event) => { if (!isDrawingMode) return; ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); isDrawing = true; totalPathPixels = 0; startPoint = getCanvasCoordinates(event); lastPoint = startPoint; ctx.beginPath(); ctx.moveTo(lastPoint.x, lastPoint.y); updateDistanceDisplay(); });
@@ -1247,11 +993,8 @@
         document.getElementById('reset-zoom').addEventListener('click', resetView);
         document.getElementById('draw-mode').addEventListener('click', (e) => { 
             isAddingLocationMode = false; 
-            isAddingRegionMode = false;
-            viewport.classList.remove('adding-location', 'adding-region'); 
+            viewport.classList.remove('adding-location'); 
             document.getElementById('add-location-mode').classList.remove('btn-active'); 
-            document.getElementById('add-region-mode').classList.remove('btn-active');
-            cancelRegionCreation();
             isDrawingMode = !isDrawingMode; 
             viewport.classList.toggle('drawing', isDrawingMode); 
             e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
@@ -1260,32 +1003,12 @@
         });
         document.getElementById('add-location-mode').addEventListener('click', (e) => { 
             isDrawingMode = false; 
-            isAddingRegionMode = false;
-            viewport.classList.remove('drawing', 'adding-region'); 
+            viewport.classList.remove('drawing'); 
             document.getElementById('draw-mode').classList.remove('btn-active'); 
-            document.getElementById('add-region-mode').classList.remove('btn-active');
-            cancelRegionCreation();
             isAddingLocationMode = !isAddingLocationMode; 
             viewport.classList.toggle('adding-location', isAddingLocationMode); 
             e.currentTarget.classList.toggle('btn-active', isAddingLocationMode); 
             // Re-render locations to update event handlers
-            renderLocations();
-        });
-        
-        document.getElementById('add-region-mode').addEventListener('click', (e) => {
-            isDrawingMode = false;
-            isAddingLocationMode = false;
-            viewport.classList.remove('drawing', 'adding-location');
-            document.getElementById('draw-mode').classList.remove('btn-active');
-            document.getElementById('add-location-mode').classList.remove('btn-active');
-            isAddingRegionMode = !isAddingRegionMode;
-            viewport.classList.toggle('adding-region', isAddingRegionMode);
-            e.currentTarget.classList.toggle('btn-active', isAddingRegionMode);
-            
-            if (!isAddingRegionMode) {
-                cancelRegionCreation();
-            }
-            
             renderLocations();
         });
         document.getElementById('erase').addEventListener('click', () => { ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); totalPathPixels = 0; startPoint = null; lastPoint = null; updateDistanceDisplay(); });
