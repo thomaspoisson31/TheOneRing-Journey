@@ -396,6 +396,7 @@
         <!-- Info Box -->
         <div id="info-box">
             <div id="info-box-header">
+                <div id="info-box-title" class="hidden text-xl font-bold text-white flex-grow mr-4"></div>
                 <div id="info-box-controls">
                     <i id="info-box-edit" class="fas fa-pencil-alt" title="Modifier"></i>
                     <i id="info-box-expand" class="fas fa-expand" title="Vue étendue"></i>
@@ -732,6 +733,9 @@
                 </div>
             `;
 
+            // Update header title
+            updateInfoBoxHeaderTitle(location.name);
+
             // Show the info box
             document.getElementById('info-box-edit-content').classList.add('hidden');
             document.getElementById('info-box-content').classList.remove('hidden');
@@ -974,18 +978,36 @@
             }
         }
 
+        function updateInfoBoxHeaderTitle(title) {
+            const titleElement = document.getElementById('info-box-title');
+            titleElement.textContent = title;
+            
+            // Show title only in expanded mode
+            if (infoBox.classList.contains('expanded')) {
+                titleElement.classList.remove('hidden');
+            } else {
+                titleElement.classList.add('hidden');
+            }
+        }
+
         function toggleInfoBoxExpand() {
             const isExpanded = infoBox.classList.toggle('expanded');
             const expandBtn = document.getElementById('info-box-expand');
+            const titleElement = document.getElementById('info-box-title');
+            
             if (expandBtn) {
                 expandBtn.className = `fas ${isExpanded ? 'fa-compress' : 'fa-expand'}`;
                 expandBtn.title = isExpanded ? 'Vue compacte' : 'Vue étendue';
             }
+            
+            // Show/hide title based on expanded state
             if (isExpanded) {
+                titleElement.classList.remove('hidden');
                 positionInfoBoxExpanded();
                 // Activate image tab by default when expanding
                 activateTab('image');
             } else {
+                titleElement.classList.add('hidden');
                 // Return to a sane compact position near top-left but outside toolbar
                 const fakeEvent = { clientX: viewport.getBoundingClientRect().left + 200, clientY: viewport.getBoundingClientRect().top + 120 };
                 positionInfoBoxCompact(fakeEvent);
@@ -1080,6 +1102,9 @@
                     <p>${region.description || 'Aucune description.'}</p>
                 </div>
             `;
+
+            // Update header title
+            updateInfoBoxHeaderTitle(region.name);
 
             // Show the info box
             document.getElementById('info-box-edit-content').classList.add('hidden');
