@@ -550,28 +550,6 @@
                             let regionPreviewCanvas = null;
                             let regionPreviewCtx = null;
 
-                            // --- Cursor Management ---
-                            function updateViewportCursor() {
-                                // Force remove all cursor classes
-                                viewport.classList.remove('drawing', 'adding-location', 'adding-region', 'panning');
-                                
-                                // Re-add current mode classes
-                                if (isDrawingMode) {
-                                    viewport.classList.add('drawing');
-                                } else if (isAddingLocationMode) {
-                                    viewport.classList.add('adding-location');
-                                } else if (isAddingRegionMode) {
-                                    viewport.classList.add('adding-region');
-                                } else if (isPanning) {
-                                    viewport.classList.add('panning');
-                                } else {
-                                    viewport.style.cursor = 'grab';
-                                }
-                                
-                                // Force browser to recalculate styles
-                                viewport.offsetHeight;
-                            }
-
                             // --- Initialization ---
                             async function loadInitialLocations() {
                                 console.log("Attempting to load locations...");
@@ -645,16 +623,7 @@
 
                             // --- Location Markers & Info Box ---
                             function renderLocations() {
-                                // Clear existing content
                                 locationsLayer.innerHTML = '';
-                                
-                                // Remove any existing event listeners to prevent conflicts
-                                const oldLayer = locationsLayer.cloneNode(false);
-                                locationsLayer.parentNode.replaceChild(oldLayer, locationsLayer);
-                                
-                                // Update reference to new layer
-                                locationsLayer = document.getElementById('locations-layer');
-                                
                                 const filteredLocations = locationsData.locations.filter(location => {
                                     const knownMatch = !activeFilters.known || location.known;
                                     const visitedMatch = !activeFilters.visited || location.visited;
@@ -675,66 +644,33 @@
                                         marker.style.backgroundColor = location.known ? (colorMap[location.color] || colorMap.red) : 'rgba(107, 114, 128, 0.7)';
                                         marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                                         marker.dataset.id = location.id;
-                                        marker.dataset.type = 'location-marker';
+
+                                        // Always add mousedown for dragging, but check modes inside the handler
+                                        marker.addEventListener('mousedown', (e) => {
+                                            if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
+                                                startDragMarker(e);
+                                            }
+                                        });
+
+                                        marker.addEventListener('click', (e) => { 
+                                            e.stopPropagation(); // Prevent viewport click events
+                                            if (e.detail > 0) {
+                                                if (isDrawingMode) {
+                                                    // Start drawing from this location
+                                                    startDrawingFromLocation(e, location);
+                                                } else if (isAddingLocationMode || isAddingRegionMode) {
+                                                    // In adding modes, don't interact with existing locations
+                                                    return;
+                                                } else {
+                                                    // Normal mode - show info box
+                                                    showInfoBox(e);
+                                                }
+                                            }
+                                        });
 
                                         locationsLayer.appendChild(marker);
                                     }
                                 });
-                                
-                                // Setup event delegation after rendering
-                                setupLocationEventDelegation();
-                            }
-                            
-                            function setupLocationEventDelegation() {
-                                // Remove existing listeners
-                                locationsLayer.removeEventListener('mousedown', handleLocationMouseDown);
-                                locationsLayer.removeEventListener('click', handleLocationClick);
-                                
-                                // Add event delegation
-                                locationsLayer.addEventListener('mousedown', handleLocationMouseDown);
-                                locationsLayer.addEventListener('click', handleLocationClick);
-                            }
-                            
-                            function handleLocationMouseDown(e) {
-                                const marker = e.target.closest('[data-type="location-marker"]');
-                                if (!marker) return;
-                                
-                                if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
-                                    startDragMarker(e);
-                                }
-                            }
-                            
-                            function handleLocationClick(e) {
-                                const marker = e.target.closest('[data-type="location-marker"]');
-                                const regionSvg = e.target.closest('[data-type="region-polygon"]');
-                                
-                                if (marker) {
-                                    e.stopPropagation();
-                                    if (e.detail > 0) {
-                                        const locationId = parseInt(marker.dataset.id, 10);
-                                        const location = locationsData.locations.find(loc => loc.id === locationId);
-                                        
-                                        if (isDrawingMode) {
-                                            startDrawingFromLocation(e, location);
-                                        } else if (isAddingLocationMode || isAddingRegionMode) {
-                                            return;
-                                        } else {
-                                            showInfoBox(e);
-                                        }
-                                    }
-                                } else if (regionSvg) {
-                                    e.stopPropagation();
-                                    if (e.detail > 0) {
-                                        const locationId = parseInt(regionSvg.dataset.id, 10);
-                                        const location = locationsData.locations.find(loc => loc.id === locationId);
-                                        
-                                        if (isDrawingMode || isAddingLocationMode || isAddingRegionMode) {
-                                            return;
-                                        } else {
-                                            showInfoBox(e, location);
-                                        }
-                                    }
-                                }
                             }
 
                             function showInfoBox(event, locationParam = null) {
@@ -845,7 +781,6 @@
                                 svg.style.pointerEvents = "auto";
                                 svg.style.zIndex = "10";
                                 svg.dataset.id = location.id;
-                                svg.dataset.type = "region-polygon";
                                 svg.className = "region-polygon";
 
                                 const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -861,6 +796,21 @@
                                 polygon.setAttribute("fill-opacity", "0.5");
 
                                 svg.appendChild(polygon);
+
+                                // Add click event for info box
+                                svg.addEventListener('click', (e) => {
+                                    e.stopPropagation(); // Prevent viewport click events
+                                    if (e.detail > 0) {
+                                        if (isDrawingMode || isAddingLocationMode || isAddingRegionMode) {
+                                            // In special modes, no interaction with existing regions
+                                            return;
+                                        } else {
+                                            // Normal mode - show info box
+                                            showInfoBox(e, location);
+                                        }
+                                    }
+                                });
+
                                 locationsLayer.appendChild(svg);
                             }
 
@@ -1321,8 +1271,10 @@
                                 viewport.classList.toggle('drawing', isDrawingMode); 
                                 e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
                                 
-                                // Force cursor update and mode cleanup
-                                updateViewportCursor();
+                                // Force cursor update
+                                if (!isDrawingMode) {
+                                    viewport.style.cursor = '';
+                                }
                                 
                                 // Re-render locations to update event handlers
                                 renderLocations();
