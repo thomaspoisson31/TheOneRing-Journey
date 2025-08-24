@@ -26,7 +26,7 @@
       "id": 2,
       "name": "Mont Venteux",
       "description": "Colline solitaire offrant une vue sur la Grande Route de l'Est.",
-      "imageUrl": "/images/weathertop.png",
+      "imageUrl": "/images/Weathertop.png",
       "color": "blue",
       "coordinates": {
         "x": 3721.45,
@@ -151,7 +151,7 @@
       "id": 13,
       "name": "Les Îles Embrumées",
       "description": "Des îles mystérieuses au milieu du Lac Evendim, hantées par une ancienne créature.",
-      "imageUrl": "/images/shrouded_islets.png",
+      "imageUrl": "/images/Shrouded_Islets.png",
       "color": "green",
       "coordinates": {
         "x": 2725.27,
@@ -234,7 +234,7 @@
       "id": 20,
       "name": "Le Refuge des Rôdeurs",
       "description": "Un campement secret des Rôdeurs du Nord, caché dans les terres sauvages de l'ancien Rhudaur.",
-      "imageUrl": "",
+      "imageUrl": "/images/the_angle.png",
       "color": "green",
       "coordinates": {
         "x": 4197.11,
