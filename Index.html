@@ -114,6 +114,88 @@
         #info-box-expand:hover {
             color: white;
         }
+        /* Full screen view styles */
+        #fullscreen-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+        }
+        #fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: rgba(17, 24, 39, 0.9);
+            border-bottom: 1px solid #4b5563;
+        }
+        #fullscreen-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+        #fullscreen-image-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #fullscreen-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        #fullscreen-description-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+            background-color: rgba(17, 24, 39, 0.8);
+            border-radius: 8px;
+            display: none;
+        }
+        #fullscreen-description {
+            color: white;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .fullscreen-toggle-btn {
+            background-color: rgba(59, 130, 246, 0.8);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+            transition: background-color 0.3s;
+        }
+        .fullscreen-toggle-btn:hover {
+            background-color: rgba(59, 130, 246, 1);
+        }
+        .fullscreen-close-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        .fullscreen-close-btn:hover {
+            color: white;
+        }
         /* Loader styles */
         #loader-overlay {
             transition: opacity 0.5s ease-out;
@@ -266,6 +348,29 @@
             </div>
         </div>
 
+        <!-- Fullscreen View -->
+        <div id="fullscreen-view">
+            <div id="fullscreen-header">
+                <div>
+                    <h2 id="fullscreen-title" class="text-2xl font-bold text-white"></h2>
+                </div>
+                <div class="flex items-center">
+                    <button id="toggle-image-description" class="fullscreen-toggle-btn">Image</button>
+                    <button id="close-fullscreen" class="fullscreen-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="fullscreen-content">
+                <div id="fullscreen-image-container">
+                    <img id="fullscreen-image" src="" alt="">
+                </div>
+                <div id="fullscreen-description-container">
+                    <div id="fullscreen-description"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Journey Log Modal -->
         <div id="journey-log-modal" class="hidden absolute inset-0 z-40 bg-black bg-opacity-70 flex items-center justify-center p-4">
             <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
@@ -310,6 +415,12 @@
         const filterPanel = document.getElementById('filter-panel');
         const mapSwitchBtn = document.getElementById('map-switch');
         const distanceDisplay = document.getElementById('distance-display');
+        const fullscreenView = document.getElementById('fullscreen-view');
+        const fullscreenTitle = document.getElementById('fullscreen-title');
+        const fullscreenImage = document.getElementById('fullscreen-image');
+        const fullscreenDescription = document.getElementById('fullscreen-description');
+        const fullscreenImageContainer = document.getElementById('fullscreen-image-container');
+        const fullscreenDescriptionContainer = document.getElementById('fullscreen-description-container');
         
         // --- Map state ---
         let MAP_WIDTH = 0, MAP_HEIGHT = 0;
@@ -440,6 +551,7 @@
                 <div class="flex items-center mb-2">
                     <h3 class="text-lg font-bold">${location.name}</h3>
                     <i id="info-box-edit" class="fas fa-pencil-alt ml-2 text-gray-400 hover:text-white cursor-pointer"></i>
+                    <i id="info-box-fullscreen" class="fas fa-expand-arrows-alt ml-2 text-gray-400 hover:text-white cursor-pointer" title="Vue plein écran"></i>
                     <i id="info-box-expand" class="fas ${infoBox.classList.contains('expanded') ? 'fa-compress' : 'fa-expand'} ml-2 text-gray-400 hover:text-white cursor-pointer" title="Basculer compact/étendu"></i>
                 </div>
                 <p class="text-gray-300">${location.description || 'Aucune description.'}</p>
@@ -455,6 +567,7 @@
             }
 
             document.getElementById('info-box-edit').addEventListener('click', enterEditMode);
+            document.getElementById('info-box-fullscreen').addEventListener('click', openFullscreenView);
             const expandBtn = document.getElementById('info-box-expand');
             if (expandBtn) expandBtn.addEventListener('click', toggleInfoBoxExpand);
         }
@@ -719,6 +832,72 @@
         function updateDistanceDisplay() { if (totalPathPixels === 0 || MAP_WIDTH === 0) { distanceContainer.classList.add('hidden'); return; } distanceContainer.classList.remove('hidden'); const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH); const days = miles / 20; const roundedDays = Math.ceil(days * 2) / 2; distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`; }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
+        document.getElementById('close-fullscreen').addEventListener('click', closeFullscreenView);
+        document.getElementById('toggle-image-description').addEventListener('click', toggleFullscreenContent);
+
+        // --- Fullscreen View Functions ---
+        function openFullscreenView() {
+            const location = locationsData.locations.find(loc => loc.id === activeLocationId);
+            if (!location) return;
+
+            fullscreenTitle.textContent = location.name;
+            fullscreenDescription.innerHTML = location.description || 'Aucune description disponible.';
+            
+            // Gestion de l'image
+            if (location.imageUrl) {
+                fullscreenImage.src = location.imageUrl;
+                fullscreenImage.alt = location.name;
+                fullscreenImageContainer.style.display = 'flex';
+                document.getElementById('toggle-image-description').style.display = 'inline-block';
+                
+                // Par défaut, afficher l'image
+                showFullscreenImage();
+            } else {
+                // Pas d'image, afficher directement la description
+                fullscreenImageContainer.style.display = 'none';
+                document.getElementById('toggle-image-description').style.display = 'none';
+                showFullscreenDescription();
+            }
+            
+            fullscreenView.style.display = 'flex';
+            hideInfoBox();
+        }
+
+        function closeFullscreenView() {
+            fullscreenView.style.display = 'none';
+        }
+
+        function toggleFullscreenContent() {
+            const toggleBtn = document.getElementById('toggle-image-description');
+            const isShowingImage = fullscreenImageContainer.style.display !== 'none';
+            
+            if (isShowingImage) {
+                showFullscreenDescription();
+                toggleBtn.textContent = 'Image';
+            } else {
+                showFullscreenImage();
+                toggleBtn.textContent = 'Description';
+            }
+        }
+
+        function showFullscreenImage() {
+            fullscreenImageContainer.style.display = 'flex';
+            fullscreenDescriptionContainer.style.display = 'none';
+            document.getElementById('toggle-image-description').textContent = 'Description';
+        }
+
+        function showFullscreenDescription() {
+            fullscreenImageContainer.style.display = 'none';
+            fullscreenDescriptionContainer.style.display = 'block';
+            document.getElementById('toggle-image-description').textContent = 'Image';
+        }
+
+        // Fermer la vue plein écran avec la touche Échap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && fullscreenView.style.display === 'flex') {
+                closeFullscreenView();
+            }
+        });
 
         // --- Gemini API Functions ---
         async function callGemini(prompt, button) {
