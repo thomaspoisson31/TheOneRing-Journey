@@ -67,6 +67,20 @@
                             .drawing .location-marker:hover {
                                 cursor: crosshair !important;
                             }
+                            /* Override cursor when in adding location mode */
+                            .adding-location .location-marker {
+                                cursor: crosshair !important;
+                            }
+                            .adding-location .location-marker:hover {
+                                cursor: crosshair !important;
+                            }
+                            /* Override cursor when in adding region mode */
+                            .adding-region .location-marker {
+                                cursor: crosshair !important;
+                            }
+                            .adding-region .location-marker:hover {
+                                cursor: crosshair !important;
+                            }
                             /* Style for the info box */
                             #info-box {
                                 position: absolute;
@@ -631,21 +645,24 @@
                                         marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                                         marker.dataset.id = location.id;
 
-                                        // Only allow dragging when not in drawing or adding location mode
+                                        // Only allow dragging when not in any special mode
                                         if (!isDrawingMode && !isAddingLocationMode && !isAddingRegionMode) {
                                             marker.addEventListener('mousedown', startDragMarker);
                                         }
 
                                         marker.addEventListener('click', (e) => { 
+                                            e.stopPropagation(); // Prevent viewport click events
                                             if (e.detail > 0) {
                                                 if (isDrawingMode) {
                                                     // Start drawing from this location
                                                     startDrawingFromLocation(e, location);
-                                                } else if (!isAddingLocationMode && !isAddingRegionMode) {
-                                                    // Show info box normally
+                                                } else if (isAddingLocationMode || isAddingRegionMode) {
+                                                    // In adding modes, don't interact with existing locations
+                                                    return;
+                                                } else {
+                                                    // Normal mode - show info box
                                                     showInfoBox(e);
                                                 }
-                                                // In region mode, no interaction with existing locations
                                             }
                                         });
 
@@ -780,10 +797,11 @@
 
                                 // Add click event for info box
                                 svg.addEventListener('click', (e) => {
-                                    if (e.detail > 0 && !isAddingLocationMode && !isAddingRegionMode) {
+                                    e.stopPropagation(); // Prevent viewport click events
+                                    if (e.detail > 0 && !isAddingLocationMode && !isAddingRegionMode && !isDrawingMode) {
                                         showInfoBox(e, location);
                                     }
-                                    // In region mode, no interaction with existing regions
+                                    // In special modes, no interaction with existing regions
                                 });
 
                                 locationsLayer.appendChild(svg);
@@ -1173,7 +1191,23 @@
                                 updateFilters();
                             }
                             viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
-                            viewport.addEventListener('mousedown', (event) => { if (event.target.closest('.location-marker, #info-box')) return; hideInfoBox(); if (isAddingLocationMode) { addLocation(event); return; } if (isDrawingMode) return; event.preventDefault(); isPanning = true; startPanX = event.clientX - panX; startPanY = event.clientY - panY; viewport.classList.add('panning'); });
+                            viewport.addEventListener('mousedown', (event) => { 
+                                if (event.target.closest('.location-marker, #info-box')) return; 
+                                hideInfoBox(); 
+                                if (isAddingLocationMode) { 
+                                    addLocation(event); 
+                                    return; 
+                                } 
+                                if (isAddingRegionMode) {
+                                    return; // Let region drawing handle the click
+                                }
+                                if (isDrawingMode) return; 
+                                event.preventDefault(); 
+                                isPanning = true; 
+                                startPanX = event.clientX - panX; 
+                                startPanY = event.clientY - panY; 
+                                viewport.classList.add('panning'); 
+                            });
                             viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
                             ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
                             drawingCanvas.addEventListener('mousedown', (event) => { 
@@ -1214,6 +1248,13 @@
                                 regionPoints = [];
                                 isDrawingRegion = false;
                                 ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                                // Hide distance container when exiting drawing mode
+                                if (isDrawingMode) {
+                                    distanceContainer.classList.add('hidden');
+                                    totalPathPixels = 0;
+                                    startPoint = null;
+                                    lastPoint = null;
+                                }
                                 
                                 viewport.classList.remove('adding-location', 'adding-region'); 
                                 document.getElementById('add-location-mode').classList.remove('btn-active'); 
@@ -1233,6 +1274,11 @@
                                 regionPoints = [];
                                 isDrawingRegion = false;
                                 ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                                // Hide distance container when clearing drawing
+                                distanceContainer.classList.add('hidden');
+                                totalPathPixels = 0;
+                                startPoint = null;
+                                lastPoint = null;
                                 
                                 viewport.classList.remove('drawing', 'adding-region'); 
                                 document.getElementById('draw-mode').classList.remove('btn-active'); 
@@ -1254,7 +1300,8 @@
                                 totalPathPixels = 0;
                                 startPoint = null;
                                 lastPoint = null;
-                                updateDistanceDisplay();
+                                // Hide distance container when clearing drawing
+                                distanceContainer.classList.add('hidden');
                                 
                                 viewport.classList.remove('drawing', 'adding-location'); 
                                 document.getElementById('draw-mode').classList.remove('btn-active'); 
@@ -1264,11 +1311,9 @@
                                 viewport.classList.toggle('adding-region', isAddingRegionMode); 
                                 e.currentTarget.classList.toggle('btn-active', isAddingRegionMode); 
                                 
-                                // Reset region drawing state when entering region mode
-                                if (isAddingRegionMode) {
-                                    regionPoints = [];
-                                    isDrawingRegion = false;
-                                }
+                                // Reset region drawing state when entering/exiting region mode
+                                regionPoints = [];
+                                isDrawingRegion = false;
                                 
                                 // Re-render locations to update event handlers
                                 renderLocations();
