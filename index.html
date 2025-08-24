@@ -925,12 +925,12 @@
                                 // Clear drawing
                                 ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
 
-                                // Reset state
+                                // Reset all region state
                                 regionPoints = [];
                                 isDrawingRegion = false;
-
-                                // Exit region mode
                                 isAddingRegionMode = false;
+
+                                // Reset UI
                                 viewport.classList.remove('adding-region');
                                 document.getElementById('add-region-mode').classList.remove('btn-active');
 
@@ -1207,9 +1207,18 @@
                             document.getElementById('zoom-out').addEventListener('click', () => { scale /= 1.2; applyTransform(); });
                             document.getElementById('reset-zoom').addEventListener('click', resetView);
                             document.getElementById('draw-mode').addEventListener('click', (e) => { 
+                                // Reset all other modes
                                 isAddingLocationMode = false; 
-                                viewport.classList.remove('adding-location'); 
+                                isAddingRegionMode = false;
+                                // Clear region drawing state
+                                regionPoints = [];
+                                isDrawingRegion = false;
+                                ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                                
+                                viewport.classList.remove('adding-location', 'adding-region'); 
                                 document.getElementById('add-location-mode').classList.remove('btn-active'); 
+                                document.getElementById('add-region-mode').classList.remove('btn-active');
+                                
                                 isDrawingMode = !isDrawingMode; 
                                 viewport.classList.toggle('drawing', isDrawingMode); 
                                 e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
@@ -1217,11 +1226,18 @@
                                 renderLocations();
                             });
                             document.getElementById('add-location-mode').addEventListener('click', (e) => { 
+                                // Reset all other modes
                                 isDrawingMode = false; 
                                 isAddingRegionMode = false;
+                                // Clear region drawing state
+                                regionPoints = [];
+                                isDrawingRegion = false;
+                                ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                                
                                 viewport.classList.remove('drawing', 'adding-region'); 
                                 document.getElementById('draw-mode').classList.remove('btn-active'); 
                                 document.getElementById('add-region-mode').classList.remove('btn-active');
+                                
                                 isAddingLocationMode = !isAddingLocationMode; 
                                 viewport.classList.toggle('adding-location', isAddingLocationMode); 
                                 e.currentTarget.classList.toggle('btn-active', isAddingLocationMode); 
@@ -1230,14 +1246,30 @@
                             });
 
                             document.getElementById('add-region-mode').addEventListener('click', (e) => { 
+                                // Reset all other modes
                                 isDrawingMode = false; 
                                 isAddingLocationMode = false;
+                                // Clear any existing drawing
+                                ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                                totalPathPixels = 0;
+                                startPoint = null;
+                                lastPoint = null;
+                                updateDistanceDisplay();
+                                
                                 viewport.classList.remove('drawing', 'adding-location'); 
                                 document.getElementById('draw-mode').classList.remove('btn-active'); 
                                 document.getElementById('add-location-mode').classList.remove('btn-active');
+                                
                                 isAddingRegionMode = !isAddingRegionMode; 
                                 viewport.classList.toggle('adding-region', isAddingRegionMode); 
                                 e.currentTarget.classList.toggle('btn-active', isAddingRegionMode); 
+                                
+                                // Reset region drawing state when entering region mode
+                                if (isAddingRegionMode) {
+                                    regionPoints = [];
+                                    isDrawingRegion = false;
+                                }
+                                
                                 // Re-render locations to update event handlers
                                 renderLocations();
                             });
