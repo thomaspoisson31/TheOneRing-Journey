@@ -1065,7 +1065,9 @@
         }
         
         function addRegionPoint(coords) {
+            console.log("🌍 Adding region point:", coords);
             currentRegionPoints.push(coords);
+            console.log("🌍 Current region points count:", currentRegionPoints.length);
             
             // Create or update temporary visual feedback
             updateTempRegion();
@@ -1078,6 +1080,11 @@
             circle.classList.add('region-point');
             circle.dataset.tempPoint = 'true';
             regionsLayer.appendChild(circle);
+            console.log("🌍 Visual point added to SVG");
+            
+            if (currentRegionPoints.length >= 3) {
+                console.log("🌍 Region has enough points for completion (double-click to finish)");
+            }
         }
         
         function updateTempRegion() {
@@ -1228,7 +1235,7 @@
             updateFilters();
         }
         viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
-        // Gestionnaire mousedown principal du viewport (géré plus haut pour le mode dessin)
+        // Gestionnaire mousedown principal du viewport
         function handleViewportMouseDown(event) {
             console.log("🖱️ Main viewport mousedown, mode:", {drawing: isDrawingMode, adding: isAddingLocationMode, region: isAddingRegionMode});
             
@@ -1236,12 +1243,15 @@
             hideInfoBox(); 
             
             if (isAddingLocationMode) { 
+                console.log("📍 Adding location mode active");
                 addLocation(event); 
                 return; 
             } 
             
             if (isAddingRegionMode) {
+                console.log("🌍 Adding region mode active");
                 const coords = getCanvasCoordinates(event);
+                console.log("🌍 Adding region point at:", coords);
                 addRegionPoint(coords);
                 return;
             }
@@ -1251,6 +1261,7 @@
                 return; 
             }
             
+            console.log("👆 Starting pan mode");
             event.preventDefault(); 
             isPanning = true; 
             startPanX = event.clientX - panX; 
@@ -1263,32 +1274,34 @@
         viewport.addEventListener('mousedown', (event) => {
             console.log("🖱️ Viewport mousedown event fired, isDrawingMode:", isDrawingMode);
             
-            if (!isDrawingMode) {
-                console.log("❌ Drawing mode not active, ignoring mousedown");
+            // Handle drawing mode specifically
+            if (isDrawingMode) {
+                // Vérifier qu'on ne clique pas sur un marqueur ou autre élément
+                if (event.target.closest('.location-marker, #info-box')) {
+                    console.log("❌ Clicked on marker or info box, ignoring");
+                    return;
+                }
+                
+                console.log("🎨 Starting drawing...");
+                event.preventDefault();
+                event.stopPropagation();
+                
+                ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
+                isDrawing = true; 
+                totalPathPixels = 0; 
+                startPoint = getCanvasCoordinates(event); 
+                lastPoint = startPoint; 
+                console.log("📍 Start point:", startPoint);
+                ctx.beginPath(); 
+                ctx.moveTo(lastPoint.x, lastPoint.y); 
+                updateDistanceDisplay(); 
+                distanceContainer.classList.remove('hidden');
+                console.log("✅ Drawing initialized");
                 return;
             }
             
-            // Vérifier qu'on ne clique pas sur un marqueur ou autre élément
-            if (event.target.closest('.location-marker, #info-box')) {
-                console.log("❌ Clicked on marker or info box, ignoring");
-                return;
-            }
-            
-            console.log("🎨 Starting drawing...");
-            event.preventDefault();
-            event.stopPropagation();
-            
-            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
-            isDrawing = true; 
-            totalPathPixels = 0; 
-            startPoint = getCanvasCoordinates(event); 
-            lastPoint = startPoint; 
-            console.log("📍 Start point:", startPoint);
-            ctx.beginPath(); 
-            ctx.moveTo(lastPoint.x, lastPoint.y); 
-            updateDistanceDisplay(); 
-            distanceContainer.classList.remove('hidden');
-            console.log("✅ Drawing initialized");
+            // Handle all other modes (panning, adding location, adding region)
+            handleViewportMouseDown(event);
         });
         
         viewport.addEventListener('mousemove', (event) => { 
