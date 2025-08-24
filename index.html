@@ -1061,7 +1061,46 @@
         }
         
         function showRegionInfo(event, region) {
-            alert(`Région: ${region.name}\n${region.description || 'Aucune description.'}`);
+            // Set active region (similar to activeLocationId)
+            activeLocationId = region.id;
+            
+            // Update image tab content (regions don't have images for now)
+            const imageTab = document.getElementById('image-tab');
+            imageTab.innerHTML = `
+                <div class="image-view">
+                    <div class="image-placeholder">Aucune image disponible pour les régions</div>
+                </div>
+            `;
+
+            // Update text tab content
+            const textTab = document.getElementById('text-tab');
+            textTab.innerHTML = `
+                <div class="text-view">
+                    <h3>${region.name}</h3>
+                    <p>${region.description || 'Aucune description.'}</p>
+                </div>
+            `;
+
+            // Show the info box
+            document.getElementById('info-box-edit-content').classList.add('hidden');
+            document.getElementById('info-box-content').classList.remove('hidden');
+
+            infoBox.style.display = 'block';
+            if (infoBox.classList.contains('expanded')) {
+                positionInfoBoxExpanded();
+            } else {
+                positionInfoBoxCompact(event);
+            }
+
+            // Set up event listeners (disable edit for regions for now)
+            const editBtn = document.getElementById('info-box-edit');
+            editBtn.style.display = 'none'; // Hide edit button for regions
+            
+            const expandBtn = document.getElementById('info-box-expand');
+            if (expandBtn) expandBtn.addEventListener('click', toggleInfoBoxExpand);
+            
+            // Set up tab switching
+            setupTabSwitching();
         }
         
         function addRegionPoint(coords) {
