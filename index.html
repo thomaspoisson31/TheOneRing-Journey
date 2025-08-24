@@ -35,6 +35,12 @@
             height: 100%;
             transition: opacity 0.3s ease-in-out;
         }
+        #drawing-canvas {
+            pointer-events: none;
+        }
+        #viewport.drawing #drawing-canvas {
+            pointer-events: auto;
+        }
         #map-image {
             transition: opacity 0.5s ease-in;
         }
@@ -1243,13 +1249,46 @@
         });
         viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
         ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
-        drawingCanvas.addEventListener('mousedown', (event) => { if (!isDrawingMode) return; ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); isDrawing = true; totalPathPixels = 0; startPoint = getCanvasCoordinates(event); lastPoint = startPoint; ctx.beginPath(); ctx.moveTo(lastPoint.x, lastPoint.y); updateDistanceDisplay(); });
-        drawingCanvas.addEventListener('mousemove', (event) => { if (!isDrawing || !isDrawingMode) return; const currentPoint = getCanvasCoordinates(event); const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2)); totalPathPixels += segmentLength; lastPoint = currentPoint; ctx.lineTo(currentPoint.x, currentPoint.y); ctx.stroke(); updateDistanceDisplay(); });
-        ['mouseup', 'mouseleave'].forEach(event => drawingCanvas.addEventListener(event, () => isDrawing = false));
+        drawingCanvas.addEventListener('mousedown', (event) => { 
+            console.log("🖱️ Canvas mousedown event fired, isDrawingMode:", isDrawingMode);
+            if (!isDrawingMode) {
+                console.log("❌ Drawing mode not active, ignoring mousedown");
+                return;
+            }
+            console.log("🎨 Starting drawing...");
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
+            isDrawing = true; 
+            totalPathPixels = 0; 
+            startPoint = getCanvasCoordinates(event); 
+            lastPoint = startPoint; 
+            console.log("📍 Start point:", startPoint);
+            ctx.beginPath(); 
+            ctx.moveTo(lastPoint.x, lastPoint.y); 
+            updateDistanceDisplay(); 
+            console.log("✅ Drawing initialized");
+        });
+        drawingCanvas.addEventListener('mousemove', (event) => { 
+            if (!isDrawing || !isDrawingMode) return; 
+            const currentPoint = getCanvasCoordinates(event); 
+            const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2)); 
+            totalPathPixels += segmentLength; 
+            lastPoint = currentPoint; 
+            ctx.lineTo(currentPoint.x, currentPoint.y); 
+            ctx.stroke(); 
+            updateDistanceDisplay(); 
+            console.log("✏️ Drawing segment, total pixels:", totalPathPixels.toFixed(1));
+        });
+        ['mouseup', 'mouseleave'].forEach(event => drawingCanvas.addEventListener(event, () => {
+            if (isDrawing) {
+                console.log("🛑 Drawing stopped on", event);
+                isDrawing = false;
+            }
+        }));
         document.getElementById('zoom-in').addEventListener('click', () => { scale *= 1.2; applyTransform(); });
         document.getElementById('zoom-out').addEventListener('click', () => { scale /= 1.2; applyTransform(); });
         document.getElementById('reset-zoom').addEventListener('click', resetView);
         document.getElementById('draw-mode').addEventListener('click', (e) => { 
+            console.log("🎨 Draw mode button clicked");
             isAddingLocationMode = false; 
             isAddingRegionMode = false;
             viewport.classList.remove('adding-location', 'adding-region'); 
@@ -1257,8 +1296,19 @@
             document.getElementById('add-region-mode').classList.remove('btn-active');
             cancelRegionCreation();
             isDrawingMode = !isDrawingMode; 
+            console.log("🎨 Drawing mode is now:", isDrawingMode);
             viewport.classList.toggle('drawing', isDrawingMode); 
-            e.currentTarget.classList.toggle('btn-active', isDrawingMode); 
+            e.currentTarget.classList.toggle('btn-active', isDrawingMode);
+            
+            // Ensure canvas has proper pointer events when in drawing mode
+            if (isDrawingMode) {
+                drawingCanvas.style.pointerEvents = 'auto';
+                console.log("✅ Canvas pointer events enabled");
+            } else {
+                drawingCanvas.style.pointerEvents = 'none';
+                console.log("❌ Canvas pointer events disabled");
+            }
+            
             // Re-render locations to update pointer events
             renderLocations();
         });
