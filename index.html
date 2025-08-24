@@ -172,6 +172,22 @@
             color: white;
             background-color: rgba(34, 197, 94, 0.2);
         }
+        #info-box-delete {
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 18px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        #info-box-delete:hover {
+            color: white;
+            background-color: rgba(239, 68, 68, 0.2);
+        }
         /* Enhanced content display for expanded mode */
         #info-box.expanded #info-box-content h3 {
             font-size: 2rem;
@@ -399,6 +415,7 @@
                 <div id="info-box-title" class="hidden text-xl font-bold text-white flex-grow mr-4"></div>
                 <div id="info-box-controls">
                     <i id="info-box-edit" class="fas fa-pencil-alt" title="Modifier"></i>
+                    <i id="info-box-delete" class="fas fa-trash hidden" title="Supprimer"></i>
                     <i id="info-box-expand" class="fas fa-expand" title="Vue étendue"></i>
                     <i id="info-box-close" class="fas fa-times" title="Fermer"></i>
                 </div>
@@ -749,6 +766,7 @@
 
             // Set up event listeners
             document.getElementById('info-box-edit').addEventListener('click', enterEditMode);
+            document.getElementById('info-box-delete').addEventListener('click', () => deleteLocation(location.id));
             const expandBtn = document.getElementById('info-box-expand');
             if (expandBtn) expandBtn.addEventListener('click', toggleInfoBoxExpand);
             
@@ -1000,14 +1018,17 @@
                 expandBtn.title = isExpanded ? 'Vue compacte' : 'Vue étendue';
             }
             
-            // Show/hide title based on expanded state
+            // Show/hide title and delete button based on expanded state
+            const deleteBtn = document.getElementById('info-box-delete');
             if (isExpanded) {
                 titleElement.classList.remove('hidden');
+                deleteBtn.classList.remove('hidden');
                 positionInfoBoxExpanded();
                 // Activate image tab by default when expanding
                 activateTab('image');
             } else {
                 titleElement.classList.add('hidden');
+                deleteBtn.classList.add('hidden');
                 // Return to a sane compact position near top-left but outside toolbar
                 const fakeEvent = { clientX: viewport.getBoundingClientRect().left + 200, clientY: viewport.getBoundingClientRect().top + 120 };
                 positionInfoBoxCompact(fakeEvent);
@@ -1122,8 +1143,11 @@
             editBtn.style.display = 'flex'; // Show edit button for regions
             editBtn.addEventListener('click', enterRegionEditMode);
             
+            const deleteBtn = document.getElementById('info-box-delete');
+            deleteBtn.addEventListener('click', () => deleteRegion(region.id));
+            
             const expandBtn = document.getElementById('info-box-expand');
-            if (expandBtn) expandBtn.addEventListener('click', toggleInfoBoxExpand);
+            if (expandBtn) expandBtn.addEventListener('click', toggleInfoBoxExpanded);
             
             // Set up tab switching
             setupTabSwitching();
@@ -1150,7 +1174,6 @@
                 <div class="mt-4 flex justify-end space-x-2">
                     <button id="cancel-region-edit" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded-md text-sm">Annuler</button>
                     <button id="save-region-edit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-md text-sm">Sauver</button>
-                    <button id="delete-region" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-md text-sm">Supprimer</button>
                 </div>
             `;
 
@@ -1166,7 +1189,6 @@
 
             document.getElementById('save-region-edit').addEventListener('click', saveRegionEdit);
             document.getElementById('cancel-region-edit').addEventListener('click', cancelRegionEdit);
-            document.getElementById('delete-region').addEventListener('click', deleteRegion);
             document.getElementById('generate-edit-region-desc').addEventListener('click', handleGenerateRegionDescription);
         }
 
@@ -1188,9 +1210,21 @@
             document.getElementById('info-box-edit-content').classList.add('hidden');
         }
         
-        function deleteRegion() {
+        function deleteLocation(locationId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')) {
+                const locationIndex = locationsData.locations.findIndex(loc => loc.id === locationId);
+                if (locationIndex !== -1) {
+                    locationsData.locations.splice(locationIndex, 1);
+                    saveLocationsToLocal();
+                    renderLocations();
+                    hideInfoBox();
+                }
+            }
+        }
+
+        function deleteRegion(regionId) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cette région ?')) {
-                const regionIndex = regionsData.regions.findIndex(reg => reg.id === activeLocationId);
+                const regionIndex = regionsData.regions.findIndex(reg => reg.id === regionId);
                 if (regionIndex !== -1) {
                     regionsData.regions.splice(regionIndex, 1);
                     saveRegionsToLocal();
