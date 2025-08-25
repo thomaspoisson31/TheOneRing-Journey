@@ -1449,7 +1449,15 @@
                 activeFilters.colors.push(cb.dataset.color);
             });
             renderLocations();
-            renderRegions(); // Re-render regions based on the new filter
+            
+            // Show or hide regions based on the checkbox
+            const showRegions = document.getElementById('filter-show-regions').checked;
+            if (showRegions) {
+                renderRegions();
+                regionsLayer.style.display = 'block';
+            } else {
+                regionsLayer.style.display = 'none';
+            }
         }
         function resetFilters() {
             document.getElementById('filter-known').checked = false;
