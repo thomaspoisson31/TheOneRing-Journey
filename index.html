@@ -411,11 +411,23 @@
         </div>
 
         <!-- Distance Display -->
-        <div id="distance-container" class="hidden absolute top-4 right-4 z-10 bg-gray-900 bg-opacity-80 p-3 rounded-lg shadow-xl border border-gray-700 text-lg flex items-center space-x-4">
-            <div id="distance-display"></div>
-            <button id="generate-journey-log" title="Générer une chronique de voyage" class="bg-purple-600 hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
-                <span class="gemini-icon">✨</span>
-            </button>
+        <div id="distance-container" class="hidden absolute top-4 right-4 z-10 bg-gray-900 bg-opacity-80 p-3 rounded-lg shadow-xl border border-gray-700 text-sm max-w-xs">
+            <div class="flex items-center space-x-4 mb-2">
+                <div id="distance-display" class="text-lg"></div>
+                <button id="generate-journey-log" title="Générer une chronique de voyage" class="bg-purple-600 hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
+                    <span class="gemini-icon">✨</span>
+                </button>
+            </div>
+            <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2">
+                <div id="traversed-regions-info" class="hidden">
+                    <div class="font-semibold text-green-400 mb-1">Régions traversées :</div>
+                    <div id="traversed-regions-list" class="text-gray-300"></div>
+                </div>
+                <div id="nearby-locations-info" class="hidden">
+                    <div class="font-semibold text-blue-400 mb-1">Lieux à proximité :</div>
+                    <div id="nearby-locations-list" class="text-gray-300"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Info Box -->
@@ -603,6 +615,12 @@
         let newLocationCoords = null;
         let activeLocationId = null;
         let activeFilters = { known: false, visited: false, colors: [] };
+
+        // --- Journey tracking ---
+        let journeyPath = [];
+        let traversedRegions = new Set();
+        let nearbyLocations = new Set();
+        const PROXIMITY_DISTANCE = 50;
 
         // --- Region creation states ---
         let currentRegionPoints = [];
@@ -865,11 +883,19 @@
             // Clear any existing drawing
             ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
 
+            // Reset journey tracking
+            journeyPath = [];
+            traversedRegions.clear();
+            nearbyLocations.clear();
+
             // Start drawing from this location
             isDrawing = true;
             totalPathPixels = 0;
             startPoint = canvasCoords;
             lastPoint = canvasCoords;
+
+            // Add start point to journey path
+            journeyPath.push({x: canvasCoords.x, y: canvasCoords.y});
 
             // Draw a small circle to show the starting point
             ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
@@ -1521,8 +1547,18 @@
                 ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
                 isDrawing = true;
                 totalPathPixels = 0;
+                
+                // Reset journey tracking
+                journeyPath = [];
+                traversedRegions.clear();
+                nearbyLocations.clear();
+                
                 startPoint = getCanvasCoordinates(event);
                 lastPoint = startPoint;
+                
+                // Add start point to journey path
+                journeyPath.push({x: startPoint.x, y: startPoint.y});
+                
                 console.log("📍 Start point:", startPoint);
                 ctx.beginPath();
                 ctx.moveTo(lastPoint.x, lastPoint.y);
@@ -1543,6 +1579,10 @@
             const currentPoint = getCanvasCoordinates(event);
             const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2));
             totalPathPixels += segmentLength;
+            
+            // Add current point to journey path for region/location detection
+            journeyPath.push({x: currentPoint.x, y: currentPoint.y});
+            
             lastPoint = currentPoint;
             ctx.lineTo(currentPoint.x, currentPoint.y);
             ctx.stroke();
@@ -1614,7 +1654,16 @@
 
             renderLocations();
         });
-        document.getElementById('erase').addEventListener('click', () => { ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); totalPathPixels = 0; startPoint = null; lastPoint = null; updateDistanceDisplay(); });
+        document.getElementById('erase').addEventListener('click', () => { 
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
+            totalPathPixels = 0; 
+            startPoint = null; 
+            lastPoint = null; 
+            journeyPath = [];
+            traversedRegions.clear();
+            nearbyLocations.clear();
+            updateDistanceDisplay(); 
+        });
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
         document.getElementById('import-file-input').addEventListener('change', importLocationsFromFile);
@@ -1641,7 +1690,89 @@
         function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         function importLocationsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.locations)) { locationsData = importedData; renderLocations(); saveLocationsToLocal(); } else { alert("Fichier JSON invalide."); } } catch (err) { alert("Erreur lors de la lecture du fichier."); console.error(err); } }; reader.readAsText(file); }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
-        function updateDistanceDisplay() { if (totalPathPixels === 0 || MAP_WIDTH === 0) { distanceContainer.classList.add('hidden'); return; } distanceContainer.classList.remove('hidden'); const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH); const days = miles / 20; const roundedDays = Math.ceil(days * 2) / 2; distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`; }
+        function updateDistanceDisplay() { 
+            if (totalPathPixels === 0 || MAP_WIDTH === 0) { 
+                distanceContainer.classList.add('hidden'); 
+                return; 
+            } 
+            distanceContainer.classList.remove('hidden'); 
+            const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH); 
+            const days = miles / 20; 
+            const roundedDays = Math.ceil(days * 2) / 2; 
+            distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`; 
+            updateJourneyInfo();
+        }
+
+        function updateJourneyInfo() {
+            updateTraversedRegions();
+            updateNearbyLocations();
+            displayJourneyInfo();
+        }
+
+        function updateTraversedRegions() {
+            traversedRegions.clear();
+            
+            regionsData.regions.forEach(region => {
+                if (region.points && region.points.length >= 3) {
+                    // Check if any point of the journey path is inside this region
+                    journeyPath.forEach(point => {
+                        if (isPointInPolygon(point, region.points)) {
+                            traversedRegions.add(region.name);
+                        }
+                    });
+                }
+            });
+        }
+
+        function updateNearbyLocations() {
+            nearbyLocations.clear();
+            
+            locationsData.locations.forEach(location => {
+                // Check if location is near any point of the journey path
+                const minDistance = Math.min(...journeyPath.map(pathPoint => 
+                    Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) + 
+                             Math.pow(location.coordinates.y - pathPoint.y, 2))
+                ));
+                
+                if (minDistance <= PROXIMITY_DISTANCE) {
+                    nearbyLocations.add(location.name);
+                }
+            });
+        }
+
+        function isPointInPolygon(point, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                if (((polygon[i].y > point.y) !== (polygon[j].y > point.y)) &&
+                    (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function displayJourneyInfo() {
+            const traversedRegionsInfo = document.getElementById('traversed-regions-info');
+            const traversedRegionsList = document.getElementById('traversed-regions-list');
+            const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
+            const nearbyLocationsList = document.getElementById('nearby-locations-list');
+
+            // Display traversed regions
+            if (traversedRegions.size > 0) {
+                traversedRegionsInfo.classList.remove('hidden');
+                traversedRegionsList.innerHTML = Array.from(traversedRegions).join(', ');
+            } else {
+                traversedRegionsInfo.classList.add('hidden');
+            }
+
+            // Display nearby locations
+            if (nearbyLocations.size > 0) {
+                nearbyLocationsInfo.classList.remove('hidden');
+                nearbyLocationsList.innerHTML = Array.from(nearbyLocations).join(', ');
+            } else {
+                nearbyLocationsInfo.classList.add('hidden');
+            }
+        }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
