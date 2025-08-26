@@ -242,6 +242,56 @@
             display: block;
         }
 
+        /* Image tabs for multi-image view */
+        .image-tabs-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .image-tabs {
+            display: flex;
+            border-bottom: 1px solid #4b5563;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        .image-tab-button {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .image-tab-button:hover {
+            color: #d1d5db;
+        }
+        .image-tab-button.active {
+            color: white;
+            border-bottom-color: #3b82f6;
+        }
+        .image-contents {
+            flex: 1;
+            position: relative;
+        }
+        .image-content {
+            display: none;
+            height: 100%;
+        }
+        .image-content.active {
+            display: block;
+        }
+
+        /* Image editing styles */
+        .image-edit-item {
+            transition: background-color 0.2s ease;
+        }
+        .image-edit-item:hover {
+            background-color: rgba(75, 85, 99, 0.8);
+        }
+
         /* Image view styles */
         .image-view {
             display: flex;
@@ -778,13 +828,42 @@
 
             // Update image tab content
             const imageTab = document.getElementById('image-tab');
-            if (location.imageUrl) {
-                imageTab.innerHTML = `
-                    <div class="image-view">
-                        <img src="${location.imageUrl}" alt="${location.name}" onerror="handleImageError(this)">
-                        <div class="image-caption">${location.name}</div>
-                    </div>
-                `;
+            const images = getLocationImages(location);
+            
+            if (images.length > 0) {
+                if (infoBox.classList.contains('expanded') && images.length > 1) {
+                    // Multi-tab view for expanded mode with multiple images
+                    const imageTabs = images.map((img, index) => 
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
+                    ).join('');
+                    
+                    const imageContents = images.map((img, index) => 
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${img}" alt="${location.name}" onerror="handleImageError(this)">
+                                <div class="image-caption">${location.name}</div>
+                            </div>
+                        </div>`
+                    ).join('');
+                    
+                    imageTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${imageTabs}</div>
+                            <div class="image-contents">${imageContents}</div>
+                        </div>
+                    `;
+                    
+                    setupImageTabSwitching();
+                } else {
+                    // Single image view (compact mode or single image)
+                    const defaultImage = getDefaultLocationImage(location);
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
+                            <div class="image-caption">${location.name}</div>
+                        </div>
+                    `;
+                }
             } else {
                 imageTab.innerHTML = `
                     <div class="image-view">
@@ -894,6 +973,60 @@
             imgElement.parentElement.innerHTML = '<div class="image-placeholder">Erreur de chargement de l\'image</div>';
         }
 
+        function getLocationImages(location) {
+            // Support both old format (imageUrl) and new format (images array)
+            if (location.images && Array.isArray(location.images)) {
+                return location.images.map(img => img.url).filter(url => url);
+            } else if (location.imageUrl) {
+                return [location.imageUrl];
+            }
+            return [];
+        }
+
+        function getDefaultLocationImage(location) {
+            if (location.images && Array.isArray(location.images)) {
+                const defaultImg = location.images.find(img => img.isDefault);
+                return defaultImg ? defaultImg.url : (location.images[0] ? location.images[0].url : '');
+            } else if (location.imageUrl) {
+                return location.imageUrl;
+            }
+            return '';
+        }
+
+        function setupImageTabSwitching() {
+            const imageTabButtons = document.querySelectorAll('.image-tab-button');
+            const imageContents = document.querySelectorAll('.image-content');
+
+            imageTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetIndex = button.dataset.imageIndex;
+                    
+                    // Update active tab button
+                    imageTabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Update active image content
+                    imageContents.forEach(content => content.classList.remove('active'));
+                    document.querySelector(`[data-image-index="${targetIndex}"].image-content`).classList.add('active');
+                });
+            });
+        }
+
+        function getRegionImages(region) {
+            if (region.images && Array.isArray(region.images)) {
+                return region.images.map(img => img.url).filter(url => url);
+            }
+            return [];
+        }
+
+        function getDefaultRegionImage(region) {
+            if (region.images && Array.isArray(region.images)) {
+                const defaultImg = region.images.find(img => img.isDefault);
+                return defaultImg ? defaultImg.url : (region.images[0] ? region.images[0].url : '');
+            }
+            return '';
+        }
+
         function startDrawingFromLocation(event, location) {
             console.log("🎯 Starting drawing from location:", location.name);
 
@@ -948,6 +1081,11 @@
             const colorPickerHtml = Object.keys(colorMap).map(color =>
                 `<div class="color-swatch ${location.color === color ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`
             ).join('');
+
+            // Prepare images for editing
+            const images = location.images || [];
+            const imagesHtml = generateImageEditHTML(images);
+
             const infoBoxEditContent = document.getElementById('info-box-edit-content');
             infoBoxEditContent.innerHTML = `
                 <div class="space-y-2">
@@ -956,7 +1094,11 @@
                         <textarea id="edit-desc" rows="2" placeholder="Description" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${location.description || ''}</textarea>
                         <button id="generate-edit-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
                     </div>
-                    <input type="url" id="edit-image" value="${location.imageUrl || ''}" placeholder="URL de l'image" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
+                        <div id="edit-images-container">${imagesHtml}</div>
+                        <button id="add-image-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une image</button>
+                    </div>
                     <div class="flex space-x-2">${colorPickerHtml}</div>
                     <div class="flex items-center space-x-4 pt-2">
                         <div class="flex items-center">
@@ -994,6 +1136,117 @@
             document.getElementById('save-edit').addEventListener('click', saveEdit);
             document.getElementById('cancel-edit').addEventListener('click', cancelEdit);
             document.getElementById('generate-edit-desc').addEventListener('click', handleGenerateDescription);
+            setupImageEditListeners();
+        }
+
+        function generateImageEditHTML(images) {
+            if (images.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune image</div>';
+            }
+
+            return images.map((img, index) => `
+                <div class="image-edit-item bg-gray-600 p-2 rounded mb-2" data-image-index="${index}">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <input type="url" value="${img.url}" placeholder="URL de l'image" class="flex-1 bg-gray-800 border border-gray-600 rounded py-1 px-2 text-white text-sm image-url-input">
+                        <button class="remove-image-btn px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">×</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" ${img.isDefault ? 'checked' : ''} class="mr-2 default-image-checkbox">
+                        <label class="text-sm text-gray-300">Image par défaut</label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupImageEditListeners() {
+            const container = document.getElementById('edit-images-container');
+            const addBtn = document.getElementById('add-image-btn');
+
+            addBtn.addEventListener('click', () => {
+                const imageItems = container.querySelectorAll('.image-edit-item');
+                if (imageItems.length >= 5) {
+                    alert('Maximum 5 images par lieu/région');
+                    return;
+                }
+
+                const newIndex = imageItems.length;
+                const newImageHTML = `
+                    <div class="image-edit-item bg-gray-600 p-2 rounded mb-2" data-image-index="${newIndex}">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <input type="url" value="" placeholder="URL de l'image" class="flex-1 bg-gray-800 border border-gray-600 rounded py-1 px-2 text-white text-sm image-url-input">
+                            <button class="remove-image-btn px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">×</button>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" ${newIndex === 0 ? 'checked' : ''} class="mr-2 default-image-checkbox">
+                            <label class="text-sm text-gray-300">Image par défaut</label>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', newImageHTML);
+                setupImageItemListeners();
+            });
+
+            setupImageItemListeners();
+        }
+
+        function setupImageItemListeners() {
+            const container = document.getElementById('edit-images-container');
+            
+            // Remove image listeners
+            container.querySelectorAll('.remove-image-btn').forEach(btn => {
+                btn.replaceWith(btn.cloneNode(true)); // Remove existing listeners
+            });
+            container.querySelectorAll('.remove-image-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.closest('.image-edit-item').remove();
+                    // Ensure at least one default is checked if images remain
+                    const remaining = container.querySelectorAll('.image-edit-item');
+                    if (remaining.length > 0) {
+                        const hasDefault = Array.from(remaining).some(item => 
+                            item.querySelector('.default-image-checkbox').checked
+                        );
+                        if (!hasDefault) {
+                            remaining[0].querySelector('.default-image-checkbox').checked = true;
+                        }
+                    }
+                });
+            });
+
+            // Default image radio-like behavior
+            container.querySelectorAll('.default-image-checkbox').forEach(checkbox => {
+                checkbox.replaceWith(checkbox.cloneNode(true)); // Remove existing listeners
+            });
+            container.querySelectorAll('.default-image-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked) {
+                        // Uncheck all others
+                        container.querySelectorAll('.default-image-checkbox').forEach(other => {
+                            if (other !== checkbox) other.checked = false;
+                        });
+                    }
+                });
+            });
+        }
+
+        function collectImagesFromEdit() {
+            const container = document.getElementById('edit-images-container');
+            const images = [];
+            
+            container.querySelectorAll('.image-edit-item').forEach(item => {
+                const url = item.querySelector('.image-url-input').value.trim();
+                const isDefault = item.querySelector('.default-image-checkbox').checked;
+                
+                if (url) {
+                    images.push({ url, isDefault });
+                }
+            });
+
+            // Ensure at least one default if images exist
+            if (images.length > 0 && !images.some(img => img.isDefault)) {
+                images[0].isDefault = true;
+            }
+
+            return images;
         }
 
         function saveEdit() {
@@ -1002,10 +1255,21 @@
 
             location.name = document.getElementById('edit-name').value;
             location.description = document.getElementById('edit-desc').value;
-            location.imageUrl = document.getElementById('edit-image').value;
             location.color = document.getElementById('info-box-edit-content').querySelector('.color-swatch.selected').dataset.color;
             location.known = document.getElementById('edit-known').checked;
             location.visited = document.getElementById('edit-visited').checked;
+
+            // Handle images
+            const images = collectImagesFromEdit();
+            if (images.length > 0) {
+                location.images = images;
+                // Remove old imageUrl if exists
+                delete location.imageUrl;
+            } else {
+                // No images, remove both old and new format
+                delete location.images;
+                delete location.imageUrl;
+            }
 
             saveLocationsToLocal();
             renderLocations();
@@ -1230,13 +1494,51 @@
             // Set active region (similar to activeLocationId)
             activeLocationId = region.id;
 
-            // Update image tab content (regions don't have images for now)
+            // Update image tab content
             const imageTab = document.getElementById('image-tab');
-            imageTab.innerHTML = `
-                <div class="image-view">
-                    <div class="image-placeholder">Aucune image disponible pour les régions</div>
-                </div>
-            `;
+            const images = getRegionImages(region);
+            
+            if (images.length > 0) {
+                if (infoBox.classList.contains('expanded') && images.length > 1) {
+                    // Multi-tab view for expanded mode with multiple images
+                    const imageTabs = images.map((img, index) => 
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
+                    ).join('');
+                    
+                    const imageContents = images.map((img, index) => 
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${img}" alt="${region.name}" onerror="handleImageError(this)">
+                                <div class="image-caption">${region.name}</div>
+                            </div>
+                        </div>`
+                    ).join('');
+                    
+                    imageTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${imageTabs}</div>
+                            <div class="image-contents">${imageContents}</div>
+                        </div>
+                    `;
+                    
+                    setupImageTabSwitching();
+                } else {
+                    // Single image view (compact mode or single image)
+                    const defaultImage = getDefaultRegionImage(region);
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
+                            <div class="image-caption">${region.name}</div>
+                        </div>
+                    `;
+                }
+            } else {
+                imageTab.innerHTML = `
+                    <div class="image-view">
+                        <div class="image-placeholder">Aucune image disponible</div>
+                    </div>
+                `;
+            }
 
             // Update text tab content
             const textTab = document.getElementById('text-tab');
@@ -1280,6 +1582,10 @@
                 `<div class="color-swatch ${region.color === color ? 'selected' : ''}" data-color="${color}" style="background-color: ${regionColorMap[color]}; border: 2px solid ${colorMap[color]};"></div>`
             ).join('');
 
+            // Prepare images for editing
+            const images = region.images || [];
+            const imagesHtml = generateImageEditHTML(images);
+
             const infoBoxEditContent = document.getElementById('info-box-edit-content');
             infoBoxEditContent.innerHTML = `
                 <div class="space-y-2">
@@ -1287,6 +1593,11 @@
                     <div class="flex items-center space-x-2">
                         <textarea id="edit-region-desc" rows="2" placeholder="Description" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${region.description || ''}</textarea>
                         <button id="generate-edit-region-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
+                        <div id="edit-images-container">${imagesHtml}</div>
+                        <button id="add-image-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une image</button>
                     </div>
                     <div class="flex space-x-2">${colorPickerHtml}</div>
                 </div>
@@ -1309,6 +1620,7 @@
             document.getElementById('save-region-edit').addEventListener('click', saveRegionEdit);
             document.getElementById('cancel-region-edit').addEventListener('click', cancelRegionEdit);
             document.getElementById('generate-edit-region-desc').addEventListener('click', handleGenerateRegionDescription);
+            setupImageEditListeners();
         }
 
         function saveRegionEdit() {
@@ -1318,6 +1630,14 @@
             region.name = document.getElementById('edit-region-name').value;
             region.description = document.getElementById('edit-region-desc').value;
             region.color = document.getElementById('info-box-edit-content').querySelector('.color-swatch.selected').dataset.color;
+
+            // Handle images
+            const images = collectImagesFromEdit();
+            if (images.length > 0) {
+                region.images = images;
+            } else {
+                delete region.images;
+            }
 
             saveRegionsToLocal();
             renderRegions();
