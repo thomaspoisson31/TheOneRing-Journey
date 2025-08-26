@@ -494,6 +494,8 @@
             <div id="info-box-tabs">
                 <button class="tab-button active" data-tab="image">Image</button>
                 <button class="tab-button" data-tab="text">Texte</button>
+                <button class="tab-button" data-tab="rumeurs">Rumeurs</button>
+                <button class="tab-button" data-tab="tradition">Tradition Ancienne</button>
             </div>
             <div id="info-box-scroll-wrapper">
                 <div id="info-box-content">
@@ -505,6 +507,18 @@
                     <div id="text-tab" class="tab-content">
                         <div class="text-view">
                             <h3></h3>
+                            <p></p>
+                        </div>
+                    </div>
+                    <div id="rumeurs-tab" class="tab-content">
+                        <div class="text-view">
+                            <h3>Rumeurs</h3>
+                            <p></p>
+                        </div>
+                    </div>
+                    <div id="tradition-tab" class="tab-content">
+                        <div class="text-view">
+                            <h3>Tradition Ancienne</h3>
                             <p></p>
                         </div>
                     </div>
@@ -881,6 +895,24 @@
                 </div>
             `;
 
+            // Update rumeurs tab content
+            const rumeursTab = document.getElementById('rumeurs-tab');
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
+
+            // Update tradition tab content
+            const traditionTab = document.getElementById('tradition-tab');
+            traditionTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Tradition Ancienne</h3>
+                    <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
+                </div>
+            `;
+
             // Update header title
             updateInfoBoxHeaderTitle(location.name);
 
@@ -1094,6 +1126,8 @@
                         <textarea id="edit-desc" rows="2" placeholder="Description" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${location.description || ''}</textarea>
                         <button id="generate-edit-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
                     </div>
+                    <textarea id="edit-rumeur" rows="2" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${location.Rumeur || ''}</textarea>
+                    <textarea id="edit-tradition" rows="2" placeholder="Tradition Ancienne" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${location.Tradition_Ancienne || ''}</textarea>
                     <div class="bg-gray-700 p-3 rounded-md">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
                         <div id="edit-images-container">${imagesHtml}</div>
@@ -1255,6 +1289,8 @@
 
             location.name = document.getElementById('edit-name').value;
             location.description = document.getElementById('edit-desc').value;
+            location.Rumeur = document.getElementById('edit-rumeur').value || 'A définir';
+            location.Tradition_Ancienne = document.getElementById('edit-tradition').value || 'A définir';
             location.color = document.getElementById('info-box-edit-content').querySelector('.color-swatch.selected').dataset.color;
             location.known = document.getElementById('edit-known').checked;
             location.visited = document.getElementById('edit-visited').checked;
@@ -1549,6 +1585,24 @@
                 </div>
             `;
 
+            // Update rumeurs tab content
+            const rumeursTab = document.getElementById('rumeurs-tab');
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
+
+            // Update tradition tab content
+            const traditionTab = document.getElementById('tradition-tab');
+            traditionTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Tradition Ancienne</h3>
+                    <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
+                </div>
+            `;
+
             // Update header title
             updateInfoBoxHeaderTitle(region.name);
 
@@ -1594,6 +1648,8 @@
                         <textarea id="edit-region-desc" rows="2" placeholder="Description" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${region.description || ''}</textarea>
                         <button id="generate-edit-region-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
                     </div>
+                    <textarea id="edit-region-rumeur" rows="2" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${region.Rumeur || ''}</textarea>
+                    <textarea id="edit-region-tradition" rows="2" placeholder="Tradition Ancienne" class="w-full bg-gray-800 border border-gray-600 rounded-md py-1 px-2 text-white">${region.Tradition_Ancienne || ''}</textarea>
                     <div class="bg-gray-700 p-3 rounded-md">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
                         <div id="edit-images-container">${imagesHtml}</div>
@@ -1629,6 +1685,8 @@
 
             region.name = document.getElementById('edit-region-name').value;
             region.description = document.getElementById('edit-region-desc').value;
+            region.Rumeur = document.getElementById('edit-region-rumeur').value || 'A définir';
+            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value || 'A définir';
             region.color = document.getElementById('info-box-edit-content').querySelector('.color-swatch.selected').dataset.color;
 
             // Handle images
@@ -1779,7 +1837,9 @@
                     name: nameInput.value,
                     description: descInput.value,
                     color: selectedColor,
-                    points: [...currentRegionPoints]
+                    points: [...currentRegionPoints],
+                    Rumeur: "A définir",
+                    Tradition_Ancienne: "A définir"
                 };
 
                 regionsData.regions.push(newRegion);
@@ -2064,7 +2124,7 @@
                 mapSwitchBtn.title = "Vue Joueurs";
             }
         });
-        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
+        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
         function saveLocationsToLocal() { localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData)); }
