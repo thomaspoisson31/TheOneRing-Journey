@@ -2096,11 +2096,14 @@
             regionsData.regions.forEach(region => {
                 if (region.points && region.points.length >= 3) {
                     // Check if any point of the journey path is inside this region
-                    journeyPath.forEach(point => {
+                    let regionTraversed = false;
+                    for (let i = 0; i < journeyPath.length && !regionTraversed; i++) {
+                        const point = journeyPath[i];
                         if (isPointInPolygon(point, region.points)) {
                             traversedRegions.add(region.name);
+                            regionTraversed = true;
                         }
-                    });
+                    }
                 }
             });
         }
@@ -2109,6 +2112,11 @@
             nearbyLocations.clear();
             
             locationsData.locations.forEach(location => {
+                // Skip locations without valid coordinates
+                if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
+                    return;
+                }
+                
                 // Check if location is near any point of the journey path
                 const minDistance = Math.min(...journeyPath.map(pathPoint => 
                     Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) + 
@@ -2142,16 +2150,20 @@
             if (traversedRegions.size > 0) {
                 traversedRegionsInfo.classList.remove('hidden');
                 traversedRegionsList.innerHTML = Array.from(traversedRegions).join(', ');
+                console.log("🗺️ Traversed regions:", Array.from(traversedRegions));
             } else {
                 traversedRegionsInfo.classList.add('hidden');
+                console.log("🗺️ No regions traversed");
             }
 
             // Display nearby locations
             if (nearbyLocations.size > 0) {
                 nearbyLocationsInfo.classList.remove('hidden');
                 nearbyLocationsList.innerHTML = Array.from(nearbyLocations).join(', ');
+                console.log("📍 Nearby locations:", Array.from(nearbyLocations));
             } else {
                 nearbyLocationsInfo.classList.add('hidden');
+                console.log("📍 No nearby locations");
             }
         }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
