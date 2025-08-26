@@ -212,7 +212,11 @@
       "color": "blue",
       "known": true,
       "visited": false,
-      "type": "custom"
+      "type": "custom",
+      "coordinates": {
+        "x": 4400,
+        "y": 1500
+      }
     },
     {
       "id": 1756020509028,

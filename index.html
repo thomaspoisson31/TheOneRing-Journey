@@ -726,6 +726,10 @@
         function renderLocations() {
             locationsLayer.innerHTML = '';
             const filteredLocations = locationsData.locations.filter(location => {
+                // Skip locations without coordinates
+                if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
+                    return false;
+                }
                 const knownMatch = !activeFilters.known || location.known;
                 const visitedMatch = !activeFilters.visited || location.visited;
                 const colorMatch = activeFilters.colors.length === 0 || activeFilters.colors.includes(location.color);
