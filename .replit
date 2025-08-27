@@ -1,5 +1,6 @@
+
 modules = ["web", "python-base-3.13"]
-run = "python -m http.server 5000"
+run = "python app.py"
 
 [nix]
 channel = "stable-25_05"
