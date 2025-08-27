@@ -7,7 +7,7 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "cloudrun"
-run = ["python", "app.py"]
+run = ["sh", "-c", "python app.py"]
 
 [workflows]
 runButton = "Run Flask Server"
