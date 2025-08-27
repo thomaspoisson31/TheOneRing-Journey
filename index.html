@@ -60,7 +60,7 @@
             border: 4px solid rgba(255, 255, 255, 0.8); /* Increased border width */
             border-radius: 50%;
             cursor: pointer;
-            transform: translate(-50%, -50%); 
+            transform: translate(-50%, -50%);
             pointer-events: auto;
             transition: background-color 0.3s, border-color 0.3s, opacity 0.3s;
         }
@@ -659,7 +659,7 @@
                     <div id="logged-in-panel" class="hidden">
                         <div class="bg-green-900/20 border border-green-500 rounded p-4 mb-6">
                             <i class="fas fa-check-circle text-green-500 text-xl mb-2"></i>
-                            <p class="text-green-400">Connecté en tant que</p>
+                            <p class="text-green-400">Connecté avec</p>
                             <p class="font-bold" id="auth-user-name"></p>
                         </div>
 
@@ -684,12 +684,11 @@
                     </div>
 
                     <div id="logged-out-panel" class="hidden">
-                        <div class="bg-yellow-900/20 border border-yellow-500 rounded p-4 mb-4">
-                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mb-2"></i>
-                            <p class="text-yellow-400">Non authentifié</p>
-                            <p class="text-sm text-gray-400 mt-2">Vous devez être connecté à Replit pour sauvegarder vos contextes de voyage.</p>
-                        </div>
-                        <p class="text-sm text-gray-400">Pour vous authentifier, veuillez vous connecter à votre compte Replit dans votre navigateur.</p>
+                        <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-black rounded-lg shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.71h6.14c-.27 1.53-1.03 2.83-2.15 3.72v3.13h3.85c.18-.06.36-.09.56-.09.69 0 1.29.49 1.47 1.15z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.67l-3.85-3.13c-.54.37-1.25.59-2.03.59-.78 0-1.49-.45-1.74-1.08l-3.85 3.13c1.73 1.7 4.03 2.67 6.57 2.67z"/><path d="M5.57 15.02c-.21-.57-.34-1.18-.34-1.82s.13-1.25.34-1.82l-3.85-3.13c-1.33 2.48-2.05 5.27-2.05 8.14s.72 5.66 2.05 8.14l3.85-3.13z"/><path d="M12 7.07c1.64 0 3.07.55 4.23 1.56l3.47-3.47c-1.93-1.74-4.43-2.77-7.28-2.77-2.97 0-5.46.98-7.28 2.67l3.85 3.13c.25-.59.96-1.08 1.74-1.08.78 0 1.49.45 2.03.59z" opacity=".5"/><path d="M24 24H0V0h24v24z" fill="none"/></svg>
+                            <span>Se connecter avec Google</span>
+                        </button>
+                        <p class="text-sm text-gray-400 mt-4">Utilisez votre compte Google pour une sauvegarde sécurisée et synchronisée.</p>
                     </div>
                 </div>
             </div>
@@ -744,6 +743,7 @@
         const contextNameInput = document.getElementById('context-name-input');
         const saveContextBtn = document.getElementById('save-context-btn');
         const savedContextsDiv = document.getElementById('saved-contexts');
+        const googleSigninBtn = document.getElementById('google-signin-btn');
 
         // --- Map state ---
         let MAP_WIDTH = 0, MAP_HEIGHT = 0;
@@ -778,8 +778,7 @@
         let tempRegionPath = null;
 
         // --- Authentication state ---
-        let replitAuthToken = null;
-        let replitUser = null;
+        let googleUser = null;
         let savedContexts = [];
 
         // --- Initialization ---
@@ -805,7 +804,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
 
-                const response = await fetch(LOCATIONS_URL, { 
+                const response = await fetch(LOCATIONS_URL, {
                     signal: controller.signal,
                     cache: 'no-cache' // Éviter les problèmes de cache
                 });
@@ -942,11 +941,11 @@
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
-                    const imageTabs = images.map((img, index) => 
+                    const imageTabs = images.map((img, index) =>
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const imageContents = images.map((img, index) => 
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
@@ -1420,7 +1419,7 @@
                     // Ensure at least one default is checked if images remain
                     const remaining = container.querySelectorAll('.image-edit-item');
                     if (remaining.length > 0) {
-                        const hasDefault = Array.from(remaining).some(item => 
+                        const hasDefault = Array.from(remaining).some(item =>
                             item.querySelector('.default-image-checkbox').checked
                         );
                         if (!hasDefault) {
@@ -1521,11 +1520,11 @@
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
-                    const imageTabs = images.map((img, index) => 
+                    const imageTabs = images.map((img, index) =>
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const imageContents = images.map((img, index) => 
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
@@ -1742,7 +1741,7 @@
                 loadRegionsFromLocal();
                 loadSavedContexts();
                 setupFilters();
-                checkReplitAuth();
+                checkGoogleAuth(); // Changed from checkReplitAuth
                 mapImage.onload = () => {
                     clearTimeout(startTimeout);
                     initializeMap();
@@ -1758,6 +1757,7 @@
                 authBtn.addEventListener('click', toggleAuthModal);
                 closeAuthModalBtn.addEventListener('click', toggleAuthModal);
                 saveContextBtn.addEventListener('click', saveCurrentContext);
+                googleSigninBtn.addEventListener('click', handleGoogleSignIn); // Add listener for Google Sign-In button
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
@@ -1824,11 +1824,11 @@
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
-                    const imageTabs = images.map((img, index) => 
+                    const imageTabs = images.map((img, index) =>
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const imageContents = images.map((img, index) => 
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
@@ -2103,11 +2103,11 @@
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
-                    const imageTabs = images.map((img, index) => 
+                    const imageTabs = images.map((img, index) =>
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const imageContents = images.map((img, index) => 
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
@@ -2356,9 +2356,9 @@
             }
         }
 
-        function handleImageError() { 
+        function handleImageError() {
             console.error("❌ Erreur de chargement de l'image de carte");
-            loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`; 
+            loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
         }
         function startDragMarker(e) { e.stopPropagation(); draggedMarker = e.target; dragStartX = e.clientX; dragStartY = e.clientY; document.addEventListener('mousemove', dragMarker); document.addEventListener('mouseup', stopDragMarker); }
         function dragMarker(e) { if (!draggedMarker) return; const deltaX = e.clientX - dragStartX; const deltaY = e.clientY - dragStartY; const newX = parseFloat(draggedMarker.style.left) + (deltaX / scale); const newY = parseFloat(draggedMarker.style.top) + (deltaY / scale); draggedMarker.style.left = `${newX}px`; draggedMarker.style.top = `${newY}px`; dragStartX = e.clientX; dragStartY = e.clientY; }
@@ -2571,15 +2571,15 @@
 
             renderLocations();
         });
-        document.getElementById('erase').addEventListener('click', () => { 
-            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); 
-            totalPathPixels = 0; 
-            startPoint = null; 
-            lastPoint = null; 
+        document.getElementById('erase').addEventListener('click', () => {
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            totalPathPixels = 0;
+            startPoint = null;
+            lastPoint = null;
             journeyPath = [];
             traversedRegions.clear();
             nearbyLocations.clear();
-            updateDistanceDisplay(); 
+            updateDistanceDisplay();
         });
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
@@ -2607,16 +2607,16 @@
         function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         function importLocationsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.locations)) { locationsData = importedData; renderLocations(); saveLocationsToLocal(); } else { alert("Fichier JSON invalide."); } } catch (err) { alert("Erreur lors de la lecture du fichier."); console.error(err); } }; reader.readAsText(file); }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
-        function updateDistanceDisplay() { 
-            if (totalPathPixels === 0 || MAP_WIDTH === 0) { 
-                distanceContainer.classList.add('hidden'); 
-                return; 
-            } 
-            distanceContainer.classList.remove('hidden'); 
-            const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH); 
-            const days = miles / 20; 
-            const roundedDays = Math.ceil(days * 2) / 2; 
-            distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`; 
+        function updateDistanceDisplay() {
+            if (totalPathPixels === 0 || MAP_WIDTH === 0) {
+                distanceContainer.classList.add('hidden');
+                return;
+            }
+            distanceContainer.classList.remove('hidden');
+            const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+            const days = miles / 20;
+            const roundedDays = Math.ceil(days * 2) / 2;
+            distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`;
             updateJourneyInfo();
         }
 
@@ -2654,8 +2654,8 @@
                 }
 
                 // Check if location is near any point of the journey path
-                const minDistance = Math.min(...journeyPath.map(pathPoint => 
-                    Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) + 
+                const minDistance = Math.min(...journeyPath.map(pathPoint =>
+                    Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) +
                              Math.pow(location.coordinates.y - pathPoint.y, 2))
                 ));
 
@@ -2714,9 +2714,9 @@
 
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
-            // IMPORTANT: Replace with your actual API key or fetch it securely.
-            // For Replit, you might use environment variables or a secrets manager.
-            const apiKey = "YOUR_GEMINI_API_KEY"; // Placeholder!
+
+            // Placeholder for API Key - ideally fetch from environment variables or secure storage
+            const apiKey = "YOUR_GEMINI_API_KEY"; // IMPORTANT: Replace with your actual Gemini API key.
 
             if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
                  console.error("Gemini API key not configured. Please set it in the code or environment variables.");
@@ -2818,55 +2818,89 @@
             descTextarea.value = result;
         }
 
-        // --- Authentication Functions ---
-        function toggleAuthModal() {
-            authModal.classList.toggle('hidden');
-            if (!authModal.classList.contains('hidden')) {
-                // Reset and show status panel
-                authStatusPanel.classList.remove('hidden');
-                authContentPanel.classList.add('hidden');
-                checkReplitAuth(); // Re-check auth status when opening
+        // --- Google Authentication Functions ---
+        async function checkGoogleAuth() {
+            // Check if Google API client is loaded
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+                console.warn("Google API client not loaded. Attempting to load.");
+                // Dynamically load the Google Sign-In client library
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.defer = true;
+                script.onload = () => {
+                    console.log("Google API client loaded.");
+                    initializeGoogleAuth();
+                };
+                script.onerror = () => {
+                    console.error("Failed to load Google API client library.");
+                    displayAuthStatus(); // Show logged-out state if loading fails
+                };
+                document.head.appendChild(script);
+            } else {
+                initializeGoogleAuth();
             }
         }
 
-        async function checkReplitAuth() {
-            try {
-                // Check if running in Replit and get auth token
-                if (window.innerWidth > 768 && window.location.hostname.includes('replit.dev')) { // Simple check for Replit environment
-                    const response = await fetch('/auth/user');
-                    if (response.ok) {
-                        const user = await response.json();
-                        replitUser = user;
-                        displayAuthStatus();
-                    } else {
-                        replitUser = null;
-                        displayAuthStatus();
-                    }
-                } else {
-                    // Not in Replit or cannot check auth, assume logged out
-                    replitUser = null;
-                    displayAuthStatus();
-                }
-            } catch (error) {
-                console.error("Error checking Replit authentication:", error);
-                replitUser = null;
-                displayAuthStatus();
-            }
+        function initializeGoogleAuth() {
+            google.accounts.id.initialize({
+                client_id: "YOUR_GOOGLE_CLIENT_ID", // IMPORTANT: Replace with your actual Google Client ID
+                callback: handleCredentialResponse // This function will be called upon successful sign-in
+            });
+
+            // Render the Google Sign-In button
+            google.accounts.id.renderButton(
+                document.getElementById("google-signin-btn"),
+                { theme: "outline", size: "large" }  // customization attributes
+            );
+
+            // Try to get the current user's status (e.g., if already signed in)
+            // Note: Google Sign-In for websites typically relies on user interaction (clicking the button)
+            // to initiate sign-in. There isn't a direct passive check like with Replit auth.
+            // We'll assume logged out until the user interacts with the button.
+            displayAuthStatus();
+        }
+
+        function handleCredentialResponse(response) {
+            console.log("Credential response received:", response);
+            // The response.credential is a JWT ID token. You need to verify this token on your backend.
+            // For this frontend example, we'll simulate a successful login.
+            // In a real app, you would send this token to your server.
+            googleUser = { // Simulate user object
+                id: response.credential, // Simplified representation
+                name: "User Name", // Placeholder, get from backend verification
+                email: "user@example.com" // Placeholder
+            };
+            console.log("Simulated Google User logged in:", googleUser);
+            displayAuthStatus();
+        }
+
+        function handleGoogleSignIn() {
+            // The Google Sign-In button itself handles the OAuth flow.
+            // When the user clicks it, the `callback` function provided in `initialize` will be executed.
+            console.log("Google Sign-In button clicked. The library will handle the flow.");
         }
 
         function displayAuthStatus() {
-            if (replitUser) {
+            if (googleUser) {
                 authStatusPanel.classList.add('hidden');
                 authContentPanel.classList.remove('hidden');
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
-                authUserName.textContent = replitUser.user.displayName || replitUser.user.username;
+                authUserName.textContent = googleUser.name;
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
                 authStatusPanel.classList.add('hidden');
                 authContentPanel.classList.remove('hidden');
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
+                // Ensure the Google Sign-In button is rendered if it wasn't already
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.id && !document.getElementById("google-signin-btn").firstChild) {
+                    google.accounts.id.renderButton(
+                        document.getElementById("google-signin-btn"),
+                        { theme: "outline", size: "large" }
+                    );
+                }
             }
         }
 
@@ -2876,7 +2910,7 @@
                 alert("Veuillez entrer un nom pour le contexte.");
                 return;
             }
-            if (!replitUser) {
+            if (!googleUser) {
                 alert("Vous devez être connecté pour sauvegarder des contextes.");
                 return;
             }
@@ -2891,12 +2925,14 @@
             };
 
             try {
-                // This endpoint would need to be implemented in your backend (e.g., Flask app)
-                const response = await fetch('/auth/save-context', {
+                // This endpoint would need to be implemented in your backend (e.g., Node.js, Python Flask)
+                // It should handle storing context data associated with the authenticated Google user.
+                const response = await fetch('/api/save-context', { // Example API endpoint
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Replit auth token might be needed here depending on backend implementation
+                        // You might need to send an authorization token obtained after Google Sign-In
+                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
                     },
                     body: JSON.stringify({ name: contextName, data: currentData })
                 });
@@ -2917,14 +2953,18 @@
 
         async function loadSavedContexts() {
             savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Chargement des contextes...</p>';
-            if (!replitUser) {
+            if (!googleUser) {
                 savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Connectez-vous pour voir vos contextes.</p>';
                 return;
             }
 
             try {
                 // This endpoint would need to be implemented in your backend
-                const response = await fetch('/auth/contexts');
+                const response = await fetch('/api/contexts', { // Example API endpoint
+                    headers: {
+                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
+                    }
+                });
                 if (response.ok) {
                     savedContexts = await response.json();
                     renderSavedContexts();
@@ -3003,10 +3043,10 @@
             if (!confirm("Êtes-vous sûr de vouloir supprimer ce contexte ?")) return;
 
             try {
-                const response = await fetch(`/auth/context/${contextId}`, {
+                const response = await fetch(`/api/context/${contextId}`, { // Example API endpoint
                     method: 'DELETE',
                     headers: {
-                        // Replit auth token might be needed
+                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
                     }
                 });
 

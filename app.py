@@ -14,7 +14,6 @@ app.secret_key = secrets.token_hex(16)  # Générer une clé secrète aléatoire
 # Configuration Google OAuth
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid_authorization_endpoint"
 
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
@@ -28,7 +27,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            replit_user_id TEXT UNIQUE NOT NULL,
+            google_id TEXT UNIQUE NOT NULL,
             email TEXT,
             name TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -71,30 +70,21 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_or_create_user(replit_user_id=None, google_id=None, name=None, email=None):
-    """Obtenir ou créer un utilisateur basé sur l'ID Replit ou Google"""
+def get_or_create_user(google_id, name=None, email=None):
+    """Obtenir ou créer un utilisateur basé sur l'ID Google"""
     conn = get_db_connection()
 
-    if replit_user_id:
-        user = conn.execute(
-            'SELECT * FROM users WHERE replit_user_id = ?', 
-            (replit_user_id,)
-        ).fetchone()
-    elif google_id:
-        user = conn.execute(
-            'SELECT * FROM users WHERE google_id = ?', 
-            (google_id,)
-        ).fetchone()
-    else:
-        conn.close()
-        return None
+    user = conn.execute(
+        'SELECT * FROM users WHERE google_id = ?', 
+        (google_id,)
+    ).fetchone()
 
     if user is None:
         # Créer un nouvel utilisateur
         cursor = conn.cursor()
         cursor.execute(
-            'INSERT INTO users (replit_user_id, google_id, name, email) VALUES (?, ?, ?, ?)',
-            (replit_user_id, google_id, name, email)
+            'INSERT INTO users (google_id, name, email) VALUES (?, ?, ?)',
+            (google_id, name, email)
         )
         user_id = cursor.lastrowid
         conn.commit()
@@ -109,21 +99,12 @@ def get_or_create_user(replit_user_id=None, google_id=None, name=None, email=Non
 
 @app.route('/')
 def index():
-    """Page principale - servir l'interface existante avec info d'auth"""
-    user_id = request.headers.get('X-Replit-User-Id')
-    user_name = request.headers.get('X-Replit-User-Name')
-
-    # Si utilisateur authentifié, créer/récupérer son profil
-    if user_id:
-        user = get_or_create_user(user_id, user_name)
-        session['user_id'] = user['id']
-
+    """Page principale - servir l'interface existante"""
     return send_from_directory('.', 'index.html')
 
 @app.route('/api/auth/user')
 def get_current_user():
-    """Obtenir les informations de l'utilisateur actuel via les headers Replit ou session Google"""
-    # Vérifier d'abord si l'utilisateur est connecté via Google
+    """Obtenir les informations de l'utilisateur actuel via session Google"""
     if 'user_id' in session and 'google_id' in session:
         conn = get_db_connection()
         user = conn.execute(
@@ -139,25 +120,11 @@ def get_current_user():
                 'auth_method': 'google'
             })
     
-    # Sinon, vérifier l'authentification Replit
-    user_id = request.headers.get('X-Replit-User-Id')
-    user_name = request.headers.get('X-Replit-User-Name')
-
-    if user_id:
-        # Utilisateur authentifié via Replit
-        user = get_or_create_user(replit_user_id=user_id, name=user_name)
-        session['user_id'] = user['id']
-        return jsonify({
-            'authenticated': True,
-            'user': user,
-            'auth_method': 'replit'
-        })
-    else:
-        # Utilisateur non authentifié
-        return jsonify({
-            'authenticated': False,
-            'user': None
-        })
+    # Utilisateur non authentifié
+    return jsonify({
+        'authenticated': False,
+        'user': None
+    })
 
 @app.route('/api/contexts', methods=['GET'])
 def get_contexts():
