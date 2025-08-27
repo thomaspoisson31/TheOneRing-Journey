@@ -419,4 +419,9 @@ if __name__ == '__main__':
     print("🚀 Serveur Flask démarré avec base de données SQLite")
     print("📊 Base de données initialisée avec les tables users, travel_contexts, api_usage")
     print("🔑 Prêt pour l'authentification Replit et la gestion des contextes de voyage")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    
+    # Configuration pour production et développement
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('REPLIT_DEV_DOMAIN') is not None
+    
+    app.run(host='0.0.0.0', port=port, debug=debug)
