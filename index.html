@@ -318,6 +318,14 @@
             color: #d1d5db;
             font-style: italic;
         }
+        /* Style for the title in compact mode without image */
+        .image-view .compact-title {
+            font-family: 'Merriweather', serif;
+            font-weight: 700; /* Merriweather bold */
+            font-size: 1.5rem; /* Larger size for title */
+            margin-bottom: 1rem; /* Space below the title */
+            color: white; /* Ensure title is visible */
+        }
         .image-placeholder {
             display: flex;
             align-items: center;
@@ -700,7 +708,7 @@
             const savedData = localStorage.getItem('middleEarthLocations');
             if (savedData) {
                 try {
-                    const parsedData = JSON.parse(savedData);
+                    const parsedData = JSON.JSON.parse(savedData);
                     if (parsedData && Array.isArray(parsedData.locations)) {
                        locationsData = parsedData;
                        console.log("✅ Success: Loaded saved locations from localStorage.");
@@ -716,13 +724,13 @@
                 // Ajouter un timeout pour éviter les attentes infinies
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
-                
+
                 const response = await fetch(LOCATIONS_URL, { 
                     signal: controller.signal,
                     cache: 'no-cache' // Éviter les problèmes de cache
                 });
                 clearTimeout(timeoutId);
-                
+
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 if (data && Array.isArray(data.locations)) {
@@ -749,7 +757,7 @@
                 console.warn("⚠️ Map image not loaded yet, retrying...");
                 return;
             }
-            
+
             console.log("📐 Map dimensions:", mapImage.naturalWidth, "x", mapImage.naturalHeight);
             MAP_WIDTH = mapImage.naturalWidth;
             MAP_HEIGHT = mapImage.naturalHeight;
@@ -847,14 +855,14 @@
             // Update image tab content
             const imageTab = document.getElementById('image-tab');
             const images = getLocationImages(location);
-            
+
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
                     const imageTabs = images.map((img, index) => 
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
-                    
+
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
@@ -863,31 +871,46 @@
                             </div>
                         </div>`
                     ).join('');
-                    
+
                     imageTab.innerHTML = `
                         <div class="image-tabs-container">
                             <div class="image-tabs">${imageTabs}</div>
                             <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
-                    
+
                     setupImageTabSwitching();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">${location.name}</span>
+                                </div>` : '';
                     imageTab.innerHTML = `
                         <div class="image-view">
+                            ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
                             <div class="image-caption">${location.name}</div>
                         </div>
                     `;
                 }
             } else {
-                imageTab.innerHTML = `
-                    <div class="image-view">
-                        <div class="image-placeholder">Aucune image disponible</div>
-                    </div>
-                `;
+                // No image - show title instead of placeholder in compact mode
+                if (!infoBox.classList.contains('expanded')) {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune image disponible</div>
+                        </div>
+                    `;
+                }
             }
 
             // Update text tab content
@@ -1036,11 +1059,11 @@
             imageTabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const targetIndex = button.dataset.imageIndex;
-                    
+
                     // Update active tab button
                     imageTabButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
-                    
+
                     // Update active image content
                     imageContents.forEach(content => content.classList.remove('active'));
                     document.querySelector(`[data-image-index="${targetIndex}"].image-content`).classList.add('active');
@@ -1220,7 +1243,7 @@
             // Add save/cancel buttons at the bottom of the scroll wrapper
             const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
             let editControls = document.getElementById('edit-controls');
-            
+
             if (!editControls) {
                 editControls = document.createElement('div');
                 editControls.id = 'edit-controls';
@@ -1306,7 +1329,7 @@
 
         function setupImageItemListeners() {
             const container = document.getElementById('edit-images-container');
-            
+
             // Remove image listeners
             container.querySelectorAll('.remove-image-btn').forEach(btn => {
                 btn.replaceWith(btn.cloneNode(true)); // Remove existing listeners
@@ -1346,11 +1369,11 @@
         function collectImagesFromEdit() {
             const container = document.getElementById('edit-images-container');
             const images = [];
-            
+
             container.querySelectorAll('.image-edit-item').forEach(item => {
                 const url = item.querySelector('.image-url-input').value.trim();
                 const isDefault = item.querySelector('.default-image-checkbox').checked;
-                
+
                 if (url) {
                     images.push({ url, isDefault });
                 }
@@ -1396,7 +1419,7 @@
         function cancelEdit() {
             // Remove edit mode flag
             delete infoBox.dataset.editMode;
-            
+
             // Remove edit controls
             const editControls = document.getElementById('edit-controls');
             if (editControls) {
@@ -1414,14 +1437,14 @@
             // Update image tab content
             const imageTab = document.getElementById('image-tab');
             const images = getLocationImages(location);
-            
+
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
                     const imageTabs = images.map((img, index) => 
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
-                    
+
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
@@ -1430,31 +1453,46 @@
                             </div>
                         </div>`
                     ).join('');
-                    
+
                     imageTab.innerHTML = `
                         <div class="image-tabs-container">
                             <div class="image-tabs">${imageTabs}</div>
                             <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
-                    
+
                     setupImageTabSwitching();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">${location.name}</span>
+                                </div>` : '';
                     imageTab.innerHTML = `
                         <div class="image-view">
+                            ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
                             <div class="image-caption">${location.name}</div>
                         </div>
                     `;
                 }
             } else {
-                imageTab.innerHTML = `
-                    <div class="image-view">
-                        <div class="image-placeholder">Aucune image disponible</div>
-                    </div>
-                `;
+                // No image - show title instead of placeholder in compact mode
+                if (!infoBox.classList.contains('expanded')) {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune image disponible</div>
+                        </div>
+                    `;
+                }
             }
 
             // Update text tab content
@@ -1609,7 +1647,7 @@
         // --- Load data and start the app ---
         async function startApp() {
             console.log("🚀 Starting application...");
-            
+
             // Ajouter un timeout global pour éviter les chargements infinis
             const startTimeout = setTimeout(() => {
                 if (loaderOverlay.style.display !== 'none') {
@@ -1622,7 +1660,7 @@
                     </div>`;
                 }
             }, 30000); // 30 secondes timeout
-            
+
             try {
                 await loadInitialLocations();
                 loadRegionsFromLocal();
@@ -1635,7 +1673,7 @@
                     clearTimeout(startTimeout);
                     handleImageError();
                 });
-                
+
                 console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
                 mapImage.src = PLAYER_MAP_URL;
                 infoBoxClose.addEventListener('click', hideInfoBox);
@@ -1701,14 +1739,14 @@
             // Update image tab content
             const imageTab = document.getElementById('image-tab');
             const images = getRegionImages(region);
-            
+
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
                     const imageTabs = images.map((img, index) => 
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
-                    
+
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
@@ -1717,31 +1755,46 @@
                             </div>
                         </div>`
                     ).join('');
-                    
+
                     imageTab.innerHTML = `
                         <div class="image-tabs-container">
                             <div class="image-tabs">${imageTabs}</div>
                             <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
-                    
+
                     setupImageTabSwitching();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultRegionImage(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">${region.name}</span>
+                                </div>` : '';
                     imageTab.innerHTML = `
                         <div class="image-view">
+                            ${titleHtml}
                             <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
                             <div class="image-caption">${region.name}</div>
                         </div>
                     `;
                 }
             } else {
-                imageTab.innerHTML = `
-                    <div class="image-view">
-                        <div class="image-placeholder">Aucune image disponible</div>
-                    </div>
-                `;
+                // No image - show title instead of placeholder in compact mode
+                if (!infoBox.classList.contains('expanded')) {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune image disponible</div>
+                        </div>
+                    `;
+                }
             }
 
             // Update text tab content
@@ -1896,7 +1949,7 @@
             // Add save/cancel buttons at the bottom of the scroll wrapper
             const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
             let editControls = document.getElementById('edit-controls');
-            
+
             if (!editControls) {
                 editControls = document.createElement('div');
                 editControls.id = 'edit-controls';
@@ -1949,7 +2002,7 @@
             // Remove edit mode flag
             delete infoBox.dataset.editMode;
             delete infoBox.dataset.editType;
-            
+
             // Remove edit controls
             const editControls = document.getElementById('edit-controls');
             if (editControls) {
@@ -1967,14 +2020,14 @@
             // Update image tab content
             const imageTab = document.getElementById('image-tab');
             const images = getRegionImages(region);
-            
+
             if (images.length > 0) {
                 if (infoBox.classList.contains('expanded') && images.length > 1) {
                     // Multi-tab view for expanded mode with multiple images
                     const imageTabs = images.map((img, index) => 
                         `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
-                    
+
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
@@ -1983,31 +2036,46 @@
                             </div>
                         </div>`
                     ).join('');
-                    
+
                     imageTab.innerHTML = `
                         <div class="image-tabs-container">
                             <div class="image-tabs">${imageTabs}</div>
                             <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
-                    
+
                     setupImageTabSwitching();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultRegionImage(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">${region.name}</span>
+                                </div>` : '';
                     imageTab.innerHTML = `
                         <div class="image-view">
+                            ${titleHtml}
                             <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
                             <div class="image-caption">${region.name}</div>
                         </div>
                     `;
                 }
             } else {
-                imageTab.innerHTML = `
-                    <div class="image-view">
-                        <div class="image-placeholder">Aucune image disponible</div>
-                    </div>
-                `;
+                // No image - show title instead of placeholder in compact mode
+                if (!infoBox.classList.contains('expanded')) {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    imageTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune image disponible</div>
+                        </div>
+                    `;
+                }
             }
 
             // Update text tab content
@@ -2247,7 +2315,7 @@
                 activeFilters.colors.push(cb.dataset.color);
             });
             renderLocations();
-            
+
             // Show or hide regions based on the checkbox
             const showRegions = document.getElementById('filter-show-regions').checked;
             if (showRegions) {
@@ -2319,18 +2387,18 @@
                 ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
                 isDrawing = true;
                 totalPathPixels = 0;
-                
+
                 // Reset journey tracking
                 journeyPath = [];
                 traversedRegions.clear();
                 nearbyLocations.clear();
-                
+
                 startPoint = getCanvasCoordinates(event);
                 lastPoint = startPoint;
-                
+
                 // Add start point to journey path
                 journeyPath.push({x: startPoint.x, y: startPoint.y});
-                
+
                 console.log("📍 Start point:", startPoint);
                 ctx.beginPath();
                 ctx.moveTo(lastPoint.x, lastPoint.y);
@@ -2351,10 +2419,10 @@
             const currentPoint = getCanvasCoordinates(event);
             const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2));
             totalPathPixels += segmentLength;
-            
+
             // Add current point to journey path for region/location detection
             journeyPath.push({x: currentPoint.x, y: currentPoint.y});
-            
+
             lastPoint = currentPoint;
             ctx.lineTo(currentPoint.x, currentPoint.y);
             ctx.stroke();
@@ -2483,7 +2551,7 @@
 
         function updateTraversedRegions() {
             traversedRegions.clear();
-            
+
             regionsData.regions.forEach(region => {
                 if (region.points && region.points.length >= 3) {
                     // Check if any point of the journey path is inside this region
@@ -2501,19 +2569,19 @@
 
         function updateNearbyLocations() {
             nearbyLocations.clear();
-            
+
             locationsData.locations.forEach(location => {
                 // Skip locations without valid coordinates
                 if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
                     return;
                 }
-                
+
                 // Check if location is near any point of the journey path
                 const minDistance = Math.min(...journeyPath.map(pathPoint => 
                     Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) + 
                              Math.pow(location.coordinates.y - pathPoint.y, 2))
                 ));
-                
+
                 if (minDistance <= PROXIMITY_DISTANCE) {
                     nearbyLocations.add(location.name);
                 }
