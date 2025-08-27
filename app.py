@@ -15,6 +15,9 @@ app.secret_key = secrets.token_hex(16)  # Générer une clé secrète aléatoire
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 
+# Configuration OAuth pour Replit
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permet OAuth en développement
+
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
 
@@ -303,7 +306,10 @@ def google_auth():
     """Initier l'authentification Google"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return jsonify({'error': 'Google OAuth non configuré'}), 500
-        
+    
+    # Construire l'URL de redirection avec HTTPS
+    redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+    
     flow = Flow.from_client_config(
         {
             "web": {
@@ -311,12 +317,12 @@ def google_auth():
                 "client_secret": GOOGLE_CLIENT_SECRET,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [request.host_url.rstrip('/') + '/auth/google/callback']
+                "redirect_uris": [redirect_uri]
             }
         },
         scopes=['openid', 'email', 'profile']
     )
-    flow.redirect_uri = request.host_url.rstrip('/') + '/auth/google/callback'
+    flow.redirect_uri = redirect_uri
     
     authorization_url, state = flow.authorization_url(
         access_type='offline',
@@ -333,6 +339,9 @@ def google_auth_callback():
         return jsonify({'error': 'Google OAuth non configuré'}), 500
         
     try:
+        # Construire l'URL de redirection avec HTTPS
+        redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+        
         flow = Flow.from_client_config(
             {
                 "web": {
@@ -340,16 +349,19 @@ def google_auth_callback():
                     "client_secret": GOOGLE_CLIENT_SECRET,
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [request.host_url.rstrip('/') + '/auth/google/callback']
+                    "redirect_uris": [redirect_uri]
                 }
             },
             scopes=['openid', 'email', 'profile'],
-            state=session['state']
+            state=session.get('state')
         )
-        flow.redirect_uri = request.host_url.rstrip('/') + '/auth/google/callback'
+        flow.redirect_uri = redirect_uri
+        
+        # Convertir l'URL de la requête en HTTPS pour Google
+        auth_response = request.url.replace('http://', 'https://')
         
         # Obtenir les tokens
-        flow.fetch_token(authorization_response=request.url)
+        flow.fetch_token(authorization_response=auth_response)
         
         # Vérifier l'ID token
         idinfo = id_token.verify_oauth2_token(
