@@ -869,7 +869,7 @@
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
-                                <img src="${img}" alt="${location.name}" onerror="handleImageError(this)">
+                                <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
@@ -891,7 +891,7 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
                         </div>
                     `;
                 }
@@ -1449,7 +1449,7 @@
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
-                                <img src="${img}" alt="${location.name}" onerror="handleImageError(this)">
+                                <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
@@ -1471,7 +1471,7 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
                         </div>
                     `;
                 }
@@ -1532,16 +1532,16 @@
             const vpRect = viewport.getBoundingClientRect();
             const tbRect = getToolbarRect();
             const margin = 16;
-            
+
             // Dimensions estimées de la boîte d'information
             const boxWidth = 280;
             const boxHeight = 250;
-            
+
             // Centrer horizontalement, mais éviter la toolbar
             const centeredLeft = Math.floor((vpRect.width - boxWidth) / 2);
             const minLeft = tbRect.right - vpRect.left + margin;
             const left = Math.max(centeredLeft, minLeft);
-            
+
             // Centrer verticalement
             const top = Math.floor((vpRect.height - boxHeight) / 2);
 
@@ -1747,7 +1747,7 @@
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
-                                <img src="${img}" alt="${region.name}" onerror="handleImageError(this)">
+                                <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
@@ -1769,7 +1769,7 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
                         </div>
                     `;
                 }
@@ -2026,7 +2026,7 @@
                     const imageContents = images.map((img, index) => 
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
-                                <img src="${img}" alt="${region.name}" onerror="handleImageError(this)">
+                                <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
@@ -2048,7 +2048,7 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
                         </div>
                     `;
                 }
