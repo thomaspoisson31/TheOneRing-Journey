@@ -1531,19 +1531,41 @@
         function positionInfoBoxCompact(event) {
             const vpRect = viewport.getBoundingClientRect();
             const tbRect = getToolbarRect();
+            const margin = 10; // Marge de sécurité par rapport aux bords
+            
             // Default near pointer
             let left = event.clientX - vpRect.left + 20;
             let top = event.clientY - vpRect.top + 20;
 
             // Prevent overlap with toolbar: ensure left edge is to the right of toolbar
-            const minLeft = Math.max(16, tbRect.right - vpRect.left + 16);
+            const minLeft = Math.max(margin, tbRect.right - vpRect.left + margin);
             left = Math.max(left, minLeft);
 
-            // Keep within viewport bounds if possible (using current box size or default max)
+            // Get actual or estimated box dimensions
             const boxWidth = infoBox.offsetWidth || 280;
-            const boxHeight = infoBox.offsetHeight || 200;
-            if (left + boxWidth > vpRect.width - 16) left = Math.max(minLeft, vpRect.width - boxWidth - 16);
-            if (top + boxHeight > vpRect.height - 16) top = Math.max(16, vpRect.height - boxHeight - 16);
+            const boxHeight = infoBox.offsetHeight || 250; // Hauteur estimée plus réaliste avec le scroll wrapper
+
+            // Ensure the info box stays within viewport bounds with margin
+            const maxLeft = vpRect.width - boxWidth - margin;
+            const maxTop = vpRect.height - boxHeight - margin;
+            
+            // Adjust horizontal position
+            if (left > maxLeft) {
+                left = Math.max(minLeft, maxLeft);
+                // Si on ne peut pas tenir à droite, essayer à gauche du pointeur
+                if (left === minLeft && event.clientX - vpRect.left - boxWidth - 20 >= margin) {
+                    left = event.clientX - vpRect.left - boxWidth - 20;
+                }
+            }
+            
+            // Adjust vertical position
+            if (top > maxTop) {
+                top = Math.max(margin, maxTop);
+                // Si on ne peut pas tenir en bas, essayer au-dessus du pointeur
+                if (top === margin && event.clientY - vpRect.top - boxHeight - 20 >= margin) {
+                    top = event.clientY - vpRect.top - boxHeight - 20;
+                }
+            }
 
             infoBox.style.left = `${left}px`;
             infoBox.style.top = `${top}px`;
