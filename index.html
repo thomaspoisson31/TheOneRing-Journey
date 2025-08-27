@@ -788,6 +788,11 @@
         let googleUser = null;
         let savedContexts = [];
 
+        // --- Authentication Debug Logs ---
+        function logAuth(message, data = null) {
+            console.log(`🔐 [AUTH] ${message}`, data || '');
+        }
+
         // --- Initialization ---
         async function loadInitialLocations() {
             console.log("Attempting to load locations...");
@@ -1748,6 +1753,7 @@
                 loadRegionsFromLocal();
                 loadSavedContexts();
                 setupFilters();
+                logAuth("Initialisation de l'authentification...");
                 checkGoogleAuth(); // Changed from checkReplitAuth
                 mapImage.onload = () => {
                     clearTimeout(startTimeout);
@@ -1761,10 +1767,47 @@
                 console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
                 mapImage.src = PLAYER_MAP_URL;
                 infoBoxClose.addEventListener('click', hideInfoBox);
-                authBtn.addEventListener('click', toggleAuthModal);
-                closeAuthModalBtn.addEventListener('click', toggleAuthModal);
-                saveContextBtn.addEventListener('click', saveCurrentContext);
-                googleSigninBtn.addEventListener('click', handleGoogleSignIn); // Add listener for Google Sign-In button
+                
+                logAuth("Configuration des event listeners d'authentification...");
+                logAuth("Bouton d'authentification trouvé:", !!authBtn);
+                logAuth("Bouton de fermeture modal trouvé:", !!closeAuthModalBtn);
+                logAuth("Bouton de sauvegarde contexte trouvé:", !!saveContextBtn);
+                logAuth("Bouton Google Sign-In trouvé:", !!googleSigninBtn);
+                
+                if (authBtn) {
+                    authBtn.addEventListener('click', (event) => {
+                        logAuth("Clic sur le bouton d'authentification détecté!");
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleAuthModal();
+                    });
+                    logAuth("Event listener ajouté au bouton d'authentification");
+                } else {
+                    logAuth("ERREUR: Bouton d'authentification non trouvé!");
+                }
+                
+                if (closeAuthModalBtn) {
+                    closeAuthModalBtn.addEventListener('click', (event) => {
+                        logAuth("Clic sur le bouton de fermeture modal détecté!");
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleAuthModal();
+                    });
+                } else {
+                    logAuth("ERREUR: Bouton de fermeture modal non trouvé!");
+                }
+                
+                if (saveContextBtn) {
+                    saveContextBtn.addEventListener('click', saveCurrentContext);
+                } else {
+                    logAuth("ERREUR: Bouton de sauvegarde contexte non trouvé!");
+                }
+                
+                if (googleSigninBtn) {
+                    googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+                } else {
+                    logAuth("ERREUR: Bouton Google Sign-In non trouvé!");
+                }
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
@@ -1774,6 +1817,24 @@
                     <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
                 </div>`;
             });
+            
+            // Test des éléments DOM après un délai
+            setTimeout(() => {
+                logAuth("=== TEST DES ÉLÉMENTS DOM ===");
+                logAuth("authModal element:", !!document.getElementById('auth-modal'));
+                logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
+                logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
+                logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
+                logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
+                
+                const testAuthBtn = document.getElementById('auth-btn');
+                if (testAuthBtn) {
+                    logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
+                    logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
+                    logAuth("Classes du bouton auth:", testAuthBtn.className);
+                }
+                logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
+            }, 2000);
 
             // Region modal handlers
             document.getElementById('confirm-add-region').addEventListener('click', saveRegion);
@@ -2749,9 +2810,14 @@
                     } catch (jsonError) {
 
         function toggleAuthModal() {
+            logAuth("Toggle de la modal d'authentification");
+            logAuth("Modal actuellement cachée:", authModal.classList.contains('hidden'));
             authModal.classList.toggle('hidden');
             if (!authModal.classList.contains('hidden')) {
+                logAuth("Modal ouverte, vérification du statut d'authentification...");
                 checkGoogleAuth(); // Refresh auth status when opening modal
+            } else {
+                logAuth("Modal fermée");
             }
         }
 
@@ -2835,41 +2901,49 @@
 
         // --- Google Authentication Functions ---
         async function checkGoogleAuth() {
+            logAuth("Vérification du statut d'authentification...");
             try {
                 const response = await fetch('/api/auth/user');
+                logAuth(`Réponse reçue: ${response.status}`, response);
                 const data = await response.json();
+                logAuth("Données d'authentification reçues:", data);
                 
                 if (data.authenticated) {
                     googleUser = data.user;
-                    console.log("User authenticated:", googleUser);
+                    logAuth("Utilisateur authentifié:", googleUser);
                 } else {
                     googleUser = null;
-                    console.log("User not authenticated");
+                    logAuth("Utilisateur non authentifié");
                 }
                 
                 displayAuthStatus();
             } catch (error) {
-                console.error("Error checking authentication:", error);
+                logAuth("Erreur lors de la vérification d'authentification:", error);
                 googleUser = null;
                 displayAuthStatus();
             }
         }
 
         function handleGoogleSignIn() {
+            logAuth("Redirection vers Google OAuth...");
             // Redirect to Google OAuth flow on the server
             window.location.href = '/auth/google';
         }
 
         function displayAuthStatus() {
+            logAuth("Affichage du statut d'authentification");
+            logAuth("GoogleUser:", googleUser);
             authStatusPanel.classList.add('hidden');
             authContentPanel.classList.remove('hidden');
             
             if (googleUser) {
+                logAuth("Affichage du panneau utilisateur connecté");
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
                 authUserName.textContent = googleUser.name || googleUser.email || 'Utilisateur';
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
+                logAuth("Affichage du panneau utilisateur non connecté");
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
             }
