@@ -708,7 +708,7 @@
             const savedData = localStorage.getItem('middleEarthLocations');
             if (savedData) {
                 try {
-                    const parsedData = JSON.JSON.parse(savedData);
+                    const parsedData = JSON.parse(savedData);
                     if (parsedData && Array.isArray(parsedData.locations)) {
                        locationsData = parsedData;
                        console.log("✅ Success: Loaded saved locations from localStorage.");
@@ -840,6 +840,9 @@
                             }
                         }
                     });
+
+                    // Ajouter le tooltip au survol
+                    marker.title = location.name;
                 }
 
                 locationsLayer.appendChild(marker);
@@ -867,7 +870,6 @@
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${location.name}" onerror="handleImageError(this)">
-                                <div class="image-caption">${location.name}</div>
                             </div>
                         </div>`
                     ).join('');
@@ -890,7 +892,6 @@
                         <div class="image-view">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
-                            <div class="image-caption">${location.name}</div>
                         </div>
                     `;
                 }
@@ -1449,7 +1450,6 @@
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${location.name}" onerror="handleImageError(this)">
-                                <div class="image-caption">${location.name}</div>
                             </div>
                         </div>`
                     ).join('');
@@ -1472,7 +1472,6 @@
                         <div class="image-view">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" onerror="handleImageError(this)">
-                            <div class="image-caption">${location.name}</div>
                         </div>
                     `;
                 }
@@ -1645,7 +1644,7 @@
         });
 
         // --- Load data and start the app ---
-        async function startApp() {
+        function startApp() {
             console.log("🚀 Starting application...");
 
             // Ajouter un timeout global pour éviter les chargements infinis
@@ -1661,8 +1660,7 @@
                 }
             }, 30000); // 30 secondes timeout
 
-            try {
-                await loadInitialLocations();
+            loadInitialLocations().then(() => {
                 loadRegionsFromLocal();
                 setupFilters();
                 mapImage.onload = () => {
@@ -1677,7 +1675,7 @@
                 console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
                 mapImage.src = PLAYER_MAP_URL;
                 infoBoxClose.addEventListener('click', hideInfoBox);
-            } catch (error) {
+            }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
                 loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
@@ -1685,7 +1683,7 @@
                     Erreur lors du démarrage.<br>
                     <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
                 </div>`;
-            }
+            });
 
             // Region modal handlers
             document.getElementById('confirm-add-region').addEventListener('click', saveRegion);
@@ -1751,7 +1749,6 @@
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${region.name}" onerror="handleImageError(this)">
-                                <div class="image-caption">${region.name}</div>
                             </div>
                         </div>`
                     ).join('');
@@ -1774,7 +1771,6 @@
                         <div class="image-view">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
-                            <div class="image-caption">${region.name}</div>
                         </div>
                     `;
                 }
@@ -2032,7 +2028,6 @@
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
                                 <img src="${img}" alt="${region.name}" onerror="handleImageError(this)">
-                                <div class="image-caption">${region.name}</div>
                             </div>
                         </div>`
                     ).join('');
@@ -2055,7 +2050,6 @@
                         <div class="image-view">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${region.name}" onerror="handleImageError(this)">
-                            <div class="image-caption">${region.name}</div>
                         </div>
                     `;
                 }
@@ -2637,7 +2631,7 @@
 
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
-            const apiKey = "";
+            const apiKey = ""; // Replace with your actual API key or fetch it securely
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             try {
