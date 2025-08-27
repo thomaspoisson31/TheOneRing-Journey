@@ -7,7 +7,7 @@ channel = "stable-25_05"
 [deployment]
 deploymentTarget = "static"
 publicDir = "./"
-run = ["sh", "-c", "python app.py"]
+run = ["sh", "-c", "PORT=80 python app.py"]
 
 [workflows]
 runButton = "Run Flask Server"
