@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from google_auth_oauthlib.flow import Flow
 import sqlite3
 import json
 import os
@@ -7,6 +10,11 @@ import secrets
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # Générer une clé secrète aléatoirement
+
+# Configuration Google OAuth
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid_authorization_endpoint"
 
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
@@ -63,21 +71,30 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_or_create_user(replit_user_id, name=None, email=None):
-    """Obtenir ou créer un utilisateur basé sur l'ID Replit"""
+def get_or_create_user(replit_user_id=None, google_id=None, name=None, email=None):
+    """Obtenir ou créer un utilisateur basé sur l'ID Replit ou Google"""
     conn = get_db_connection()
 
-    user = conn.execute(
-        'SELECT * FROM users WHERE replit_user_id = ?', 
-        (replit_user_id,)
-    ).fetchone()
+    if replit_user_id:
+        user = conn.execute(
+            'SELECT * FROM users WHERE replit_user_id = ?', 
+            (replit_user_id,)
+        ).fetchone()
+    elif google_id:
+        user = conn.execute(
+            'SELECT * FROM users WHERE google_id = ?', 
+            (google_id,)
+        ).fetchone()
+    else:
+        conn.close()
+        return None
 
     if user is None:
         # Créer un nouvel utilisateur
         cursor = conn.cursor()
         cursor.execute(
-            'INSERT INTO users (replit_user_id, name, email) VALUES (?, ?, ?)',
-            (replit_user_id, name, email)
+            'INSERT INTO users (replit_user_id, google_id, name, email) VALUES (?, ?, ?, ?)',
+            (replit_user_id, google_id, name, email)
         )
         user_id = cursor.lastrowid
         conn.commit()
@@ -105,17 +122,35 @@ def index():
 
 @app.route('/api/auth/user')
 def get_current_user():
-    """Obtenir les informations de l'utilisateur actuel via les headers Replit"""
+    """Obtenir les informations de l'utilisateur actuel via les headers Replit ou session Google"""
+    # Vérifier d'abord si l'utilisateur est connecté via Google
+    if 'user_id' in session and 'google_id' in session:
+        conn = get_db_connection()
+        user = conn.execute(
+            'SELECT * FROM users WHERE id = ?', 
+            (session['user_id'],)
+        ).fetchone()
+        conn.close()
+        
+        if user:
+            return jsonify({
+                'authenticated': True,
+                'user': dict(user),
+                'auth_method': 'google'
+            })
+    
+    # Sinon, vérifier l'authentification Replit
     user_id = request.headers.get('X-Replit-User-Id')
     user_name = request.headers.get('X-Replit-User-Name')
 
     if user_id:
         # Utilisateur authentifié via Replit
-        user = get_or_create_user(user_id, user_name)
+        user = get_or_create_user(replit_user_id=user_id, name=user_name)
         session['user_id'] = user['id']
         return jsonify({
             'authenticated': True,
-            'user': user
+            'user': user,
+            'auth_method': 'replit'
         })
     else:
         # Utilisateur non authentifié
@@ -295,6 +330,88 @@ def serve_static(filename):
 def auth_panel():
     """Panneau d'authentification"""
     return render_template('auth_panel.html')
+
+@app.route('/auth/google')
+def google_auth():
+    """Initier l'authentification Google"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return jsonify({'error': 'Google OAuth non configuré'}), 500
+        
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [request.host_url.rstrip('/') + '/auth/google/callback']
+            }
+        },
+        scopes=['openid', 'email', 'profile']
+    )
+    flow.redirect_uri = request.host_url.rstrip('/') + '/auth/google/callback'
+    
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    
+    session['state'] = state
+    return redirect(authorization_url)
+
+@app.route('/auth/google/callback')
+def google_auth_callback():
+    """Callback Google OAuth"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return jsonify({'error': 'Google OAuth non configuré'}), 500
+        
+    try:
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [request.host_url.rstrip('/') + '/auth/google/callback']
+                }
+            },
+            scopes=['openid', 'email', 'profile'],
+            state=session['state']
+        )
+        flow.redirect_uri = request.host_url.rstrip('/') + '/auth/google/callback'
+        
+        # Obtenir les tokens
+        flow.fetch_token(authorization_response=request.url)
+        
+        # Vérifier l'ID token
+        idinfo = id_token.verify_oauth2_token(
+            flow.credentials.id_token, 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+        
+        # Créer ou récupérer l'utilisateur
+        user = get_or_create_user(
+            google_id=idinfo['sub'],
+            name=idinfo.get('name'),
+            email=idinfo.get('email')
+        )
+        
+        session['user_id'] = user['id']
+        session['google_id'] = idinfo['sub']
+        
+        return redirect('/')
+        
+    except Exception as e:
+        print(f"Erreur OAuth Google: {e}")
+        return redirect('/?auth_error=1')
+
+@app.route('/auth/logout')
+def logout():
+    """Déconnexion"""
+    session.clear()
+    return redirect('/')
 
 if __name__ == '__main__':
     init_db()

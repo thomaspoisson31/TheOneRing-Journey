@@ -25,7 +25,8 @@ class DatabaseManager:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                replit_user_id TEXT UNIQUE NOT NULL,
+                replit_user_id TEXT UNIQUE,
+                google_id TEXT UNIQUE,
                 email TEXT,
                 name TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
