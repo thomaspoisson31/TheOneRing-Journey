@@ -1767,13 +1767,13 @@
                 console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
                 mapImage.src = PLAYER_MAP_URL;
                 infoBoxClose.addEventListener('click', hideInfoBox);
-                
+
                 logAuth("Configuration des event listeners d'authentification...");
                 logAuth("Bouton d'authentification trouvé:", !!authBtn);
                 logAuth("Bouton de fermeture modal trouvé:", !!closeAuthModalBtn);
                 logAuth("Bouton de sauvegarde contexte trouvé:", !!saveContextBtn);
                 logAuth("Bouton Google Sign-In trouvé:", !!googleSigninBtn);
-                
+
                 if (authBtn) {
                     authBtn.addEventListener('click', (event) => {
                         logAuth("Clic sur le bouton d'authentification détecté!");
@@ -1785,7 +1785,7 @@
                 } else {
                     logAuth("ERREUR: Bouton d'authentification non trouvé!");
                 }
-                
+
                 if (closeAuthModalBtn) {
                     closeAuthModalBtn.addEventListener('click', (event) => {
                         logAuth("Clic sur le bouton de fermeture modal détecté!");
@@ -1796,13 +1796,13 @@
                 } else {
                     logAuth("ERREUR: Bouton de fermeture modal non trouvé!");
                 }
-                
+
                 if (saveContextBtn) {
                     saveContextBtn.addEventListener('click', saveCurrentContext);
                 } else {
                     logAuth("ERREUR: Bouton de sauvegarde contexte non trouvé!");
                 }
-                
+
                 if (googleSigninBtn) {
                     googleSigninBtn.addEventListener('click', handleGoogleSignIn);
                 } else {
@@ -1817,7 +1817,7 @@
                     <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
                 </div>`;
             });
-            
+
             // Test des éléments DOM après un délai
             setTimeout(() => {
                 logAuth("=== TEST DES ÉLÉMENTS DOM ===");
@@ -1826,7 +1826,7 @@
                 logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
                 logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
                 logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
-                
+
                 const testAuthBtn = document.getElementById('auth-btn');
                 if (testAuthBtn) {
                     logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
@@ -2809,19 +2809,6 @@
                         errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
                     } catch (jsonError) {
 
-        function toggleAuthModal() {
-            logAuth("Toggle de la modal d'authentification");
-            logAuth("Modal actuellement cachée:", authModal.classList.contains('hidden'));
-            authModal.classList.toggle('hidden');
-            if (!authModal.classList.contains('hidden')) {
-                logAuth("Modal ouverte, vérification du statut d'authentification...");
-                checkGoogleAuth(); // Refresh auth status when opening modal
-            } else {
-                logAuth("Modal fermée");
-            }
-        }
-
-                        // Ignore if the response is not JSON
                     }
                     throw new Error(errorMsg);
                 }
@@ -2907,7 +2894,7 @@
                 logAuth(`Réponse reçue: ${response.status}`, response);
                 const data = await response.json();
                 logAuth("Données d'authentification reçues:", data);
-                
+
                 if (data.authenticated) {
                     googleUser = data.user;
                     logAuth("Utilisateur authentifié:", googleUser);
@@ -2915,7 +2902,7 @@
                     googleUser = null;
                     logAuth("Utilisateur non authentifié");
                 }
-                
+
                 displayAuthStatus();
             } catch (error) {
                 logAuth("Erreur lors de la vérification d'authentification:", error);
@@ -2935,7 +2922,7 @@
             logAuth("GoogleUser:", googleUser);
             authStatusPanel.classList.add('hidden');
             authContentPanel.classList.remove('hidden');
-            
+
             if (googleUser) {
                 logAuth("Affichage du panneau utilisateur connecté");
                 loggedInPanel.classList.remove('hidden');
@@ -3048,9 +3035,9 @@
                 if (!response.ok) {
                     throw new Error(`Failed to load context: ${response.status}`);
                 }
-                
+
                 const context = await response.json();
-                
+
                 // Load data
                 locationsData = context.data.locations || { locations: [] };
                 regionsData = context.data.regions || { regions: [] };
