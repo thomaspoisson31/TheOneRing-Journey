@@ -10,7 +10,7 @@ publicDir = "./"
 run = ["sh", "-c", "python -m http.server 5000"]
 
 [workflows]
-runButton = "Run"
+runButton = "Run Flask Server"
 
 [[workflows.workflow]]
 name = "Run"
@@ -20,6 +20,15 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python -m http.server 8000"
+
+[[workflows.workflow]]
+name = "Run Flask Server"
+author = 46807984
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
 
 [[ports]]
 localPort = 5000
