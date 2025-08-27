@@ -307,8 +307,13 @@ def google_auth():
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return jsonify({'error': 'Google OAuth non configuré'}), 500
     
-    # Construire l'URL de redirection avec HTTPS
-    redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+    # Construire l'URL de redirection pour production/développement
+    if request.headers.get('X-Forwarded-Proto') == 'https' or 'replit.app' in request.host:
+        # En production sur Replit
+        redirect_uri = f"https://{request.host}/auth/google/callback"
+    else:
+        # En développement local
+        redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
     
     flow = Flow.from_client_config(
         {
@@ -339,8 +344,13 @@ def google_auth_callback():
         return jsonify({'error': 'Google OAuth non configuré'}), 500
         
     try:
-        # Construire l'URL de redirection avec HTTPS
-        redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+        # Construire l'URL de redirection pour production/développement
+        if request.headers.get('X-Forwarded-Proto') == 'https' or 'replit.app' in request.host:
+            # En production sur Replit
+            redirect_uri = f"https://{request.host}/auth/google/callback"
+        else:
+            # En développement local
+            redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
         
         flow = Flow.from_client_config(
             {
@@ -391,6 +401,18 @@ def logout():
     """Déconnexion"""
     session.clear()
     return redirect('/')
+
+@app.route('/auth/debug')
+def auth_debug():
+    """Debug des variables d'environnement OAuth (à supprimer en production)"""
+    return jsonify({
+        'host': request.host,
+        'url_root': request.url_root,
+        'google_client_id_set': bool(GOOGLE_CLIENT_ID),
+        'google_client_secret_set': bool(GOOGLE_CLIENT_SECRET),
+        'x_forwarded_proto': request.headers.get('X-Forwarded-Proto'),
+        'redirect_uri_would_be': f"https://{request.host}/auth/google/callback" if 'replit.app' in request.host else request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+    })
 
 if __name__ == '__main__':
     init_db()
