@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentification - Voyages en Terre du Milieu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-map-marked-alt text-4xl text-blue-500 mb-4"></i>
+                <h1 class="text-2xl font-bold">Voyages en Terre du Milieu</h1>
+                <p class="text-gray-400 mt-2">Authentifiez-vous pour sauvegarder vos aventures</p>
+            </div>
+            
+            <div id="auth-status" class="text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p class="text-gray-400">Vérification de l'authentification...</p>
+            </div>
+            
+            <div id="auth-content" class="hidden">
+                <div id="logged-in" class="hidden">
+                    <div class="text-center">
+                        <div class="bg-green-900/20 border border-green-500 rounded p-4 mb-4">
+                            <i class="fas fa-check-circle text-green-500 text-xl mb-2"></i>
+                            <p class="text-green-400">Connecté en tant que</p>
+                            <p class="font-bold" id="user-name"></p>
+                        </div>
+                        <button onclick="window.location.href='/'" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                            <i class="fas fa-map mr-2"></i>Accéder à la carte
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="logged-out" class="hidden">
+                    <div class="text-center">
+                        <div class="bg-yellow-900/20 border border-yellow-500 rounded p-4 mb-4">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mb-2"></i>
+                            <p class="text-yellow-400">Non authentifié</p>
+                            <p class="text-sm text-gray-400 mt-2">Vous devez être connecté à Replit pour sauvegarder vos contextes de voyage.</p>
+                        </div>
+                        <button onclick="window.location.href='/'" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                            <i class="fas fa-map mr-2"></i>Continuer en mode invité
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/user');
+                const data = await response.json();
+                
+                document.getElementById('auth-status').classList.add('hidden');
+                document.getElementById('auth-content').classList.remove('hidden');
+                
+                if (data.authenticated) {
+                    document.getElementById('user-name').textContent = data.user.name || 'Utilisateur Replit';
+                    document.getElementById('logged-in').classList.remove('hidden');
+                } else {
+                    document.getElementById('logged-out').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification de l\'authentification:', error);
+                document.getElementById('auth-status').innerHTML = `
+                    <div class="text-red-400">
+                        <i class="fas fa-exclamation-circle text-xl mb-2"></i>
+                        <p>Erreur de connexion</p>
+                    </div>
+                `;
+            }
+        }
+        
+        checkAuth();
+    </script>
+</body>
+</html>
