@@ -1541,9 +1541,35 @@
             const minLeft = Math.max(margin, tbRect.right - vpRect.left + margin);
             left = Math.max(left, minLeft);
 
-            // Get actual or estimated box dimensions
-            const boxWidth = infoBox.offsetWidth || 280;
-            const boxHeight = infoBox.offsetHeight || 250; // Hauteur estimée plus réaliste avec le scroll wrapper
+            // Calculate theoretical dimensions based on content and expected layout
+            let estimatedWidth = 280; // Default max width
+            let estimatedHeight = 120; // Base height for header + padding
+
+            // Estimate height based on content
+            const location = locationsData.locations.find(loc => loc.id === activeLocationId) || 
+                            regionsData.regions.find(reg => reg.id === activeLocationId);
+            
+            if (location) {
+                // Add height for title (if not expanded)
+                if (!infoBox.classList.contains('expanded')) {
+                    estimatedHeight += 60; // Title space in compact mode
+                }
+                
+                // Add height for image or placeholder
+                const images = getLocationImages ? getLocationImages(location) : [];
+                if (images.length > 0 || !infoBox.classList.contains('expanded')) {
+                    estimatedHeight += 200; // Image space
+                } else {
+                    estimatedHeight += 100; // Placeholder space
+                }
+                
+                // Add some buffer for padding and margins
+                estimatedHeight += 40;
+            }
+
+            // Use actual dimensions if available, otherwise use estimates
+            const boxWidth = infoBox.offsetWidth > 0 ? infoBox.offsetWidth : estimatedWidth;
+            const boxHeight = infoBox.offsetHeight > 0 ? infoBox.offsetHeight : Math.min(estimatedHeight, 400);
 
             // Ensure the info box stays within viewport bounds with margin
             const maxLeft = vpRect.width - boxWidth - margin;
