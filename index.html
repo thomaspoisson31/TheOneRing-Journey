@@ -409,22 +409,8 @@
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
 
-    <header class="bg-gray-900 p-2 shadow-lg z-20 flex justify-between items-center">
-        <h1 class="text-xl font-bold tracking-wider flex-grow text-center">Voyages en Terre du Milieu</h1>
-        <div id="auth-status" class="flex items-center space-x-2">
-            <div id="user-info" class="hidden text-sm text-gray-300">
-                <span id="user-name-display"></span>
-            </div>
-            <div id="replit-auth-container">
-                <script
-                    authed="handleReplitAuth()"
-                    src="https://auth.util.repl.co/script.js">
-                </script>
-            </div>
-            <button id="logout-btn" class="hidden px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm" onclick="logout()">
-                <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
-            </button>
-        </div>
+    <header class="bg-gray-900 text-center p-2 shadow-lg z-20">
+        <h1 class="text-xl font-bold tracking-wider">Voyages en Terre du Milieu</h1>
     </header>
 
     <!-- Main container -->
@@ -2832,46 +2818,6 @@
             descTextarea.value = result;
         }
 
-        // --- Header Authentication Functions ---
-        function handleReplitAuth() {
-            // Cette fonction est appelée quand l'utilisateur s'authentifie via Replit
-            console.log("Utilisateur authentifié via Replit");
-            checkReplitAuth(); // Recheck auth status
-        }
-
-        function updateHeaderAuthStatus() {
-            const userInfo = document.getElementById('user-info');
-            const userNameDisplay = document.getElementById('user-name-display');
-            const logoutBtn = document.getElementById('logout-btn');
-            const authContainer = document.getElementById('replit-auth-container');
-
-            if (replitUser) {
-                // User is logged in
-                userNameDisplay.textContent = replitUser.user?.displayName || replitUser.user?.username || 'Utilisateur';
-                userInfo.classList.remove('hidden');
-                logoutBtn.classList.remove('hidden');
-                // Hide the login button by making the container empty
-                authContainer.style.display = 'none';
-            } else {
-                // User is not logged in
-                userInfo.classList.add('hidden');
-                logoutBtn.classList.add('hidden');
-                authContainer.style.display = 'block';
-            }
-        }
-
-        function logout() {
-            fetch('/auth/logout', { method: 'POST' })
-                .then(() => {
-                    replitUser = null;
-                    updateHeaderAuthStatus();
-                    displayAuthStatus(); // Update modal status too
-                })
-                .catch(error => {
-                    console.error('Logout error:', error);
-                });
-        }
-
         // --- Authentication Functions ---
         function toggleAuthModal() {
             authModal.classList.toggle('hidden');
@@ -2885,22 +2831,26 @@
 
         async function checkReplitAuth() {
             try {
-                const response = await fetch('/auth/user');
-                if (response.ok) {
-                    const user = await response.json();
-                    replitUser = user;
-                    displayAuthStatus();
-                    updateHeaderAuthStatus();
+                // Check if running in Replit and get auth token
+                if (window.innerWidth > 768 && window.location.hostname.includes('replit.dev')) { // Simple check for Replit environment
+                    const response = await fetch('/auth/user');
+                    if (response.ok) {
+                        const user = await response.json();
+                        replitUser = user;
+                        displayAuthStatus();
+                    } else {
+                        replitUser = null;
+                        displayAuthStatus();
+                    }
                 } else {
+                    // Not in Replit or cannot check auth, assume logged out
                     replitUser = null;
                     displayAuthStatus();
-                    updateHeaderAuthStatus();
                 }
             } catch (error) {
                 console.error("Error checking Replit authentication:", error);
                 replitUser = null;
                 displayAuthStatus();
-                updateHeaderAuthStatus();
             }
         }
 
@@ -2910,7 +2860,7 @@
                 authContentPanel.classList.remove('hidden');
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
-                authUserName.textContent = replitUser.user?.displayName || replitUser.user?.username || 'Utilisateur';
+                authUserName.textContent = replitUser.user.displayName || replitUser.user.username;
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
                 authStatusPanel.classList.add('hidden');
@@ -2918,7 +2868,6 @@
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
             }
-            updateHeaderAuthStatus(); // Synchronize header status
         }
 
         async function saveCurrentContext() {
