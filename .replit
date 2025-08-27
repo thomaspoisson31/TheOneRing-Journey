@@ -5,9 +5,8 @@ run = "python -m http.server 5000"
 channel = "stable-25_05"
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "./"
-run = ["sh", "-c", "PORT=80 python app.py"]
+deploymentTarget = "cloudrun"
+run = ["sh", "-c", "python app.py"]
 
 [workflows]
 runButton = "Run Flask Server"

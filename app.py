@@ -422,7 +422,8 @@ if __name__ == '__main__':
     
     # Configuration pour production et développement
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
+    debug = os.environ.get('REPLIT_DEV_DOMAIN') is not None
     
     print(f"🌐 Démarrage sur le port {port} (debug: {debug})")
+    print(f"🔧 Variables d'environnement: PORT={os.environ.get('PORT')}, REPLIT_DEV_DOMAIN={os.environ.get('REPLIT_DEV_DOMAIN')}")
     app.run(host='0.0.0.0', port=port, debug=debug)
