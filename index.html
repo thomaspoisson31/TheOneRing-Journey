@@ -658,9 +658,16 @@
                 <div id="auth-content-panel" class="hidden">
                     <div id="logged-in-panel" class="hidden">
                         <div class="bg-green-900/20 border border-green-500 rounded p-4 mb-6">
-                            <i class="fas fa-check-circle text-green-500 text-xl mb-2"></i>
-                            <p class="text-green-400">Connecté avec</p>
-                            <p class="font-bold" id="auth-user-name"></p>
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <i class="fas fa-check-circle text-green-500 text-xl mb-2"></i>
+                                    <p class="text-green-400">Connecté avec Google</p>
+                                    <p class="font-bold" id="auth-user-name"></p>
+                                </div>
+                                <a href="/auth/logout" class="text-red-400 hover:text-red-300 text-sm">
+                                    <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
+                                </a>
+                            </div>
                         </div>
 
                         <div class="space-y-4">
@@ -2740,6 +2747,14 @@
                         const errorData = await response.json();
                         errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
                     } catch (jsonError) {
+
+        function toggleAuthModal() {
+            authModal.classList.toggle('hidden');
+            if (!authModal.classList.contains('hidden')) {
+                checkGoogleAuth(); // Refresh auth status when opening modal
+            }
+        }
+
                         // Ignore if the response is not JSON
                     }
                     throw new Error(errorMsg);
@@ -2820,87 +2835,43 @@
 
         // --- Google Authentication Functions ---
         async function checkGoogleAuth() {
-            // Check if Google API client is loaded
-            if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
-                console.warn("Google API client not loaded. Attempting to load.");
-                // Dynamically load the Google Sign-In client library
-                const script = document.createElement('script');
-                script.src = 'https://accounts.google.com/gsi/client';
-                script.async = true;
-                script.defer = true;
-                script.onload = () => {
-                    console.log("Google API client loaded.");
-                    initializeGoogleAuth();
-                };
-                script.onerror = () => {
-                    console.error("Failed to load Google API client library.");
-                    displayAuthStatus(); // Show logged-out state if loading fails
-                };
-                document.head.appendChild(script);
-            } else {
-                initializeGoogleAuth();
+            try {
+                const response = await fetch('/api/auth/user');
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    googleUser = data.user;
+                    console.log("User authenticated:", googleUser);
+                } else {
+                    googleUser = null;
+                    console.log("User not authenticated");
+                }
+                
+                displayAuthStatus();
+            } catch (error) {
+                console.error("Error checking authentication:", error);
+                googleUser = null;
+                displayAuthStatus();
             }
         }
 
-        function initializeGoogleAuth() {
-            google.accounts.id.initialize({
-                client_id: "YOUR_GOOGLE_CLIENT_ID", // IMPORTANT: Replace with your actual Google Client ID
-                callback: handleCredentialResponse // This function will be called upon successful sign-in
-            });
-
-            // Render the Google Sign-In button
-            google.accounts.id.renderButton(
-                document.getElementById("google-signin-btn"),
-                { theme: "outline", size: "large" }  // customization attributes
-            );
-
-            // Try to get the current user's status (e.g., if already signed in)
-            // Note: Google Sign-In for websites typically relies on user interaction (clicking the button)
-            // to initiate sign-in. There isn't a direct passive check like with Replit auth.
-            // We'll assume logged out until the user interacts with the button.
-            displayAuthStatus();
-        }
-
-        function handleCredentialResponse(response) {
-            console.log("Credential response received:", response);
-            // The response.credential is a JWT ID token. You need to verify this token on your backend.
-            // For this frontend example, we'll simulate a successful login.
-            // In a real app, you would send this token to your server.
-            googleUser = { // Simulate user object
-                id: response.credential, // Simplified representation
-                name: "User Name", // Placeholder, get from backend verification
-                email: "user@example.com" // Placeholder
-            };
-            console.log("Simulated Google User logged in:", googleUser);
-            displayAuthStatus();
-        }
-
         function handleGoogleSignIn() {
-            // The Google Sign-In button itself handles the OAuth flow.
-            // When the user clicks it, the `callback` function provided in `initialize` will be executed.
-            console.log("Google Sign-In button clicked. The library will handle the flow.");
+            // Redirect to Google OAuth flow on the server
+            window.location.href = '/auth/google';
         }
 
         function displayAuthStatus() {
+            authStatusPanel.classList.add('hidden');
+            authContentPanel.classList.remove('hidden');
+            
             if (googleUser) {
-                authStatusPanel.classList.add('hidden');
-                authContentPanel.classList.remove('hidden');
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
-                authUserName.textContent = googleUser.name;
+                authUserName.textContent = googleUser.name || googleUser.email || 'Utilisateur';
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
-                authStatusPanel.classList.add('hidden');
-                authContentPanel.classList.remove('hidden');
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
-                // Ensure the Google Sign-In button is rendered if it wasn't already
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.id && !document.getElementById("google-signin-btn").firstChild) {
-                    google.accounts.id.renderButton(
-                        document.getElementById("google-signin-btn"),
-                        { theme: "outline", size: "large" }
-                    );
-                }
             }
         }
 
@@ -2925,14 +2896,10 @@
             };
 
             try {
-                // This endpoint would need to be implemented in your backend (e.g., Node.js, Python Flask)
-                // It should handle storing context data associated with the authenticated Google user.
-                const response = await fetch('/api/save-context', { // Example API endpoint
+                const response = await fetch('/api/contexts', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        // You might need to send an authorization token obtained after Google Sign-In
-                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ name: contextName, data: currentData })
                 });
@@ -2942,8 +2909,8 @@
                     contextNameInput.value = ''; // Clear input
                     loadSavedContexts(); // Refresh list
                 } else {
-                    const errorText = await response.text();
-                    alert(`Erreur lors de la sauvegarde du contexte: ${errorText}`);
+                    const errorData = await response.json();
+                    alert(`Erreur lors de la sauvegarde du contexte: ${errorData.error}`);
                 }
             } catch (error) {
                 console.error("Error saving context:", error);
@@ -2959,12 +2926,7 @@
             }
 
             try {
-                // This endpoint would need to be implemented in your backend
-                const response = await fetch('/api/contexts', { // Example API endpoint
-                    headers: {
-                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
-                    }
-                });
+                const response = await fetch('/api/contexts');
                 if (response.ok) {
                     savedContexts = await response.json();
                     renderSavedContexts();
@@ -3006,48 +2968,51 @@
             });
         }
 
-        function loadContext(contextId) {
-            const context = savedContexts.find(c => c.id === contextId);
-            if (!context) {
-                alert("Contexte non trouvé.");
-                return;
+        async function loadContext(contextId) {
+            try {
+                const response = await fetch(`/api/contexts/${contextId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load context: ${response.status}`);
+                }
+                
+                const context = await response.json();
+                
+                // Load data
+                locationsData = context.data.locations || { locations: [] };
+                regionsData = context.data.regions || { regions: [] };
+                scale = context.data.scale || 1;
+                panX = context.data.panX || 0;
+                panY = context.data.panY || 0;
+                activeFilters = context.data.activeFilters || { known: false, visited: false, colors: [] };
+
+                // Re-render everything
+                renderLocations();
+                renderRegions();
+                applyTransform();
+                updateFilters(); // Apply loaded filters
+
+                // Update UI elements
+                document.getElementById('filter-known').checked = activeFilters.known;
+                document.getElementById('filter-visited').checked = activeFilters.visited;
+                document.getElementById('filter-show-regions').checked = true; // Assume regions are shown by default
+                document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
+                    cb.checked = activeFilters.colors.includes(cb.dataset.color);
+                });
+
+                alert(`Contexte "${context.name}" chargé.`);
+                toggleAuthModal(); // Close modal after loading
+            } catch (error) {
+                console.error("Error loading context:", error);
+                alert("Erreur lors du chargement du contexte.");
             }
-
-            // Load data
-            locationsData = context.data.locations;
-            regionsData = context.data.regions;
-            scale = context.data.scale;
-            panX = context.data.panX;
-            panY = context.data.panY;
-            activeFilters = context.data.activeFilters;
-
-            // Re-render everything
-            renderLocations();
-            renderRegions();
-            applyTransform();
-            updateFilters(); // Apply loaded filters
-
-            // Update UI elements
-            document.getElementById('filter-known').checked = activeFilters.known;
-            document.getElementById('filter-visited').checked = activeFilters.visited;
-            document.getElementById('filter-show-regions').checked = true; // Assume regions are shown by default
-            document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
-                cb.checked = activeFilters.colors.includes(cb.dataset.color);
-            });
-
-            alert(`Contexte "${context.name}" chargé.`);
-            toggleAuthModal(); // Close modal after loading
         }
 
         async function deleteContext(contextId) {
             if (!confirm("Êtes-vous sûr de vouloir supprimer ce contexte ?")) return;
 
             try {
-                const response = await fetch(`/api/context/${contextId}`, { // Example API endpoint
-                    method: 'DELETE',
-                    headers: {
-                        // 'Authorization': `Bearer ${googleUser.id_token}` // Example
-                    }
+                const response = await fetch(`/api/contexts/${contextId}`, {
+                    method: 'DELETE'
                 });
 
                 if (response.ok) {
