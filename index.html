@@ -1531,19 +1531,19 @@
         function positionInfoBoxCompact(event) {
             const vpRect = viewport.getBoundingClientRect();
             const tbRect = getToolbarRect();
-            // Default near pointer
-            let left = event.clientX - vpRect.left + 20;
-            let top = event.clientY - vpRect.top + 20;
-
-            // Prevent overlap with toolbar: ensure left edge is to the right of toolbar
-            const minLeft = Math.max(16, tbRect.right - vpRect.left + 16);
-            left = Math.max(left, minLeft);
-
-            // Keep within viewport bounds if possible (using current box size or default max)
-            const boxWidth = infoBox.offsetWidth || 280;
-            const boxHeight = infoBox.offsetHeight || 200;
-            if (left + boxWidth > vpRect.width - 16) left = Math.max(minLeft, vpRect.width - boxWidth - 16);
-            if (top + boxHeight > vpRect.height - 16) top = Math.max(16, vpRect.height - boxHeight - 16);
+            const margin = 16;
+            
+            // Dimensions estimées de la boîte d'information
+            const boxWidth = 280;
+            const boxHeight = 250;
+            
+            // Centrer horizontalement, mais éviter la toolbar
+            const centeredLeft = Math.floor((vpRect.width - boxWidth) / 2);
+            const minLeft = tbRect.right - vpRect.left + margin;
+            const left = Math.max(centeredLeft, minLeft);
+            
+            // Centrer verticalement
+            const top = Math.floor((vpRect.height - boxHeight) / 2);
 
             infoBox.style.left = `${left}px`;
             infoBox.style.top = `${top}px`;
@@ -1624,9 +1624,8 @@
             } else {
                 titleElement.classList.add('hidden');
                 deleteBtn.classList.add('hidden');
-                // Return to a sane compact position near top-left but outside toolbar
-                const fakeEvent = { clientX: viewport.getBoundingClientRect().left + 200, clientY: viewport.getBoundingClientRect().top + 120 };
-                positionInfoBoxCompact(fakeEvent);
+                // Return to compact mode positioning (centered)
+                positionInfoBoxCompact();
             }
         }
 
