@@ -793,6 +793,18 @@
             console.log(`🔐 [AUTH] ${message}`, data || '');
         }
 
+        // --- Toggle Authentication Modal ---
+        function toggleAuthModal() {
+            logAuth("Basculement de la modal d'authentification");
+            if (authModal.classList.contains('hidden')) {
+                authModal.classList.remove('hidden');
+                logAuth("Modal d'authentification ouverte");
+            } else {
+                authModal.classList.add('hidden');
+                logAuth("Modal d'authentification fermée");
+            }
+        }
+
         // --- Initialization ---
         async function loadInitialLocations() {
             console.log("Attempting to load locations...");
@@ -1791,7 +1803,7 @@
                         logAuth("Clic sur le bouton de fermeture modal détecté!");
                         event.preventDefault();
                         event.stopPropagation();
-                        toggleAuthModal();
+                        authModal.classList.add('hidden');
                     });
                 } else {
                     logAuth("ERREUR: Bouton de fermeture modal non trouvé!");
@@ -3061,7 +3073,7 @@
                 });
 
                 alert(`Contexte "${context.name}" chargé.`);
-                toggleAuthModal(); // Close modal after loading
+                authModal.classList.add('hidden'); // Close modal after loading
             } catch (error) {
                 console.error("Error loading context:", error);
                 alert("Erreur lors du chargement du contexte.");
