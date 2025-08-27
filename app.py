@@ -421,7 +421,7 @@ if __name__ == '__main__':
     print("🔑 Prêt pour l'authentification Replit et la gestion des contextes de voyage")
     
     # Configuration pour production et développement
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8080))
     debug = os.environ.get('REPLIT_DEV_DOMAIN') is not None
     
     print(f"🌐 Démarrage sur le port {port} (debug: {debug})")
