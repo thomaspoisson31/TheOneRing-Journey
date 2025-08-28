@@ -312,12 +312,12 @@ def google_auth():
         return jsonify({'error': 'Google OAuth non configuré'}), 500
     
     # Construire l'URL de redirection pour production/développement
-    if request.headers.get('X-Forwarded-Proto') == 'https' or 'replit.app' in request.host:
-        # En production sur Replit
+    if 'replit.app' in request.host or request.headers.get('X-Forwarded-Proto') == 'https':
+        # En production sur Replit - utiliser HTTPS
         redirect_uri = f"https://{request.host}/auth/google/callback"
     else:
         # En développement local
-        redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+        redirect_uri = f"http://{request.host}/auth/google/callback"
     
     flow = Flow.from_client_config(
         {
@@ -349,12 +349,14 @@ def google_auth_callback():
         
     try:
         # Construire l'URL de redirection pour production/développement
-        if request.headers.get('X-Forwarded-Proto') == 'https' or 'replit.app' in request.host:
-            # En production sur Replit
+        if 'replit.app' in request.host or request.headers.get('X-Forwarded-Proto') == 'https':
+            # En production sur Replit - utiliser HTTPS
             redirect_uri = f"https://{request.host}/auth/google/callback"
+            auth_response = request.url.replace('http://', 'https://')
         else:
             # En développement local
-            redirect_uri = request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+            redirect_uri = f"http://{request.host}/auth/google/callback"
+            auth_response = request.url
         
         flow = Flow.from_client_config(
             {
@@ -370,9 +372,6 @@ def google_auth_callback():
             state=session.get('state')
         )
         flow.redirect_uri = redirect_uri
-        
-        # Convertir l'URL de la requête en HTTPS pour Google
-        auth_response = request.url.replace('http://', 'https://')
         
         # Obtenir les tokens
         flow.fetch_token(authorization_response=auth_response)
@@ -397,6 +396,9 @@ def google_auth_callback():
         session['user_id'] = user['id']
         session['google_id'] = idinfo['sub']
         session['user_picture'] = idinfo.get('picture')
+        
+        print(f"🔑 Utilisateur authentifié: {user['name']} ({user['email']})")
+        print(f"🔑 Session créée pour user_id: {session['user_id']}")
         
         return redirect('/')
         
