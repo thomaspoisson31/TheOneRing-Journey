@@ -311,12 +311,10 @@ def google_auth():
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return redirect('/?error=oauth_not_configured')
     
-    # Déterminer le protocole et construire l'URL de redirection
-    is_production = 'replit.app' in request.host or 'replit.dev' in request.host
-    protocol = 'https' if is_production else 'http'
-    redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
+    # Sur Replit, toujours utiliser HTTPS
+    redirect_uri = f"https://{request.host}/auth/google/callback"
     
-    print(f"🔑 OAuth Init - Host: {request.host}, Protocol: {protocol}")
+    print(f"🔑 OAuth Init - Host: {request.host}")
     print(f"🔑 Redirect URI: {redirect_uri}")
     
     flow = Flow.from_client_config(
@@ -336,13 +334,14 @@ def google_auth():
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='select_account'  # Force la sélection de compte
+        prompt='select_account'
     )
     
     session['state'] = state
     session.permanent = True
     
-    print(f"🔑 Redirection vers: {authorization_url}")
+    print(f"🔑 Authorization URL: {authorization_url}")
+    print(f"🔑 State: {state}")
     return redirect(authorization_url)
 
 @app.route('/auth/google/callback')
@@ -352,19 +351,28 @@ def google_auth_callback():
         return redirect('/?error=oauth_not_configured')
         
     try:
-        # Déterminer le protocole et construire l'URL de redirection
-        is_production = 'replit.app' in request.host or 'replit.dev' in request.host
-        protocol = 'https' if is_production else 'http'
-        redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
+        # Sur Replit, toujours utiliser HTTPS
+        redirect_uri = f"https://{request.host}/auth/google/callback"
         
-        # S'assurer que l'URL de réponse utilise le bon protocole
+        # S'assurer que l'URL de réponse utilise HTTPS
         auth_response = request.url
-        if is_production and auth_response.startswith('http://'):
+        if auth_response.startswith('http://'):
             auth_response = auth_response.replace('http://', 'https://', 1)
         
-        print(f"🔑 OAuth Callback - Host: {request.host}, Protocol: {protocol}")
+        print(f"🔑 OAuth Callback - Host: {request.host}")
         print(f"🔑 Redirect URI: {redirect_uri}")
         print(f"🔑 Auth Response: {auth_response}")
+        print(f"🔑 Session state: {session.get('state')}")
+        print(f"🔑 Request args: {dict(request.args)}")
+        
+        # Vérifier l'état de la session
+        if 'state' not in session:
+            print("❌ Erreur: Aucun état dans la session")
+            return redirect('/?auth_error=1')
+            
+        if request.args.get('state') != session['state']:
+            print("❌ Erreur: État de session invalide")
+            return redirect('/?auth_error=1')
         
         flow = Flow.from_client_config(
             {
@@ -377,7 +385,7 @@ def google_auth_callback():
                 }
             },
             scopes=['openid', 'email', 'profile'],
-            state=session.get('state')
+            state=session['state']
         )
         flow.redirect_uri = redirect_uri
         
@@ -424,14 +432,17 @@ def logout():
 
 @app.route('/auth/debug')
 def auth_debug():
-    """Debug des variables d'environnement OAuth (à supprimer en production)"""
+    """Debug des variables d'environnement OAuth"""
     return jsonify({
         'host': request.host,
         'url_root': request.url_root,
         'google_client_id_set': bool(GOOGLE_CLIENT_ID),
         'google_client_secret_set': bool(GOOGLE_CLIENT_SECRET),
+        'google_client_id_prefix': GOOGLE_CLIENT_ID[:20] + '...' if GOOGLE_CLIENT_ID else 'Not set',
         'x_forwarded_proto': request.headers.get('X-Forwarded-Proto'),
-        'redirect_uri_would_be': f"https://{request.host}/auth/google/callback" if 'replit.app' in request.host else request.url_root.rstrip('/').replace('http://', 'https://') + '/auth/google/callback'
+        'redirect_uri': f"https://{request.host}/auth/google/callback",
+        'session_keys': list(session.keys()),
+        'all_headers': dict(request.headers)
     })
 
 if __name__ == '__main__':
