@@ -22,16 +22,11 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permet OAuth en développemen
 def force_https():
     """Force HTTPS pour toutes les requêtes sur Replit"""
     if request.headers.get('X-Forwarded-Proto') == 'https':
-        # Modifier l'objet request pour qu'il considère la requête comme HTTPS
+        # Modifier uniquement les variables d'environnement WSGI
         request.environ['wsgi.url_scheme'] = 'https'
         request.environ['REQUEST_SCHEME'] = 'https'
         request.environ['SERVER_PORT'] = '443'
         request.environ['HTTPS'] = 'on'
-        
-        # Patcher directement les propriétés de l'objet request
-        import types
-        request.scheme = 'https'
-        request.is_secure = True
         
         # Forcer Flask à reconnaître HTTPS pour toutes les URLs
         request.url = request.url.replace('http://', 'https://')
