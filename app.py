@@ -24,6 +24,8 @@ def force_https():
     if request.headers.get('X-Forwarded-Proto') == 'https':
         # Modifier l'objet request pour qu'il considère la requête comme HTTPS
         request.environ['wsgi.url_scheme'] = 'https'
+        request.environ['REQUEST_SCHEME'] = 'https'
+        request.environ['SERVER_PORT'] = '443'
 
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
@@ -330,6 +332,62 @@ def google_auth():
                 "client_id": GOOGLE_CLIENT_ID,
                 "client_secret": GOOGLE_CLIENT_SECRET,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+
+
+@app.route('/auth/test')
+def test_oauth():
+    """Test du processus OAuth étape par étape"""
+    try:
+        # Test 1: Configuration
+        if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+            return jsonify({
+                'step': 'configuration',
+                'status': 'error',
+                'message': 'Google Client ID ou Secret manquant'
+            })
+        
+        # Test 2: Construction de l'URI de redirection
+        redirect_uri = f"https://{request.host}/auth/google/callback"
+        
+        # Test 3: Création du flow OAuth
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [redirect_uri]
+                }
+            },
+            scopes=['openid', 'email', 'profile']
+        )
+        flow.redirect_uri = redirect_uri
+        
+        # Test 4: Génération de l'URL d'autorisation
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='select_account'
+        )
+        
+        return jsonify({
+            'step': 'oauth_flow_creation',
+            'status': 'success',
+            'redirect_uri': redirect_uri,
+            'authorization_url': authorization_url,
+            'state': state,
+            'flow_configured': True
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'step': 'error',
+            'status': 'error',
+            'message': str(e),
+            'error_type': type(e).__name__
+        })
+
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "redirect_uris": [redirect_uri]
             }
@@ -452,10 +510,18 @@ def auth_debug():
         'x_forwarded_proto': request.headers.get('X-Forwarded-Proto'),
         'redirect_uri': redirect_uri,
         'session_keys': list(session.keys()),
+        'session_content': {k: str(v)[:100] + '...' if len(str(v)) > 100 else str(v) for k, v in session.items()},
         'scheme': request.scheme,
         'is_secure': request.is_secure,
         'environ_server_name': os.environ.get('SERVER_NAME'),
         'environ_server_port': os.environ.get('SERVER_PORT'),
+        'wsgi_url_scheme': request.environ.get('wsgi.url_scheme'),
+        'request_scheme': request.environ.get('REQUEST_SCHEME'),
+        'server_port': request.environ.get('SERVER_PORT'),
+        'flask_config': {
+            'PREFERRED_URL_SCHEME': app.config.get('PREFERRED_URL_SCHEME'),
+            'SESSION_COOKIE_SECURE': app.config.get('SESSION_COOKIE_SECURE')
+        },
         'all_headers': dict(request.headers),
         'url_components': {
             'scheme': request.scheme,
@@ -470,8 +536,11 @@ if __name__ == '__main__':
     print("📊 Base de données initialisée avec les tables users, travel_contexts, api_usage")
     print("🔑 Prêt pour l'authentification Google et la gestion des contextes de voyage")
     
-    # Forcer HTTPS sur Replit
+    # Configuration HTTPS pour Replit
     app.config['PREFERRED_URL_SCHEME'] = 'https'
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     
     # Configuration pour production et développement
     port = int(os.environ.get('PORT', 8080))
