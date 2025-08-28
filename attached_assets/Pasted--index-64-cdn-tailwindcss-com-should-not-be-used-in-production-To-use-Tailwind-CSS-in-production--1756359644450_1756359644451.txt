@@ -1,0 +1,39 @@
+(index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
+(anonymous) @ (index):64
+(anonymous) @ (index):64
+?auth_error=1:1746 🚀 Starting application...
+?auth_error=1:807 Attempting to load locations...
+?auth_error=1:814 ✅ Success: Loaded saved locations from localStorage.
+?auth_error=1:2665 Uncaught TypeError: Cannot read properties of null (reading 'addEventListener')
+    at ?auth_error=1:2665:51
+(anonymous) @ ?auth_error=1:2665
+?auth_error=1:790 🔐 [AUTH] Initialisation de l'authentification... 
+?auth_error=1:790 🔐 [AUTH] Vérification du statut d'authentification... 
+?auth_error=1:1776 🗺️ Loading map image: fr_tor_2nd_eriadors_map_page-0001.webp
+?auth_error=1:790 🔐 [AUTH] Configuration des event listeners d'authentification... 
+?auth_error=1:790 🔐 [AUTH] Bouton d'authentification trouvé: true
+?auth_error=1:790 🔐 [AUTH] Bouton de fermeture modal trouvé: true
+?auth_error=1:790 🔐 [AUTH] Bouton de sauvegarde contexte trouvé: true
+?auth_error=1:790 🔐 [AUTH] Bouton Google Sign-In trouvé: true
+?auth_error=1:790 🔐 [AUTH] Event listener ajouté au bouton d'authentification 
+?auth_error=1:855 🗺️ Initializing map...
+?auth_error=1:861 📐 Map dimensions: 5103 x 3296
+?auth_error=1:888 Preloading Loremaster map...
+?auth_error=1:884 ✅ Map initialized successfully
+?auth_error=1:790 🔐 [AUTH] Réponse reçue: 200 Response {type: 'basic', url: 'https://tor-journey.replit.app/api/auth/user', redirected: false, status: 200, ok: true, …}
+?auth_error=1:790 🔐 [AUTH] Données d'authentification reçues: {authenticated: false, user: null}
+?auth_error=1:790 🔐 [AUTH] Utilisateur non authentifié 
+?auth_error=1:790 🔐 [AUTH] Affichage du statut d'authentification 
+?auth_error=1:790 🔐 [AUTH] GoogleUser: 
+?auth_error=1:790 🔐 [AUTH] Affichage du panneau utilisateur non connecté 
+?auth_error=1:891 ✅ Loremaster map preloaded.
+?auth_error=1:790 🔐 [AUTH] === TEST DES ÉLÉMENTS DOM === 
+?auth_error=1:790 🔐 [AUTH] authModal element: true
+?auth_error=1:790 🔐 [AUTH] auth-btn element: true
+?auth_error=1:790 🔐 [AUTH] close-auth-modal element: true
+?auth_error=1:790 🔐 [AUTH] google-signin-btn element: true
+?auth_error=1:790 🔐 [AUTH] save-context-btn element: true
+?auth_error=1:790 🔐 [AUTH] Bouton auth visible: true
+?auth_error=1:790 🔐 [AUTH] Bouton auth cliquable: true
+?auth_error=1:790 🔐 [AUTH] Classes du bouton auth: w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors relative overflow-hidden
+?auth_error=1:790 🔐 [AUTH] === FIN TEST DES ÉLÉMENTS DOM === 
