@@ -406,8 +406,6 @@ def test_oauth():
             'message': str(e),
             'error_type': type(e).__name__
         })
-
-                "token_uri": "https://oauth2.googleapis.com/token",
                 "redirect_uris": [redirect_uri]
             }
         },
