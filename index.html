@@ -417,9 +417,10 @@
     <div class="flex-grow relative">
         <!-- Toolbar -->
         <div id="toolbar" class="absolute top-4 left-4 z-10 bg-gray-900 bg-opacity-80 p-2 rounded-lg shadow-xl flex flex-col space-y-2 border border-gray-700">
-            <button id="zoom-in" title="Zoomer" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-plus"></i></button>
-            <button id="zoom-out" title="Dézoomer" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-minus"></i></button>
-            <button id="reset-zoom" title="Réinitialiser la vue" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-expand"></i></button>
+            <!-- Authentication Button en premier -->
+            <button id="auth-btn" title="Authentification et sauvegarde" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors">
+                <i class="fas fa-user"></i>
+            </button>
             <hr class="border-gray-600">
             <button id="draw-mode" title="Mode Dessin" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-pencil-alt"></i></button>
             <button id="erase" title="Effacer le tracé" class="w-10 h-10 bg-gray-700 hover:bg-red-600 rounded transition-colors"><i class="fas fa-eraser"></i></button>
@@ -432,16 +433,11 @@
             <hr class="border-gray-600">
             <button id="export-locations" title="Exporter en fichier" class="w-10 h-10 bg-gray-700 hover:bg-green-600 rounded transition-colors"><i class="fas fa-file-export"></i></button>
             <button id="import-locations" title="Importer un fichier" class="w-10 h-10 bg-gray-700 hover:bg-green-600 rounded transition-colors"><i class="fas fa-file-import"></i></button>
-            <button id="reset-locations" title="Réinitialiser les lieux" class="w-10 h-10 bg-gray-700 hover:bg-yellow-600 rounded transition-colors"><i class="fas fa-undo"></i></button>
             <input type="file" id="import-file-input" class="hidden" accept=".json">
             <hr class="border-gray-600">
             <!-- Gemini Button -->
             <button id="gemini-btn" title="Générer du texte avec Gemini" class="w-10 h-10 bg-gray-700 hover:bg-purple-600 rounded transition-colors">
                 <i class="fas fa-magic"></i>
-            </button>
-            <!-- Authentication Button -->
-            <button id="auth-btn" title="Authentification et sauvegarde" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors">
-                <i class="fas fa-user"></i>
             </button>
         </div>
 
