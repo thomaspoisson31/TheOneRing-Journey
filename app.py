@@ -309,15 +309,15 @@ def auth_panel():
 def google_auth():
     """Initier l'authentification Google"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        return jsonify({'error': 'Google OAuth non configuré'}), 500
+        return redirect('/?error=oauth_not_configured')
     
-    # Construire l'URL de redirection pour production/développement
-    if 'replit.app' in request.host or request.headers.get('X-Forwarded-Proto') == 'https':
-        # En production sur Replit - utiliser HTTPS
-        redirect_uri = f"https://{request.host}/auth/google/callback"
-    else:
-        # En développement local
-        redirect_uri = f"http://{request.host}/auth/google/callback"
+    # Déterminer le protocole et construire l'URL de redirection
+    is_production = 'replit.app' in request.host
+    protocol = 'https' if is_production else 'http'
+    redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
+    
+    print(f"🔑 OAuth Init - Host: {request.host}, Protocol: {protocol}")
+    print(f"🔑 Redirect URI: {redirect_uri}")
     
     flow = Flow.from_client_config(
         {
@@ -335,28 +335,36 @@ def google_auth():
     
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        include_granted_scopes='true'
+        include_granted_scopes='true',
+        prompt='select_account'  # Force la sélection de compte
     )
     
     session['state'] = state
+    session.permanent = True
+    
+    print(f"🔑 Redirection vers: {authorization_url}")
     return redirect(authorization_url)
 
 @app.route('/auth/google/callback')
 def google_auth_callback():
     """Callback Google OAuth"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        return jsonify({'error': 'Google OAuth non configuré'}), 500
+        return redirect('/?error=oauth_not_configured')
         
     try:
-        # Construire l'URL de redirection pour production/développement
-        if 'replit.app' in request.host or request.headers.get('X-Forwarded-Proto') == 'https':
-            # En production sur Replit - utiliser HTTPS
-            redirect_uri = f"https://{request.host}/auth/google/callback"
-            auth_response = request.url.replace('http://', 'https://')
-        else:
-            # En développement local
-            redirect_uri = f"http://{request.host}/auth/google/callback"
-            auth_response = request.url
+        # Déterminer le protocole et construire l'URL de redirection
+        is_production = 'replit.app' in request.host
+        protocol = 'https' if is_production else 'http'
+        redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
+        
+        # S'assurer que l'URL de réponse utilise le bon protocole
+        auth_response = request.url
+        if is_production and auth_response.startswith('http://'):
+            auth_response = auth_response.replace('http://', 'https://', 1)
+        
+        print(f"🔑 OAuth Callback - Host: {request.host}, Protocol: {protocol}")
+        print(f"🔑 Redirect URI: {redirect_uri}")
+        print(f"🔑 Auth Response: {auth_response}")
         
         flow = Flow.from_client_config(
             {
@@ -390,20 +398,22 @@ def google_auth_callback():
             email=idinfo.get('email')
         )
         
-        # Ajouter la photo de profil Google pour cette session
-        user['picture'] = idinfo.get('picture')
-        
+        # Configurer la session utilisateur
+        session.permanent = True
         session['user_id'] = user['id']
         session['google_id'] = idinfo['sub']
         session['user_picture'] = idinfo.get('picture')
+        session['authenticated'] = True
         
-        print(f"🔑 Utilisateur authentifié: {user['name']} ({user['email']})")
-        print(f"🔑 Session créée pour user_id: {session['user_id']}")
+        print(f"✅ Utilisateur authentifié: {user['name']} ({user['email']})")
+        print(f"✅ Session configurée pour user_id: {session['user_id']}")
         
-        return redirect('/')
+        return redirect('/?auth_success=1')
         
     except Exception as e:
-        print(f"Erreur OAuth Google: {e}")
+        print(f"❌ Erreur OAuth Google: {e}")
+        import traceback
+        traceback.print_exc()
         return redirect('/?auth_error=1')
 
 @app.route('/auth/logout')

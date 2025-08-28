@@ -428,7 +428,7 @@
             <hr class="border-gray-600">
             <button id="add-location-mode" title="Ajouter un lieu" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-map-marker-alt"></i></button>
             <button id="add-region-mode" title="Créer une région" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-draw-polygon"></i></button>
-            <hr class="border-gray-600"></hr>
+            <hr class="border-gray-600">
             <button id="filter-toggle" title="Filtrer les lieux" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-filter"></i></button>
             <button id="map-switch" title="Changer de carte" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors hidden"><i id="map-switch-icon" class="fas fa-users"></i></button>
             <hr class="border-gray-600">
@@ -2942,7 +2942,7 @@
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
                 authUserName.textContent = googleUser.name || googleUser.email || 'Utilisateur';
-                
+
                 // Afficher la photo de profil si disponible
                 if (googleUser.picture) {
                     userProfilePic.src = googleUser.picture;
@@ -2956,13 +2956,13 @@
                     authIcon.className = 'fas fa-user-check text-green-400';
                     authBtn.title = `Connecté en tant que ${googleUser.name || googleUser.email}`;
                 }
-                
+
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
                 logAuth("Affichage du panneau utilisateur non connecté");
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
-                
+
                 // Remettre l'icône par défaut
                 userProfilePic.classList.add('hidden');
                 authIcon.classList.remove('hidden');
