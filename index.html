@@ -1779,14 +1779,14 @@
 
             // Vérifier les erreurs d'authentification dans l'URL
             checkAuthError();
-            
+
             loadInitialLocations().then(() => {
                 loadRegionsFromLocal();
                 loadSavedContexts();
                 setupFilters();
                 logAuth("Initialisation de l'authentification...");
                 checkGoogleAuth();
-                
+
                 if (mapImage) {
                     mapImage.onload = () => {
                         clearTimeout(startTimeout);
@@ -1806,45 +1806,40 @@
                 }
 
                 logAuth("Configuration des event listeners d'authentification...");
-                logAuth("Bouton d'authentification trouvé:", !!authBtn);
-                logAuth("Bouton de fermeture modal trouvé:", !!closeAuthModalBtn);
-                logAuth("Bouton de sauvegarde contexte trouvé:", !!saveContextBtn);
-                logAuth("Bouton Google Sign-In trouvé:", !!googleSigninBtn);
 
-                if (authBtn) {
+                // Attendre que tous les éléments DOM soient disponibles
+                waitForElement('#auth-btn', (authBtn) => {
+                    logAuth("Bouton d'authentification trouvé et configuré");
                     authBtn.addEventListener('click', (event) => {
                         logAuth("Clic sur le bouton d'authentification détecté!");
                         event.preventDefault();
                         event.stopPropagation();
                         toggleAuthModal();
                     });
-                    logAuth("Event listener ajouté au bouton d'authentification");
-                } else {
-                    logAuth("ERREUR: Bouton d'authentification non trouvé!");
-                }
+                });
 
-                if (closeAuthModalBtn) {
+                waitForElement('#close-auth-modal', (closeAuthModalBtn) => {
+                    logAuth("Bouton de fermeture modal trouvé et configuré");
                     closeAuthModalBtn.addEventListener('click', (event) => {
                         logAuth("Clic sur le bouton de fermeture modal détecté!");
                         event.preventDefault();
                         event.stopPropagation();
-                        authModal.classList.add('hidden');
+                        const authModal = document.getElementById('auth-modal');
+                        if (authModal) {
+                            authModal.classList.add('hidden');
+                        }
                     });
-                } else {
-                    logAuth("ERREUR: Bouton de fermeture modal non trouvé!");
-                }
+                });
 
-                if (saveContextBtn) {
+                waitForElement('#save-context-btn', (saveContextBtn) => {
+                    logAuth("Bouton de sauvegarde contexte trouvé et configuré");
                     saveContextBtn.addEventListener('click', saveCurrentContext);
-                } else {
-                    logAuth("ERREUR: Bouton de sauvegarde contexte non trouvé!");
-                }
+                });
 
-                if (googleSigninBtn) {
+                waitForElement('#google-signin-btn', (googleSigninBtn) => {
+                    logAuth("Bouton Google Sign-In trouvé et configuré");
                     googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-                } else {
-                    logAuth("ERREUR: Bouton Google Sign-In non trouvé!");
-                }
+                });
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
@@ -1878,11 +1873,11 @@
             // Region modal handlers avec vérification null
             const confirmAddRegionBtn = document.getElementById('confirm-add-region');
             const cancelAddRegionBtn = document.getElementById('cancel-add-region');
-            
+
             if (confirmAddRegionBtn) {
                 confirmAddRegionBtn.addEventListener('click', saveRegion);
             }
-            
+
             if (cancelAddRegionBtn) {
                 cancelAddRegionBtn.addEventListener('click', () => {
                     if (addRegionModal) {
@@ -2943,7 +2938,7 @@
             logAuth("Vérification du statut d'authentification...");
             try {
                 const response = await fetch('/api/auth/user');
-                logAuth(`Réponse reçue: ${response.status}`, response);
+                logAuth("Réponse reçue:", response.status, response.statusText);
                 const data = await response.json();
                 logAuth("Données d'authentification reçues:", data);
 
@@ -3166,6 +3161,23 @@
             }
         }
 
+        // Helper function to wait for an element and then execute a callback
+        function waitForElement(selector, callback, maxWait = 5000) {
+            const startTime = Date.now();
+
+            function check() {
+                const element = document.querySelector(selector);
+                if (element) {
+                    callback(element);
+                } else if (Date.now() - startTime < maxWait) {
+                    setTimeout(check, 100);
+                } else {
+                    logAuth("TIMEOUT: Élément non trouvé:", selector);
+                }
+            }
+
+            check();
+        }
     </script>
 </body>
 </html>

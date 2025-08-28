@@ -525,8 +525,56 @@ def auth_debug():
             'scheme': request.scheme,
             'netloc': request.host,
             'full_url': request.url
+        },
+        'google_oauth_config': {
+            'client_id': GOOGLE_CLIENT_ID,
+            'client_secret_present': bool(GOOGLE_CLIENT_SECRET),
+            'expected_redirect_uri': redirect_uri,
+            'oauth_insecure_transport': os.environ.get('OAUTHLIB_INSECURE_TRANSPORT')
         }
     })
+
+@app.route('/auth/verify-config')
+def verify_oauth_config():
+    """Vérifier la configuration OAuth avec Google"""
+    try:
+        redirect_uri = f"https://{request.host}/auth/google/callback"
+        
+        # Test de base de la configuration
+        if not GOOGLE_CLIENT_ID:
+            return jsonify({'error': 'GOOGLE_CLIENT_ID manquant', 'status': 'error'}), 400
+            
+        if not GOOGLE_CLIENT_SECRET:
+            return jsonify({'error': 'GOOGLE_CLIENT_SECRET manquant', 'status': 'error'}), 400
+        
+        # Test de création du flow OAuth
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [redirect_uri]
+                }
+            },
+            scopes=['openid', 'email', 'profile']
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Configuration OAuth valide',
+            'redirect_uri': redirect_uri,
+            'client_id': GOOGLE_CLIENT_ID,
+            'scopes': ['openid', 'email', 'profile']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Erreur de configuration OAuth: {str(e)}',
+            'error_type': type(e).__name__
+        }), 500
 
 if __name__ == '__main__':
     init_db()
