@@ -117,9 +117,13 @@ def get_current_user():
         conn.close()
         
         if user:
+            user_data = dict(user)
+            # Ajouter la photo de profil stockée en session si disponible
+            if 'user_picture' in session:
+                user_data['picture'] = session['user_picture']
             return jsonify({
                 'authenticated': True,
-                'user': dict(user),
+                'user': user_data,
                 'auth_method': 'google'
             })
     
@@ -387,8 +391,12 @@ def google_auth_callback():
             email=idinfo.get('email')
         )
         
+        # Ajouter la photo de profil Google pour cette session
+        user['picture'] = idinfo.get('picture')
+        
         session['user_id'] = user['id']
         session['google_id'] = idinfo['sub']
+        session['user_picture'] = idinfo.get('picture')
         
         return redirect('/')
         

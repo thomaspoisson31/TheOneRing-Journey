@@ -418,8 +418,9 @@
         <!-- Toolbar -->
         <div id="toolbar" class="absolute top-4 left-4 z-10 bg-gray-900 bg-opacity-80 p-2 rounded-lg shadow-xl flex flex-col space-y-2 border border-gray-700">
             <!-- Authentication Button en premier -->
-            <button id="auth-btn" title="Authentification et sauvegarde" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors">
-                <i class="fas fa-user"></i>
+            <button id="auth-btn" title="Authentification et sauvegarde" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors relative overflow-hidden">
+                <i id="auth-icon" class="fas fa-user"></i>
+                <img id="user-profile-pic" class="absolute inset-0 w-full h-full object-cover rounded hidden" alt="Photo de profil">
             </button>
             <hr class="border-gray-600">
             <button id="draw-mode" title="Mode Dessin" class="w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors"><i class="fas fa-pencil-alt"></i></button>
@@ -2932,16 +2933,41 @@
             authStatusPanel.classList.add('hidden');
             authContentPanel.classList.remove('hidden');
 
+            const authIcon = document.getElementById('auth-icon');
+            const userProfilePic = document.getElementById('user-profile-pic');
+            const authBtn = document.getElementById('auth-btn');
+
             if (googleUser) {
                 logAuth("Affichage du panneau utilisateur connecté");
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
                 authUserName.textContent = googleUser.name || googleUser.email || 'Utilisateur';
+                
+                // Afficher la photo de profil si disponible
+                if (googleUser.picture) {
+                    userProfilePic.src = googleUser.picture;
+                    userProfilePic.classList.remove('hidden');
+                    authIcon.classList.add('hidden');
+                    authBtn.title = `Connecté en tant que ${googleUser.name || googleUser.email}`;
+                } else {
+                    // Pas de photo, garder l'icône mais changer le style
+                    userProfilePic.classList.add('hidden');
+                    authIcon.classList.remove('hidden');
+                    authIcon.className = 'fas fa-user-check text-green-400';
+                    authBtn.title = `Connecté en tant que ${googleUser.name || googleUser.email}`;
+                }
+                
                 loadSavedContexts(); // Load contexts after confirming login
             } else {
                 logAuth("Affichage du panneau utilisateur non connecté");
                 loggedInPanel.classList.add('hidden');
                 loggedOutPanel.classList.remove('hidden');
+                
+                // Remettre l'icône par défaut
+                userProfilePic.classList.add('hidden');
+                authIcon.classList.remove('hidden');
+                authIcon.className = 'fas fa-user';
+                authBtn.title = 'Authentification et sauvegarde';
             }
         }
 
