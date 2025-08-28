@@ -406,25 +406,6 @@ def test_oauth():
             'message': str(e),
             'error_type': type(e).__name__
         })
-                "redirect_uris": [redirect_uri]
-            }
-        },
-        scopes=['openid', 'email', 'profile']
-    )
-    flow.redirect_uri = redirect_uri
-    
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='select_account'
-    )
-    
-    session['state'] = state
-    session.permanent = True
-    
-    print(f"🔑 Authorization URL: {authorization_url}")
-    print(f"🔑 State: {state}")
-    return redirect(authorization_url)
 
 @app.route('/auth/google/callback')
 def google_auth_callback():
