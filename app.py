@@ -26,7 +26,14 @@ def force_https():
         request.environ['wsgi.url_scheme'] = 'https'
         request.environ['REQUEST_SCHEME'] = 'https'
         request.environ['SERVER_PORT'] = '443'
-        # Forcer Flask à reconnaître HTTPS
+        request.environ['HTTPS'] = 'on'
+        
+        # Patcher directement les propriétés de l'objet request
+        import types
+        request.scheme = 'https'
+        request.is_secure = True
+        
+        # Forcer Flask à reconnaître HTTPS pour toutes les URLs
         request.url = request.url.replace('http://', 'https://')
         request.url_root = request.url_root.replace('http://', 'https://')
         request.base_url = request.base_url.replace('http://', 'https://')
@@ -439,6 +446,11 @@ def google_auth_callback():
         auth_response = request.url
         if auth_response.startswith('http://'):
             auth_response = auth_response.replace('http://', 'https://', 1)
+        
+        # Double vérification pour s'assurer que l'URL est bien en HTTPS
+        if not auth_response.startswith('https://'):
+            # Reconstruire l'URL manuellement
+            auth_response = f"https://{host}{request.full_path}"
         
         print(f"🔑 OAuth Callback - Host: {request.host}")
         print(f"🔑 Redirect URI: {redirect_uri}")
