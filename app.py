@@ -18,6 +18,13 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 # Configuration OAuth pour Replit
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permet OAuth en développement
 
+@app.before_request
+def force_https():
+    """Force HTTPS pour toutes les requêtes sur Replit"""
+    if request.headers.get('X-Forwarded-Proto') == 'https':
+        # Modifier l'objet request pour qu'il considère la requête comme HTTPS
+        request.environ['wsgi.url_scheme'] = 'https'
+
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
 
@@ -433,6 +440,9 @@ def logout():
 @app.route('/auth/debug')
 def auth_debug():
     """Debug des variables d'environnement OAuth"""
+    # Reproduire exactement la même logique que dans les routes auth
+    redirect_uri = f"https://{request.host}/auth/google/callback"
+    
     return jsonify({
         'host': request.host,
         'url_root': request.url_root,
@@ -440,16 +450,28 @@ def auth_debug():
         'google_client_secret_set': bool(GOOGLE_CLIENT_SECRET),
         'google_client_id_prefix': GOOGLE_CLIENT_ID[:20] + '...' if GOOGLE_CLIENT_ID else 'Not set',
         'x_forwarded_proto': request.headers.get('X-Forwarded-Proto'),
-        'redirect_uri': f"https://{request.host}/auth/google/callback",
+        'redirect_uri': redirect_uri,
         'session_keys': list(session.keys()),
-        'all_headers': dict(request.headers)
+        'scheme': request.scheme,
+        'is_secure': request.is_secure,
+        'environ_server_name': os.environ.get('SERVER_NAME'),
+        'environ_server_port': os.environ.get('SERVER_PORT'),
+        'all_headers': dict(request.headers),
+        'url_components': {
+            'scheme': request.scheme,
+            'netloc': request.host,
+            'full_url': request.url
+        }
     })
 
 if __name__ == '__main__':
     init_db()
     print("🚀 Serveur Flask démarré avec base de données SQLite")
     print("📊 Base de données initialisée avec les tables users, travel_contexts, api_usage")
-    print("🔑 Prêt pour l'authentification Replit et la gestion des contextes de voyage")
+    print("🔑 Prêt pour l'authentification Google et la gestion des contextes de voyage")
+    
+    # Forcer HTTPS sur Replit
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
     
     # Configuration pour production et développement
     port = int(os.environ.get('PORT', 8080))
