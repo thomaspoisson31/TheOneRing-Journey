@@ -790,6 +790,25 @@
             console.log(`🔐 [AUTH] ${message}`, data || '');
         }
 
+        // --- Check for authentication errors in URL ---
+        function checkAuthError() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('auth_error') === '1') {
+                logAuth("ERREUR: Échec de l'authentification Google détecté dans l'URL");
+                alert("Erreur lors de l'authentification Google. Veuillez réessayer.");
+                // Nettoyer l'URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('auth_success') === '1') {
+                logAuth("SUCCÈS: Authentification Google réussie détectée dans l'URL");
+                // Nettoyer l'URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                // Forcer une nouvelle vérification de l'authentification
+                setTimeout(() => {
+                    checkGoogleAuth();
+                }, 1000);
+            }
+        }
+
         // --- Toggle Authentication Modal ---
         function toggleAuthModal() {
             logAuth("Basculement de la modal d'authentification");
@@ -1747,7 +1766,7 @@
 
             // Ajouter un timeout global pour éviter les chargements infinis
             const startTimeout = setTimeout(() => {
-                if (loaderOverlay.style.display !== 'none') {
+                if (loaderOverlay && loaderOverlay.style.display !== 'none') {
                     console.error("❌ Application startup timed out");
                     loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
                         <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
@@ -1758,24 +1777,33 @@
                 }
             }, 30000); // 30 secondes timeout
 
+            // Vérifier les erreurs d'authentification dans l'URL
+            checkAuthError();
+            
             loadInitialLocations().then(() => {
                 loadRegionsFromLocal();
                 loadSavedContexts();
                 setupFilters();
                 logAuth("Initialisation de l'authentification...");
-                checkGoogleAuth(); // Changed from checkReplitAuth
-                mapImage.onload = () => {
-                    clearTimeout(startTimeout);
-                    initializeMap();
-                };
-                mapImage.addEventListener('error', () => {
-                    clearTimeout(startTimeout);
-                    handleImageError();
-                });
+                checkGoogleAuth();
+                
+                if (mapImage) {
+                    mapImage.onload = () => {
+                        clearTimeout(startTimeout);
+                        initializeMap();
+                    };
+                    mapImage.addEventListener('error', () => {
+                        clearTimeout(startTimeout);
+                        handleImageError();
+                    });
 
-                console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
-                mapImage.src = PLAYER_MAP_URL;
-                infoBoxClose.addEventListener('click', hideInfoBox);
+                    console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
+                    mapImage.src = PLAYER_MAP_URL;
+                }
+
+                if (infoBoxClose) {
+                    infoBoxClose.addEventListener('click', hideInfoBox);
+                }
 
                 logAuth("Configuration des event listeners d'authentification...");
                 logAuth("Bouton d'authentification trouvé:", !!authBtn);
@@ -1820,11 +1848,13 @@
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
-                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
-                    <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
-                    Erreur lors du démarrage.<br>
-                    <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
-                </div>`;
+                if (loaderOverlay) {
+                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                        <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
+                        Erreur lors du démarrage.<br>
+                        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
+                    </div>`;
+                }
             });
 
             // Test des éléments DOM après un délai
@@ -1845,20 +1875,32 @@
                 logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
             }, 2000);
 
-            // Region modal handlers
-            document.getElementById('confirm-add-region').addEventListener('click', saveRegion);
-            document.getElementById('cancel-add-region').addEventListener('click', () => {
-                addRegionModal.classList.add('hidden');
-                cancelRegionCreation();
-            });
+            // Region modal handlers avec vérification null
+            const confirmAddRegionBtn = document.getElementById('confirm-add-region');
+            const cancelAddRegionBtn = document.getElementById('cancel-add-region');
+            
+            if (confirmAddRegionBtn) {
+                confirmAddRegionBtn.addEventListener('click', saveRegion);
+            }
+            
+            if (cancelAddRegionBtn) {
+                cancelAddRegionBtn.addEventListener('click', () => {
+                    if (addRegionModal) {
+                        addRegionModal.classList.add('hidden');
+                    }
+                    cancelRegionCreation();
+                });
+            }
 
             // Double-click to complete region
-            viewport.addEventListener('dblclick', (event) => {
-                if (isAddingRegionMode && currentRegionPoints.length >= 3) {
-                    event.preventDefault();
-                    completeRegion();
-                }
-            });
+            if (viewport) {
+                viewport.addEventListener('dblclick', (event) => {
+                    if (isAddingRegionMode && currentRegionPoints.length >= 3) {
+                        event.preventDefault();
+                        completeRegion();
+                    }
+                });
+            }
         }
 
         startApp();
