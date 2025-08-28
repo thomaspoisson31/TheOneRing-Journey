@@ -312,7 +312,7 @@ def google_auth():
         return redirect('/?error=oauth_not_configured')
     
     # Déterminer le protocole et construire l'URL de redirection
-    is_production = 'replit.app' in request.host
+    is_production = 'replit.app' in request.host or 'replit.dev' in request.host
     protocol = 'https' if is_production else 'http'
     redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
     
@@ -353,7 +353,7 @@ def google_auth_callback():
         
     try:
         # Déterminer le protocole et construire l'URL de redirection
-        is_production = 'replit.app' in request.host
+        is_production = 'replit.app' in request.host or 'replit.dev' in request.host
         protocol = 'https' if is_production else 'http'
         redirect_uri = f"{protocol}://{request.host}/auth/google/callback"
         
