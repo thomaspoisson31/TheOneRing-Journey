@@ -790,6 +790,12 @@
             console.log(`🔐 [AUTH] ${message}`, data || '');
         }
 
+        // --- Check Google Authentication Status ---
+        function checkGoogleAuth() {
+            logAuth("Vérification du statut d'authentification...");
+            checkAuthStatus();
+        }
+
         // --- Check for authentication errors in URL ---
         function checkAuthError() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1785,7 +1791,11 @@
                 loadSavedContexts();
                 setupFilters();
                 logAuth("Initialisation de l'authentification...");
-                checkGoogleAuth();
+                
+                // Initialize authentication after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    checkGoogleAuth();
+                }, 100);
 
                 if (mapImage) {
                     mapImage.onload = () => {
@@ -1808,38 +1818,7 @@
                 logAuth("Configuration des event listeners d'authentification...");
 
                 // Attendre que tous les éléments DOM soient disponibles
-                waitForElement('#auth-btn', (authBtn) => {
-                    logAuth("Bouton d'authentification trouvé et configuré");
-                    authBtn.addEventListener('click', (event) => {
-                        logAuth("Clic sur le bouton d'authentification détecté!");
-                        event.preventDefault();
-                        event.stopPropagation();
-                        toggleAuthModal();
-                    });
-                });
-
-                waitForElement('#close-auth-modal', (closeAuthModalBtn) => {
-                    logAuth("Bouton de fermeture modal trouvé et configuré");
-                    closeAuthModalBtn.addEventListener('click', (event) => {
-                        logAuth("Clic sur le bouton de fermeture modal détecté!");
-                        event.preventDefault();
-                        event.stopPropagation();
-                        const authModal = document.getElementById('auth-modal');
-                        if (authModal) {
-                            authModal.classList.add('hidden');
-                        }
-                    });
-                });
-
-                waitForElement('#save-context-btn', (saveContextBtn) => {
-                    logAuth("Bouton de sauvegarde contexte trouvé et configuré");
-                    saveContextBtn.addEventListener('click', saveCurrentContext);
-                });
-
-                waitForElement('#google-signin-btn', (googleSigninBtn) => {
-                    logAuth("Bouton Google Sign-In trouvé et configuré");
-                    googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-                });
+                setupAuthEventListeners();
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
@@ -1898,7 +1877,12 @@
             }
         }
 
-        startApp();
+        // Start the application only once when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
 
         // --- Functions ---
         // --- Region Functions ---
@@ -3161,6 +3145,44 @@
             }
         }
 
+        // Setup authentication event listeners
+        function setupAuthEventListeners() {
+            logAuth("Configuration des event listeners d'authentification...");
+            
+            waitForElement('#auth-btn', (authBtn) => {
+                logAuth("Bouton d'authentification trouvé et configuré");
+                authBtn.addEventListener('click', (event) => {
+                    logAuth("Clic sur le bouton d'authentification détecté!");
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleAuthModal();
+                });
+            });
+
+            waitForElement('#close-auth-modal', (closeAuthModalBtn) => {
+                logAuth("Bouton de fermeture modal trouvé et configuré");
+                closeAuthModalBtn.addEventListener('click', (event) => {
+                    logAuth("Clic sur le bouton de fermeture modal détecté!");
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const authModal = document.getElementById('auth-modal');
+                    if (authModal) {
+                        authModal.classList.add('hidden');
+                    }
+                });
+            });
+
+            waitForElement('#save-context-btn', (saveContextBtn) => {
+                logAuth("Bouton de sauvegarde contexte trouvé et configuré");
+                saveContextBtn.addEventListener('click', saveCurrentContext);
+            });
+
+            waitForElement('#google-signin-btn', (googleSigninBtn) => {
+                logAuth("Bouton Google Sign-In trouvé et configuré");
+                googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            });
+        }
+
         // Helper function to wait for an element and then execute a callback
         function waitForElement(selector, callback, maxWait = 5000) {
             const startTime = Date.now();
@@ -3179,71 +3201,7 @@
             check();
         }
 
-        // --- Initialisation de l'authentification ---
-        function initAuth() {
-            console.log('🔐 [AUTH] Initialisation de l\'authentification...', '');
-
-            // Attendre que le DOM soit complètement chargé
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                    checkAuthStatus();
-                    setupAuthEventListeners();
-                });
-            } else {
-                checkAuthStatus();
-                setupAuthEventListeners();
-            }
-        }
-
-        // Configuration des event listeners d'authentification
-        function setupAuthEventListeners() {
-            console.log('🔐 [AUTH] Configuration des event listeners d\'authentification...', '');
-
-            const authBtn = document.getElementById('auth-btn');
-            const closeAuthModal = document.getElementById('close-auth-modal');
-            const saveContextBtn = document.getElementById('save-context-btn');
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-
-            if (authBtn) {
-                console.log('🔐 [AUTH] Bouton d\'authentification trouvé et configuré', '');
-                authBtn.addEventListener('click', function() {
-                    const authModal = document.getElementById('authModal');
-                    if (authModal) {
-                        authModal.classList.remove('hidden');
-                    }
-                });
-            } else {
-                console.warn('🔐 [AUTH] Bouton d\'authentification non trouvé');
-            }
-
-            if (closeAuthModal) {
-                console.log('🔐 [AUTH] Bouton de fermeture modal trouvé et configuré', '');
-                closeAuthModal.addEventListener('click', function() {
-                    const authModal = document.getElementById('authModal');
-                    if (authModal) {
-                        authModal.classList.add('hidden');
-                    }
-                });
-            } else {
-                console.warn('🔐 [AUTH] Bouton de fermeture modal non trouvé');
-            }
-
-            if (saveContextBtn) {
-                console.log('🔐 [AUTH] Bouton de sauvegarde contexte trouvé et configuré', '');
-                saveContextBtn.addEventListener('click', saveCurrentContext);
-            } else {
-                console.warn('🔐 [AUTH] Bouton de sauvegarde contexte non trouvé');
-            }
-
-            if (googleSigninBtn) {
-                console.log('🔐 [AUTH] Bouton Google Sign-In trouvé et configuré', '');
-                googleSigninBtn.addEventListener('click', function() {
-                    window.location.href = '/auth/google';
-                });
-            } else {
-                console.warn('🔐 [AUTH] Bouton Google Sign-In non trouvé');
-            }
-        }
+        
     </script>
 </body>
 </html>
