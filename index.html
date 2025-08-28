@@ -2589,9 +2589,10 @@
                 isDrawing = false;
             }
         }));
-        document.getElementById('zoom-in').addEventListener('click', () => { scale *= 1.2; applyTransform(); });
-        document.getElementById('zoom-out').addEventListener('click', () => { scale /= 1.2; applyTransform(); });
-        document.getElementById('reset-zoom').addEventListener('click', resetView);
+        // Les boutons zoom ont été supprimés de l'interface
+        // document.getElementById('zoom-in').addEventListener('click', () => { scale *= 1.2; applyTransform(); });
+        // document.getElementById('zoom-out').addEventListener('click', () => { scale /= 1.2; applyTransform(); });
+        // document.getElementById('reset-zoom').addEventListener('click', resetView);
         document.getElementById('draw-mode').addEventListener('click', (e) => {
             console.log("🎨 Draw mode button clicked");
             isAddingLocationMode = false;
