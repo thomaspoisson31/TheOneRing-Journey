@@ -21,17 +21,11 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permet OAuth en développemen
 @app.before_request
 def force_https():
     """Force HTTPS pour toutes les requêtes sur Replit"""
-    if request.headers.get('X-Forwarded-Proto') == 'https':
-        # Modifier uniquement les variables d'environnement WSGI
-        request.environ['wsgi.url_scheme'] = 'https'
-        request.environ['REQUEST_SCHEME'] = 'https'
-        request.environ['SERVER_PORT'] = '443'
-        request.environ['HTTPS'] = 'on'
-        
-        # Forcer Flask à reconnaître HTTPS pour toutes les URLs
-        request.url = request.url.replace('http://', 'https://')
-        request.url_root = request.url_root.replace('http://', 'https://')
-        request.base_url = request.base_url.replace('http://', 'https://')
+    # Toujours forcer HTTPS sur Replit car l'accès externe est toujours en HTTPS
+    request.environ['wsgi.url_scheme'] = 'https'
+    request.environ['REQUEST_SCHEME'] = 'https'
+    request.environ['SERVER_PORT'] = '443'
+    request.environ['HTTPS'] = 'on'
 
 # Configuration de la base de données
 DATABASE = 'travel_contexts.db'
@@ -326,12 +320,8 @@ def google_auth():
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return redirect('/?error=oauth_not_configured')
     
-    # Sur Replit, toujours utiliser HTTPS - détecter le bon domaine
-    if request.headers.get('X-Forwarded-Host'):
-        host = request.headers.get('X-Forwarded-Host')
-    else:
-        host = request.host
-    
+    # Sur Replit, utiliser le domaine externe HTTPS
+    host = request.headers.get('X-Forwarded-Host') or request.host
     redirect_uri = f"https://{host}/auth/google/callback"
     
     print(f"🔑 OAuth Init - Host: {request.host}")
@@ -377,10 +367,7 @@ def test_oauth():
             })
         
         # Test 2: Construction de l'URI de redirection
-        if request.headers.get('X-Forwarded-Host'):
-            host = request.headers.get('X-Forwarded-Host')
-        else:
-            host = request.host
+        host = request.headers.get('X-Forwarded-Host') or request.host
         redirect_uri = f"https://{host}/auth/google/callback"
         
         # Test 3: Création du flow OAuth
@@ -429,23 +416,12 @@ def google_auth_callback():
         return redirect('/?error=oauth_not_configured')
         
     try:
-        # Sur Replit, toujours utiliser HTTPS - détecter le bon domaine
-        if request.headers.get('X-Forwarded-Host'):
-            host = request.headers.get('X-Forwarded-Host')
-        else:
-            host = request.host
-            
+        # Sur Replit, utiliser le domaine externe HTTPS
+        host = request.headers.get('X-Forwarded-Host') or request.host
         redirect_uri = f"https://{host}/auth/google/callback"
         
-        # S'assurer que l'URL de réponse utilise HTTPS
-        auth_response = request.url
-        if auth_response.startswith('http://'):
-            auth_response = auth_response.replace('http://', 'https://', 1)
-        
-        # Double vérification pour s'assurer que l'URL est bien en HTTPS
-        if not auth_response.startswith('https://'):
-            # Reconstruire l'URL manuellement
-            auth_response = f"https://{host}{request.full_path}"
+        # Construire l'URL de réponse en HTTPS
+        auth_response = f"https://{host}{request.full_path}"
         
         print(f"🔑 OAuth Callback - Host: {request.host}")
         print(f"🔑 Redirect URI: {redirect_uri}")
@@ -522,10 +498,7 @@ def logout():
 def auth_debug():
     """Debug des variables d'environnement OAuth"""
     # Reproduire exactement la même logique que dans les routes auth
-    if request.headers.get('X-Forwarded-Host'):
-        host = request.headers.get('X-Forwarded-Host')
-    else:
-        host = request.host
+    host = request.headers.get('X-Forwarded-Host') or request.host
     redirect_uri = f"https://{host}/auth/google/callback"
     
     return jsonify({
@@ -567,10 +540,7 @@ def auth_debug():
 def verify_oauth_config():
     """Vérifier la configuration OAuth avec Google"""
     try:
-        if request.headers.get('X-Forwarded-Host'):
-            host = request.headers.get('X-Forwarded-Host')
-        else:
-            host = request.host
+        host = request.headers.get('X-Forwarded-Host') or request.host
         redirect_uri = f"https://{host}/auth/google/callback"
         
         # Test de base de la configuration
