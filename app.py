@@ -11,6 +11,13 @@ import secrets
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # Générer une clé secrète aléatoirement
 
+# Configuration des cookies de session pour le déploiement
+app.config.update(
+    SESSION_COOKIE_SECURE=True,  # Requiert HTTPS
+    SESSION_COOKIE_HTTPONLY=True,  # Empêche l'accès via JavaScript
+    SESSION_COOKIE_SAMESITE='Lax',  # Protection CSRF
+)
+
 # Configuration Google OAuth
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
@@ -108,6 +115,9 @@ def index():
 @app.route('/api/auth/user')
 def get_current_user():
     """Obtenir les informations de l'utilisateur actuel via session Google"""
+    print(f"🔍 Vérification auth - Session: {dict(session)}")
+    print(f"🔍 Cookies: {request.cookies}")
+    
     if 'user_id' in session and 'google_id' in session:
         conn = get_db_connection()
         user = conn.execute(
@@ -399,11 +409,17 @@ def google_auth_callback():
         
         print(f"🔑 Utilisateur authentifié: {user['name']} ({user['email']})")
         print(f"🔑 Session créée pour user_id: {session['user_id']}")
+        print(f"🔑 Session state: {dict(session)}")
         
         return redirect('/')
         
     except Exception as e:
-        print(f"Erreur OAuth Google: {e}")
+        print(f"❌ Erreur OAuth Google: {e}")
+        print(f"❌ Type d'erreur: {type(e).__name__}")
+        print(f"❌ URL de la requête: {request.url}")
+        print(f"❌ Headers: {dict(request.headers)}")
+        import traceback
+        traceback.print_exc()
         return redirect('/?auth_error=1')
 
 @app.route('/auth/logout')
