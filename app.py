@@ -332,7 +332,26 @@ def google_auth():
                 "client_id": GOOGLE_CLIENT_ID,
                 "client_secret": GOOGLE_CLIENT_SECRET,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [redirect_uri]
+            }
+        },
+        scopes=['openid', 'email', 'profile']
+    )
+    flow.redirect_uri = redirect_uri
+    
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='select_account'
+    )
+    
+    session['state'] = state
+    session.permanent = True
+    
+    print(f"🔑 Authorization URL: {authorization_url}")
+    print(f"🔑 State: {state}")
+    return redirect(authorization_url)
 
 @app.route('/auth/test')
 def test_oauth():
