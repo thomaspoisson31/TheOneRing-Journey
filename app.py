@@ -416,6 +416,7 @@ def test_oauth():
 def google_auth_callback():
     """Callback Google OAuth"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        print("❌ Configuration OAuth manquante")
         return redirect('/?error=oauth_not_configured')
         
     try:
@@ -430,15 +431,28 @@ def google_auth_callback():
         print(f"🔑 Auth Response: {auth_response}")
         print(f"🔑 Session state: {session.get('state')}")
         print(f"🔑 Request args: {dict(request.args)}")
+        print(f"🔑 Session cookies: {request.cookies}")
+        
+        # Vérifier s'il y a une erreur dans les paramètres de retour
+        if 'error' in request.args:
+            error_desc = request.args.get('error_description', 'Erreur inconnue')
+            print(f"❌ Erreur OAuth reçue: {request.args.get('error')} - {error_desc}")
+            return redirect(f'/?auth_error=google_error&desc={error_desc}')
         
         # Vérifier l'état de la session
         if 'state' not in session:
             print("❌ Erreur: Aucun état dans la session")
-            return redirect('/?auth_error=1')
+            print(f"❌ Session disponible: {dict(session)}")
+            return redirect('/?auth_error=no_session_state')
             
         if request.args.get('state') != session['state']:
-            print("❌ Erreur: État de session invalide")
-            return redirect('/?auth_error=1')
+            print(f"❌ Erreur: État de session invalide. Session: {session.get('state')}, Request: {request.args.get('state')}")
+            return redirect('/?auth_error=invalid_state')
+        
+        # Vérifier qu'on a bien le code d'autorisation
+        if 'code' not in request.args:
+            print("❌ Erreur: Code d'autorisation manquant")
+            return redirect('/?auth_error=no_auth_code')
         
         flow = Flow.from_client_config(
             {
@@ -455,8 +469,12 @@ def google_auth_callback():
         )
         flow.redirect_uri = redirect_uri
         
+        print(f"🔑 Tentative fetch_token avec auth_response: {auth_response}")
+        
         # Obtenir les tokens
         flow.fetch_token(authorization_response=auth_response)
+        
+        print(f"🔑 Token obtenu, vérification ID token...")
         
         # Vérifier l'ID token
         idinfo = id_token.verify_oauth2_token(
@@ -465,6 +483,8 @@ def google_auth_callback():
             GOOGLE_CLIENT_ID
         )
         
+        print(f"🔑 ID Token vérifié: {idinfo}")
+        
         # Créer ou récupérer l'utilisateur
         user = get_or_create_user(
             google_id=idinfo['sub'],
@@ -472,23 +492,28 @@ def google_auth_callback():
             email=idinfo.get('email')
         )
         
-        # Configurer la session utilisateur
+        # Nettoyer et configurer la session utilisateur
+        session.clear()  # Nettoyer l'ancienne session
         session.permanent = True
         session['user_id'] = user['id']
         session['google_id'] = idinfo['sub']
         session['user_picture'] = idinfo.get('picture')
         session['authenticated'] = True
+        session['user_name'] = idinfo.get('name')
+        session['user_email'] = idinfo.get('email')
         
         print(f"✅ Utilisateur authentifié: {user['name']} ({user['email']})")
         print(f"✅ Session configurée pour user_id: {session['user_id']}")
+        print(f"✅ Session complète: {dict(session)}")
         
         return redirect('/?auth_success=1')
         
     except Exception as e:
         print(f"❌ Erreur OAuth Google: {e}")
+        print(f"❌ Type d'erreur: {type(e).__name__}")
         import traceback
         traceback.print_exc()
-        return redirect('/?auth_error=1')
+        return redirect(f'/?auth_error=exception&msg={str(e)[:100]}')
 
 @app.route('/auth/logout')
 def logout():
@@ -535,6 +560,23 @@ def auth_debug():
             'expected_redirect_uri': redirect_uri,
             'oauth_insecure_transport': os.environ.get('OAUTHLIB_INSECURE_TRANSPORT')
         }
+    })
+
+@app.route('/auth/session-test')
+def session_test():
+    """Test de persistance de session"""
+    if 'test_counter' not in session:
+        session['test_counter'] = 0
+    session['test_counter'] += 1
+    session.permanent = True
+    
+    return jsonify({
+        'session_works': True,
+        'counter': session['test_counter'],
+        'session_id': request.cookies.get('session'),
+        'all_session_data': dict(session),
+        'cookie_domain': app.config.get('SESSION_COOKIE_DOMAIN'),
+        'cookie_secure': app.config.get('SESSION_COOKIE_SECURE')
     })
 
 @app.route('/auth/verify-config')
@@ -590,6 +632,8 @@ if __name__ == '__main__':
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_DOMAIN'] = 'tor-journey.replit.app'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
     
     # Configuration pour production et développement
     port = int(os.environ.get('PORT', 8080))
@@ -597,4 +641,5 @@ if __name__ == '__main__':
     
     print(f"🌐 Démarrage sur le port {port} (debug: {debug})")
     print(f"🔧 Variables d'environnement: PORT={os.environ.get('PORT')}, REPLIT_DEV_DOMAIN={os.environ.get('REPLIT_DEV_DOMAIN')}")
+    print(f"🔧 Configuration OAuth: CLIENT_ID={GOOGLE_CLIENT_ID[:20]}..., SECRET_SET={bool(GOOGLE_CLIENT_SECRET)}")
     app.run(host='0.0.0.0', port=port, debug=debug)
