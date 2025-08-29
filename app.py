@@ -58,15 +58,51 @@ def init_db():
         )
     ''')
 
-    # Migration : Ajouter la colonne google_id si elle n'existe pas
+    # Migration : Vérifier et corriger le schéma de la table users
     try:
-        cursor.execute("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE")
-        print("✅ Colonne google_id ajoutée à la table users")
-    except sqlite3.OperationalError as e:
-        if "duplicate column name" in str(e) or "already exists" in str(e):
-            print("ℹ️  Colonne google_id existe déjà")
+        # Vérifier si la colonne google_id existe
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'google_id' not in columns:
+            print("🔧 Migration nécessaire : recréation de la table users avec google_id")
+            
+            # Sauvegarder les données existantes
+            cursor.execute("SELECT * FROM users")
+            existing_users = cursor.fetchall()
+            
+            # Supprimer l'ancienne table
+            cursor.execute("DROP TABLE IF EXISTS users")
+            
+            # Recréer la table avec le bon schéma
+            cursor.execute('''
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    google_id TEXT UNIQUE,
+                    email TEXT,
+                    name TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Restaurer les données existantes (sans google_id pour l'instant)
+            for user in existing_users:
+                if len(user) >= 5:  # Ancien format avec replit_user_id
+                    cursor.execute(
+                        'INSERT INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)',
+                        (user[0], user[3] if len(user) > 3 else None, user[4] if len(user) > 4 else None, user[5] if len(user) > 5 else datetime.now())
+                    )
+                else:  # Format simple
+                    cursor.execute(
+                        'INSERT INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)',
+                        (user[0], user[2] if len(user) > 2 else None, user[3] if len(user) > 3 else None, user[4] if len(user) > 4 else datetime.now())
+                    )
+            
+            print("✅ Table users recréée avec succès avec la colonne google_id")
         else:
-            print(f"⚠️  Erreur lors de l'ajout de la colonne google_id: {e}")
+            print("ℹ️  Colonne google_id existe déjà")
+    except sqlite3.OperationalError as e:
+        print(f"⚠️  Erreur lors de la migration de la table users: {e}")
 
     # Table des contextes de voyage
     cursor.execute('''
