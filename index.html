@@ -1805,6 +1805,10 @@
                 panX: panX,
                 panY: panY,
                 activeFilters: activeFilters,
+                journeyPath: journeyPath,
+                totalPathPixels: totalPathPixels,
+                startPoint: startPoint,
+                lastPoint: lastPoint,
                 lastModified: Date.now()
             };
 
@@ -1819,7 +1823,7 @@
 
                 if (response.ok) {
                     lastSyncTime = Date.now();
-                    console.log("🔄 Données utilisateur synchronisées automatiquement");
+                    console.log("🔄 Données utilisateur synchronisées automatiquement (avec tracé)");
                 } else {
                     console.error("Erreur lors de la synchronisation automatique");
                 }
@@ -1854,6 +1858,34 @@
                     if (userData.activeFilters) {
                         activeFilters = userData.activeFilters;
                         console.log("🔍 Filtres utilisateur restaurés");
+                    }
+                    
+                    // Charger les tracés de voyage
+                    if (userData.journeyPath && Array.isArray(userData.journeyPath)) {
+                        journeyPath = userData.journeyPath;
+                        totalPathPixels = userData.totalPathPixels || 0;
+                        startPoint = userData.startPoint || null;
+                        lastPoint = userData.lastPoint || null;
+                        
+                        // Redessiner le tracé sur le canvas
+                        if (journeyPath.length > 0) {
+                            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                            ctx.beginPath();
+                            ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
+                            
+                            for (let i = 1; i < journeyPath.length; i++) {
+                                ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
+                            }
+                            ctx.stroke();
+                            
+                            // Mettre à jour l'affichage des distances
+                            updateDistanceDisplay();
+                            
+                            // Réinitialiser les régions traversées et lieux proches
+                            updateJourneyInfo();
+                        }
+                        
+                        console.log("🎨 Tracé de voyage restauré");
                     }
 
                     // Re-render everything
@@ -2725,6 +2757,7 @@
             if (isDrawing) {
                 console.log("🛑 Drawing stopped on", eventType);
                 isDrawing = false;
+                scheduleAutoSync(); // Synchroniser après avoir terminé un segment de tracé
             }
         }));
         // Les boutons zoom ont été supprimés de l'interface
@@ -2795,6 +2828,7 @@
             traversedRegions.clear();
             nearbyLocations.clear();
             updateDistanceDisplay();
+            scheduleAutoSync(); // Synchroniser après effacement du tracé
         });
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
@@ -3131,7 +3165,11 @@
                 scale: scale,
                 panX: panX,
                 panY: panY,
-                activeFilters: activeFilters
+                activeFilters: activeFilters,
+                journeyPath: journeyPath,
+                totalPathPixels: totalPathPixels,
+                startPoint: startPoint,
+                lastPoint: lastPoint
             };
 
             try {
@@ -3223,6 +3261,32 @@
                 panX = context.data.panX || 0;
                 panY = context.data.panY || 0;
                 activeFilters = context.data.activeFilters || { known: false, visited: false, colors: [] };
+
+                // Load journey data
+                journeyPath = context.data.journeyPath || [];
+                totalPathPixels = context.data.totalPathPixels || 0;
+                startPoint = context.data.startPoint || null;
+                lastPoint = context.data.lastPoint || null;
+
+                // Redraw journey path if it exists
+                if (journeyPath.length > 0) {
+                    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    ctx.beginPath();
+                    ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
+                    
+                    for (let i = 1; i < journeyPath.length; i++) {
+                        ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
+                    }
+                    ctx.stroke();
+                    
+                    // Update distance display
+                    updateDistanceDisplay();
+                    updateJourneyInfo();
+                } else {
+                    // Clear canvas if no journey path
+                    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    distanceContainer.classList.add('hidden');
+                }
 
                 // Re-render everything
                 renderLocations();
