@@ -2683,7 +2683,7 @@
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
         document.getElementById('import-file-input').addEventListener('change', importLocationsFromFile);
-        document.getElementById('reset-locations').addEventListener('click', () => { if (confirm("Voulez-vous vraiment réinitialiser tous les lieux par défaut ?")) { locationsData = getDefaultLocations(); renderLocations(); saveLocationsToLocal(); } });
+        // document.getElementById('reset-locations').addEventListener('click', () => { if (confirm("Voulez-vous vraiment réinitialiser tous les lieux par défaut ?")) { locationsData = getDefaultLocations(); renderLocations(); saveLocationsToLocal(); } });
         mapSwitchBtn.addEventListener('click', () => {
             isPlayerView = !isPlayerView;
             const icon = document.getElementById('map-switch-icon');
