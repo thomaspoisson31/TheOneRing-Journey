@@ -10,10 +10,21 @@ from datetime import datetime
 import secrets
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)  # Générer une clé secrète aléatoirement
+
+# Utiliser une clé secrète fixe en développement pour la persistance
+if os.environ.get('REPLIT_DEV_DOMAIN'):
+    app.secret_key = 'dev-secret-key-for-replit-sessions'
+else:
+    app.secret_key = secrets.token_hex(16)
 
 # Configuration ProxyFix pour Replit (gestion des headers X-Forwarded)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Configuration de session pour Replit
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'tor-journey:'
 
 # Configuration Google OAuth
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -629,11 +640,19 @@ if __name__ == '__main__':
     
     # Configuration HTTPS pour Replit
     app.config['PREFERRED_URL_SCHEME'] = 'https'
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    # Ne pas spécifier de domaine spécifique, laisser Flask gérer automatiquement
-    # app.config['SESSION_COOKIE_DOMAIN'] = 'tor-journey.replit.app'
+    
+    # Configuration des cookies de session pour Replit
+    if os.environ.get('REPLIT_DEV_DOMAIN'):
+        # En développement, cookies moins stricts
+        app.config['SESSION_COOKIE_SECURE'] = False
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    else:
+        # En production, cookies sécurisés
+        app.config['SESSION_COOKIE_SECURE'] = True
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
     
     # Configuration pour production et développement
