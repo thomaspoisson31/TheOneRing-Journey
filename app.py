@@ -632,7 +632,8 @@ if __name__ == '__main__':
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_DOMAIN'] = 'tor-journey.replit.app'
+    # Ne pas spécifier de domaine spécifique, laisser Flask gérer automatiquement
+    # app.config['SESSION_COOKIE_DOMAIN'] = 'tor-journey.replit.app'
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
     
     # Configuration pour production et développement
