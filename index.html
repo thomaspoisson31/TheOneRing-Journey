@@ -776,6 +776,7 @@
         let traversedRegions = new Set();
         let nearbyLocations = new Set();
         const PROXIMITY_DISTANCE = 50;
+        let journeyDiscoveries = []; // Added for journey discoveries
 
         // --- Region creation states ---
         let currentRegionPoints = [];
@@ -784,7 +785,7 @@
         // --- Authentication state ---
         let googleUser = null;
         let savedContexts = [];
-        
+
         // --- Auto-sync state ---
         let autoSyncEnabled = false;
         let lastSyncTime = 0;
@@ -1787,7 +1788,7 @@
 
         function scheduleAutoSync() {
             if (!autoSyncEnabled || !googleUser) return;
-            
+
             // Debounce: attendre 2 secondes après la dernière modification
             clearTimeout(window.autoSyncTimeout);
             window.autoSyncTimeout = setTimeout(() => {
@@ -1809,7 +1810,7 @@
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
                 lastPoint: lastPoint,
-                lastModified: Date.now()
+                journeyDiscoveries: journeyDiscoveries // Included journey discoveries
             };
 
             console.log("🔄 Synchronisation des données:", {
@@ -1846,7 +1847,7 @@
                 const response = await fetch('/api/user/data');
                 if (response.ok) {
                     const userData = await response.json();
-                    
+
                     // Charger les données utilisateur
                     if (userData.locations) {
                         locationsData = userData.locations;
@@ -1866,32 +1867,38 @@
                         activeFilters = userData.activeFilters;
                         console.log("🔍 Filtres utilisateur restaurés");
                     }
-                    
+
                     // Charger les tracés de voyage
                     if (userData.journeyPath && Array.isArray(userData.journeyPath)) {
                         journeyPath = userData.journeyPath;
                         totalPathPixels = userData.totalPathPixels || 0;
                         startPoint = userData.startPoint || null;
                         lastPoint = userData.lastPoint || null;
-                        
+
+                        // Charger les découvertes de voyage
+                        if (userData.journeyDiscoveries && Array.isArray(userData.journeyDiscoveries)) {
+                            journeyDiscoveries = userData.journeyDiscoveries;
+                            console.log("🌟 Découvertes de voyage chargées");
+                        }
+
                         // Redessiner le tracé sur le canvas
                         if (journeyPath.length > 0) {
                             ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
                             ctx.beginPath();
                             ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
-                            
+
                             for (let i = 1; i < journeyPath.length; i++) {
                                 ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
                             }
                             ctx.stroke();
-                            
+
                             // Mettre à jour l'affichage des distances
                             updateDistanceDisplay();
-                            
+
                             // Réinitialiser les régions traversées et lieux proches
                             updateJourneyInfo();
                         }
-                        
+
                         console.log("🎨 Tracé de voyage restauré");
                     }
 
@@ -1945,7 +1952,7 @@
                 loadSavedContexts();
                 setupFilters();
                 logAuth("Initialisation de l'authentification...");
-                
+
                 // Initialize authentication after a short delay to ensure DOM is ready
                 setTimeout(() => {
                     checkGoogleAuth();
@@ -2780,13 +2787,13 @@
             document.getElementById('add-location-mode').classList.remove('btn-active');
             document.getElementById('add-region-mode').classList.remove('btn-active');
             cancelRegionCreation();
-            
+
             // Si on désactive le mode dessin et qu'il y a un tracé, synchroniser
             if (isDrawingMode && journeyPath.length > 0) {
                 console.log("🔄 Synchronisation lors de la désactivation du mode dessin");
                 scheduleAutoSync();
             }
-            
+
             isDrawingMode = !isDrawingMode;
             console.log("🎨 Drawing mode is now:", isDrawingMode);
             viewport.classList.toggle('drawing', isDrawingMode);
@@ -2842,6 +2849,7 @@
             journeyPath = [];
             traversedRegions.clear();
             nearbyLocations.clear();
+            journeyDiscoveries = []; // Clear discoveries as well
             updateDistanceDisplay();
             console.log("🔄 Synchronisation après effacement du tracé");
             scheduleAutoSync(); // Synchroniser après effacement du tracé
@@ -2868,8 +2876,8 @@
         document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
-        function saveLocationsToLocal() { 
-            localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData)); 
+        function saveLocationsToLocal() {
+            localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData));
             scheduleAutoSync(); // Synchroniser après modification
         }
         function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
@@ -3159,7 +3167,7 @@
                 authIcon.classList.remove('hidden');
                 authIcon.className = 'fas fa-user';
                 authBtn.title = 'Authentification et sauvegarde';
-                
+
                 disableAutoSync(); // Désactiver la synchronisation
             }
         }
@@ -3185,7 +3193,8 @@
                 journeyPath: journeyPath,
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
-                lastPoint: lastPoint
+                lastPoint: lastPoint,
+                journeyDiscoveries: journeyDiscoveries // Included journey discoveries
             };
 
             try {
@@ -3283,18 +3292,19 @@
                 totalPathPixels = context.data.totalPathPixels || 0;
                 startPoint = context.data.startPoint || null;
                 lastPoint = context.data.lastPoint || null;
+                journeyDiscoveries = context.data.journeyDiscoveries || []; // Load journey discoveries
 
                 // Redraw journey path if it exists
                 if (journeyPath.length > 0) {
                     ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
                     ctx.beginPath();
                     ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
-                    
+
                     for (let i = 1; i < journeyPath.length; i++) {
                         ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
                     }
                     ctx.stroke();
-                    
+
                     // Update distance display
                     updateDistanceDisplay();
                     updateJourneyInfo();
@@ -3350,7 +3360,7 @@
         // Setup authentication event listeners
         function setupAuthEventListeners() {
             logAuth("Configuration des event listeners d'authentification...");
-            
+
             waitForElement('#auth-btn', (authBtn) => {
                 logAuth("Bouton d'authentification trouvé et configuré");
                 authBtn.addEventListener('click', (event) => {
@@ -3403,7 +3413,7 @@
             check();
         }
 
-        
+
     </script>
 </body>
 </html>
