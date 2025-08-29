@@ -2976,29 +2976,33 @@
             const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
             const nearbyLocationsList = document.getElementById('nearby-locations-list');
 
-            // Sort discoveries by discovery order and separate by type
+            // Sort discoveries by discovery order, keeping them mixed
             const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-            const regions = chronologicalDiscoveries.filter(d => d.type === 'region').map(d => d.name);
-            const locations = chronologicalDiscoveries.filter(d => d.type === 'location').map(d => d.name);
 
-            // Display traversed regions in chronological order
-            if (regions.length > 0) {
+            if (chronologicalDiscoveries.length > 0) {
+                // Create a single list with icons to differentiate regions and locations
+                const discoveryList = chronologicalDiscoveries.map(discovery => {
+                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
+                    return `${icon} ${discovery.name}`;
+                }).join(', ');
+
+                // Show only one section with all discoveries
                 traversedRegionsInfo.classList.remove('hidden');
-                traversedRegionsList.innerHTML = regions.join(', ');
-                console.log("🗺️ Traversed regions (chronological):", regions);
+                traversedRegionsList.innerHTML = discoveryList;
+                nearbyLocationsInfo.classList.add('hidden');
+                
+                // Update the title to reflect mixed content
+                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
+                if (regionsTitle) {
+                    regionsTitle.textContent = 'Découvertes du voyage :';
+                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
+                }
+
+                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
             } else {
                 traversedRegionsInfo.classList.add('hidden');
-                console.log("🗺️ No regions traversed");
-            }
-
-            // Display nearby locations in chronological order
-            if (locations.length > 0) {
-                nearbyLocationsInfo.classList.remove('hidden');
-                nearbyLocationsList.innerHTML = locations.join(', ');
-                console.log("📍 Nearby locations (chronological):", locations);
-            } else {
                 nearbyLocationsInfo.classList.add('hidden');
-                console.log("📍 No nearby locations");
+                console.log("🌟 No discoveries made");
             }
         }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
