@@ -776,7 +776,7 @@
         let traversedRegions = new Set();
         let nearbyLocations = new Set();
         const PROXIMITY_DISTANCE = 50;
-        let journeyDiscoveries = []; // Added for journey discoveries
+        let journeyDiscoveries = []; // Chronological list of discoveries (regions and locations)
 
         // --- Region creation states ---
         let currentRegionPoints = [];
@@ -1235,6 +1235,7 @@
             journeyPath = [];
             traversedRegions.clear();
             nearbyLocations.clear();
+            journeyDiscoveries = [];
 
             // Start drawing from this location
             isDrawing = true;
@@ -2729,6 +2730,7 @@
                 journeyPath = [];
                 traversedRegions.clear();
                 nearbyLocations.clear();
+                journeyDiscoveries = [];
 
                 startPoint = getCanvasCoordinates(event);
                 lastPoint = startPoint;
@@ -2897,48 +2899,64 @@
         }
 
         function updateJourneyInfo() {
-            updateTraversedRegions();
-            updateNearbyLocations();
+            updateDiscoveriesChronologically();
             displayJourneyInfo();
         }
 
-        function updateTraversedRegions() {
+        function updateDiscoveriesChronologically() {
+            // Reset tracking
             traversedRegions.clear();
-
-            regionsData.regions.forEach(region => {
-                if (region.points && region.points.length >= 3) {
-                    // Check if any point of the journey path is inside this region
-                    let regionTraversed = false;
-                    for (let i = 0; i < journeyPath.length && !regionTraversed; i++) {
-                        const point = journeyPath[i];
-                        if (isPointInPolygon(point, region.points)) {
-                            traversedRegions.add(region.name);
-                            regionTraversed = true;
+            nearbyLocations.clear();
+            
+            // Process each point in the journey path to maintain chronological order
+            for (let i = 0; i < journeyPath.length; i++) {
+                const currentPoint = journeyPath[i];
+                
+                // Check regions at this point
+                regionsData.regions.forEach(region => {
+                    if (region.points && region.points.length >= 3) {
+                        if (isPointInPolygon(currentPoint, region.points)) {
+                            if (!traversedRegions.has(region.name)) {
+                                traversedRegions.add(region.name);
+                                // Add to chronological discoveries if not already present
+                                if (!journeyDiscoveries.some(d => d.name === region.name && d.type === 'region')) {
+                                    journeyDiscoveries.push({
+                                        name: region.name,
+                                        type: 'region',
+                                        discoveryIndex: i
+                                    });
+                                }
+                            }
                         }
                     }
-                }
-            });
-        }
-
-        function updateNearbyLocations() {
-            nearbyLocations.clear();
-
-            locationsData.locations.forEach(location => {
-                // Skip locations without valid coordinates
-                if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
-                    return;
-                }
-
-                // Check if location is near any point of the journey path
-                const minDistance = Math.min(...journeyPath.map(pathPoint =>
-                    Math.sqrt(Math.pow(location.coordinates.x - pathPoint.x, 2) +
-                             Math.pow(location.coordinates.y - pathPoint.y, 2))
-                ));
-
-                if (minDistance <= PROXIMITY_DISTANCE) {
-                    nearbyLocations.add(location.name);
-                }
-            });
+                });
+                
+                // Check locations at this point
+                locationsData.locations.forEach(location => {
+                    if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
+                        return;
+                    }
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(location.coordinates.x - currentPoint.x, 2) +
+                        Math.pow(location.coordinates.y - currentPoint.y, 2)
+                    );
+                    
+                    if (distance <= PROXIMITY_DISTANCE) {
+                        if (!nearbyLocations.has(location.name)) {
+                            nearbyLocations.add(location.name);
+                            // Add to chronological discoveries if not already present
+                            if (!journeyDiscoveries.some(d => d.name === location.name && d.type === 'location')) {
+                                journeyDiscoveries.push({
+                                    name: location.name,
+                                    type: 'location',
+                                    discoveryIndex: i
+                                });
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function isPointInPolygon(point, polygon) {
@@ -2958,21 +2976,26 @@
             const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
             const nearbyLocationsList = document.getElementById('nearby-locations-list');
 
-            // Display traversed regions
-            if (traversedRegions.size > 0) {
+            // Sort discoveries by discovery order and separate by type
+            const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+            const regions = chronologicalDiscoveries.filter(d => d.type === 'region').map(d => d.name);
+            const locations = chronologicalDiscoveries.filter(d => d.type === 'location').map(d => d.name);
+
+            // Display traversed regions in chronological order
+            if (regions.length > 0) {
                 traversedRegionsInfo.classList.remove('hidden');
-                traversedRegionsList.innerHTML = Array.from(traversedRegions).join(', ');
-                console.log("🗺️ Traversed regions:", Array.from(traversedRegions));
+                traversedRegionsList.innerHTML = regions.join(', ');
+                console.log("🗺️ Traversed regions (chronological):", regions);
             } else {
                 traversedRegionsInfo.classList.add('hidden');
                 console.log("🗺️ No regions traversed");
             }
 
-            // Display nearby locations
-            if (nearbyLocations.size > 0) {
+            // Display nearby locations in chronological order
+            if (locations.length > 0) {
                 nearbyLocationsInfo.classList.remove('hidden');
-                nearbyLocationsList.innerHTML = Array.from(nearbyLocations).join(', ');
-                console.log("📍 Nearby locations:", Array.from(nearbyLocations));
+                nearbyLocationsList.innerHTML = locations.join(', ');
+                console.log("📍 Nearby locations (chronological):", locations);
             } else {
                 nearbyLocationsInfo.classList.add('hidden');
                 console.log("📍 No nearby locations");
