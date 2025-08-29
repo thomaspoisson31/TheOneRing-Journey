@@ -1812,6 +1812,13 @@
                 lastModified: Date.now()
             };
 
+            console.log("🔄 Synchronisation des données:", {
+                journeyPathLength: journeyPath.length,
+                totalPathPixels: totalPathPixels,
+                hasStartPoint: !!startPoint,
+                hasLastPoint: !!lastPoint
+            });
+
             try {
                 const response = await fetch('/api/user/data', {
                     method: 'PUT',
@@ -1823,12 +1830,12 @@
 
                 if (response.ok) {
                     lastSyncTime = Date.now();
-                    console.log("🔄 Données utilisateur synchronisées automatiquement (avec tracé)");
+                    console.log("✅ Données utilisateur synchronisées automatiquement (tracé inclus)");
                 } else {
-                    console.error("Erreur lors de la synchronisation automatique");
+                    console.error("❌ Erreur lors de la synchronisation automatique");
                 }
             } catch (error) {
-                console.error("Erreur réseau lors de la synchronisation:", error);
+                console.error("❌ Erreur réseau lors de la synchronisation:", error);
             }
         }
 
@@ -2757,6 +2764,7 @@
             if (isDrawing) {
                 console.log("🛑 Drawing stopped on", eventType);
                 isDrawing = false;
+                console.log("🔄 Programmation de la synchronisation après tracé");
                 scheduleAutoSync(); // Synchroniser après avoir terminé un segment de tracé
             }
         }));
@@ -2772,6 +2780,13 @@
             document.getElementById('add-location-mode').classList.remove('btn-active');
             document.getElementById('add-region-mode').classList.remove('btn-active');
             cancelRegionCreation();
+            
+            // Si on désactive le mode dessin et qu'il y a un tracé, synchroniser
+            if (isDrawingMode && journeyPath.length > 0) {
+                console.log("🔄 Synchronisation lors de la désactivation du mode dessin");
+                scheduleAutoSync();
+            }
+            
             isDrawingMode = !isDrawingMode;
             console.log("🎨 Drawing mode is now:", isDrawingMode);
             viewport.classList.toggle('drawing', isDrawingMode);
@@ -2828,6 +2843,7 @@
             traversedRegions.clear();
             nearbyLocations.clear();
             updateDistanceDisplay();
+            console.log("🔄 Synchronisation après effacement du tracé");
             scheduleAutoSync(); // Synchroniser après effacement du tracé
         });
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
