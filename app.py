@@ -51,12 +51,22 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            google_id TEXT UNIQUE NOT NULL,
+            google_id TEXT UNIQUE,
             email TEXT,
             name TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Migration : Ajouter la colonne google_id si elle n'existe pas
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE")
+        print("✅ Colonne google_id ajoutée à la table users")
+    except sqlite3.OperationalError as e:
+        if "duplicate column name" in str(e) or "already exists" in str(e):
+            print("ℹ️  Colonne google_id existe déjà")
+        else:
+            print(f"⚠️  Erreur lors de l'ajout de la colonne google_id: {e}")
 
     # Table des contextes de voyage
     cursor.execute('''
