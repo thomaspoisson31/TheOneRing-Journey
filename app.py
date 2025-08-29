@@ -136,7 +136,7 @@ def get_current_user():
             (session['user_id'],)
         ).fetchone()
         conn.close()
-        
+
         if user:
             user_data = dict(user)
             # Ajouter la photo de profil stockée en session si disponible
@@ -147,7 +147,7 @@ def get_current_user():
                 'user': user_data,
                 'auth_method': 'google'
             })
-    
+
     # Utilisateur non authentifié
     return jsonify({
         'authenticated': False,
@@ -331,13 +331,13 @@ def google_auth():
     """Initier l'authentification Google"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return redirect('/?error=oauth_not_configured')
-    
+
     # Utiliser url_for avec _external=True pour générer l'URL complète en HTTPS
     redirect_uri = url_for('google_auth_callback', _external=True, _scheme='https')
-    
+
     print(f"🔑 OAuth Init - Host: {request.host}")
     print(f"🔑 Redirect URI: {redirect_uri}")
-    
+
     flow = Flow.from_client_config(
         {
             "web": {
@@ -348,19 +348,23 @@ def google_auth():
                 "redirect_uris": [redirect_uri]
             }
         },
-        scopes=['openid', 'email', 'profile']
+        scopes=[
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile', 
+            'openid'
+        ]
     )
     flow.redirect_uri = redirect_uri
-    
+
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
         prompt='select_account'
     )
-    
+
     session['state'] = state
     session.permanent = True
-    
+
     print(f"🔑 Authorization URL: {authorization_url}")
     print(f"🔑 State: {state}")
     return redirect(authorization_url)
@@ -376,10 +380,10 @@ def test_oauth():
                 'status': 'error',
                 'message': 'Google Client ID ou Secret manquant'
             })
-        
+
         # Test 2: Construction de l'URI de redirection
         redirect_uri = url_for('google_auth_callback', _external=True, _scheme='https')
-        
+
         # Test 3: Création du flow OAuth
         flow = Flow.from_client_config(
             {
@@ -391,17 +395,21 @@ def test_oauth():
                     "redirect_uris": [redirect_uri]
                 }
             },
-            scopes=['openid', 'email', 'profile']
+            scopes=[
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile', 
+                'openid'
+            ]
         )
         flow.redirect_uri = redirect_uri
-        
+
         # Test 4: Génération de l'URL d'autorisation
         authorization_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
             prompt='select_account'
         )
-        
+
         return jsonify({
             'step': 'oauth_flow_creation',
             'status': 'success',
@@ -410,7 +418,7 @@ def test_oauth():
             'state': state,
             'flow_configured': True
         })
-        
+
     except Exception as e:
         return jsonify({
             'step': 'error',
@@ -425,42 +433,42 @@ def google_auth_callback():
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         print("❌ Configuration OAuth manquante")
         return redirect('/?error=oauth_not_configured')
-        
+
     try:
         # Utiliser url_for avec _external=True pour générer l'URL complète en HTTPS
         redirect_uri = url_for('google_auth_callback', _external=True, _scheme='https')
-        
+
         # Construire l'URL de réponse complète avec HTTPS
         auth_response = request.url.replace('http://', 'https://')
-        
+
         print(f"🔑 OAuth Callback - Host: {request.host}")
         print(f"🔑 Redirect URI: {redirect_uri}")
         print(f"🔑 Auth Response: {auth_response}")
         print(f"🔑 Session state: {session.get('state')}")
         print(f"🔑 Request args: {dict(request.args)}")
         print(f"🔑 Session cookies: {request.cookies}")
-        
+
         # Vérifier s'il y a une erreur dans les paramètres de retour
         if 'error' in request.args:
             error_desc = request.args.get('error_description', 'Erreur inconnue')
             print(f"❌ Erreur OAuth reçue: {request.args.get('error')} - {error_desc}")
             return redirect(f'/?auth_error=google_error&desc={error_desc}')
-        
+
         # Vérifier l'état de la session
         if 'state' not in session:
             print("❌ Erreur: Aucun état dans la session")
             print(f"❌ Session disponible: {dict(session)}")
             return redirect('/?auth_error=no_session_state')
-            
+
         if request.args.get('state') != session['state']:
             print(f"❌ Erreur: État de session invalide. Session: {session.get('state')}, Request: {request.args.get('state')}")
             return redirect('/?auth_error=invalid_state')
-        
+
         # Vérifier qu'on a bien le code d'autorisation
         if 'code' not in request.args:
             print("❌ Erreur: Code d'autorisation manquant")
             return redirect('/?auth_error=no_auth_code')
-        
+
         flow = Flow.from_client_config(
             {
                 "web": {
@@ -471,34 +479,38 @@ def google_auth_callback():
                     "redirect_uris": [redirect_uri]
                 }
             },
-            scopes=['openid', 'email', 'profile'],
+            scopes=[
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile', 
+                'openid'
+            ],
             state=session['state']
         )
         flow.redirect_uri = redirect_uri
-        
+
         print(f"🔑 Tentative fetch_token avec auth_response: {auth_response}")
-        
+
         # Obtenir les tokens
         flow.fetch_token(authorization_response=auth_response)
-        
+
         print(f"🔑 Token obtenu, vérification ID token...")
-        
+
         # Vérifier l'ID token
         idinfo = id_token.verify_oauth2_token(
             flow.credentials.id_token, 
             google_requests.Request(), 
             GOOGLE_CLIENT_ID
         )
-        
+
         print(f"🔑 ID Token vérifié: {idinfo}")
-        
+
         # Créer ou récupérer l'utilisateur
         user = get_or_create_user(
             google_id=idinfo['sub'],
             name=idinfo.get('name'),
             email=idinfo.get('email')
         )
-        
+
         # Nettoyer et configurer la session utilisateur
         session.clear()  # Nettoyer l'ancienne session
         session.permanent = True
@@ -508,13 +520,13 @@ def google_auth_callback():
         session['authenticated'] = True
         session['user_name'] = idinfo.get('name')
         session['user_email'] = idinfo.get('email')
-        
+
         print(f"✅ Utilisateur authentifié: {user['name']} ({user['email']})")
         print(f"✅ Session configurée pour user_id: {session['user_id']}")
         print(f"✅ Session complète: {dict(session)}")
-        
+
         return redirect('/?auth_success=1')
-        
+
     except Exception as e:
         print(f"❌ Erreur OAuth Google: {e}")
         print(f"❌ Type d'erreur: {type(e).__name__}")
@@ -533,7 +545,7 @@ def auth_debug():
     """Debug des variables d'environnement OAuth"""
     # Reproduire exactement la même logique que dans les routes auth
     redirect_uri = url_for('google_auth_callback', _external=True, _scheme='https')
-    
+
     return jsonify({
         'host': request.host,
         'url_root': request.url_root,
@@ -576,7 +588,7 @@ def session_test():
         session['test_counter'] = 0
     session['test_counter'] += 1
     session.permanent = True
-    
+
     return jsonify({
         'session_works': True,
         'counter': session['test_counter'],
@@ -591,14 +603,14 @@ def verify_oauth_config():
     """Vérifier la configuration OAuth avec Google"""
     try:
         redirect_uri = url_for('google_auth_callback', _external=True, _scheme='https')
-        
+
         # Test de base de la configuration
         if not GOOGLE_CLIENT_ID:
             return jsonify({'error': 'GOOGLE_CLIENT_ID manquant', 'status': 'error'}), 400
-            
+
         if not GOOGLE_CLIENT_SECRET:
             return jsonify({'error': 'GOOGLE_CLIENT_SECRET manquant', 'status': 'error'}), 400
-        
+
         # Test de création du flow OAuth
         flow = Flow.from_client_config(
             {
@@ -610,17 +622,25 @@ def verify_oauth_config():
                     "redirect_uris": [redirect_uri]
                 }
             },
-            scopes=['openid', 'email', 'profile']
+            scopes=[
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile', 
+                'openid'
+            ]
         )
-        
+
         return jsonify({
             'status': 'success',
             'message': 'Configuration OAuth valide',
             'redirect_uri': redirect_uri,
             'client_id': GOOGLE_CLIENT_ID,
-            'scopes': ['openid', 'email', 'profile']
+            'scopes': [
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile', 
+                'openid'
+            ]
         })
-        
+
     except Exception as e:
         return jsonify({
             'status': 'error',
@@ -633,10 +653,10 @@ if __name__ == '__main__':
     print("🚀 Serveur Flask démarré avec base de données SQLite")
     print("📊 Base de données initialisée avec les tables users, travel_contexts, api_usage")
     print("🔑 Prêt pour l'authentification Google et la gestion des contextes de voyage")
-    
+
     # Configuration HTTPS pour Replit
     app.config['PREFERRED_URL_SCHEME'] = 'https'
-    
+
     # Configuration des cookies de session pour Replit
     if os.environ.get('REPLIT_DEV_DOMAIN'):
         # En développement, cookies moins stricts
@@ -648,16 +668,16 @@ if __name__ == '__main__':
         app.config['SESSION_COOKIE_SECURE'] = True
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    
+
     # Configuration pour éviter les cookies dupliqués
     app.config['SESSION_COOKIE_PATH'] = '/'
     app.config['SESSION_COOKIE_NAME'] = 'tor_journey_session'
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
-    
+
     # Configuration pour production et développement
     port = int(os.environ.get('PORT', 8080))
     debug = os.environ.get('REPLIT_DEV_DOMAIN') is not None
-    
+
     print(f"🌐 Démarrage sur le port {port} (debug: {debug})")
     print(f"🔧 Variables d'environnement: PORT={os.environ.get('PORT')}, REPLIT_DEV_DOMAIN={os.environ.get('REPLIT_DEV_DOMAIN')}")
     print(f"🔧 Configuration OAuth: CLIENT_ID={GOOGLE_CLIENT_ID[:20]}..., SECRET_SET={bool(GOOGLE_CLIENT_SECRET)}")
