@@ -649,6 +649,9 @@ if __name__ == '__main__':
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     
+    # Configuration pour éviter les cookies dupliqués
+    app.config['SESSION_COOKIE_PATH'] = '/'
+    app.config['SESSION_COOKIE_NAME'] = 'tor_journey_session'
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
     
     # Configuration pour production et développement
