@@ -784,6 +784,11 @@
         // --- Authentication state ---
         let googleUser = null;
         let savedContexts = [];
+        
+        // --- Auto-sync state ---
+        let autoSyncEnabled = false;
+        let lastSyncTime = 0;
+        const SYNC_DELAY = 2000; // 2 seconds delay before auto-sync
 
         // --- Authentication Debug Logs ---
         function logAuth(message, data = null) {
@@ -1766,6 +1771,116 @@
             }
         });
 
+        // --- Auto-sync Functions ---
+        function enableAutoSync() {
+            if (googleUser) {
+                autoSyncEnabled = true;
+                loadUserData();
+                console.log("✅ Auto-sync activé");
+            }
+        }
+
+        function disableAutoSync() {
+            autoSyncEnabled = false;
+            console.log("❌ Auto-sync désactivé");
+        }
+
+        function scheduleAutoSync() {
+            if (!autoSyncEnabled || !googleUser) return;
+            
+            // Debounce: attendre 2 secondes après la dernière modification
+            clearTimeout(window.autoSyncTimeout);
+            window.autoSyncTimeout = setTimeout(() => {
+                autoSyncUserData();
+            }, SYNC_DELAY);
+        }
+
+        async function autoSyncUserData() {
+            if (!googleUser || !autoSyncEnabled) return;
+
+            const userData = {
+                locations: locationsData,
+                regions: regionsData,
+                scale: scale,
+                panX: panX,
+                panY: panY,
+                activeFilters: activeFilters,
+                lastModified: Date.now()
+            };
+
+            try {
+                const response = await fetch('/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    lastSyncTime = Date.now();
+                    console.log("🔄 Données utilisateur synchronisées automatiquement");
+                } else {
+                    console.error("Erreur lors de la synchronisation automatique");
+                }
+            } catch (error) {
+                console.error("Erreur réseau lors de la synchronisation:", error);
+            }
+        }
+
+        async function loadUserData() {
+            if (!googleUser) return;
+
+            try {
+                const response = await fetch('/api/user/data');
+                if (response.ok) {
+                    const userData = await response.json();
+                    
+                    // Charger les données utilisateur
+                    if (userData.locations) {
+                        locationsData = userData.locations;
+                        console.log("📍 Lieux utilisateur chargés");
+                    }
+                    if (userData.regions) {
+                        regionsData = userData.regions;
+                        console.log("🗺️ Régions utilisateur chargées");
+                    }
+                    if (userData.scale) {
+                        scale = userData.scale;
+                        panX = userData.panX || 0;
+                        panY = userData.panY || 0;
+                        console.log("🔍 Vue utilisateur restaurée");
+                    }
+                    if (userData.activeFilters) {
+                        activeFilters = userData.activeFilters;
+                        console.log("🔍 Filtres utilisateur restaurés");
+                    }
+
+                    // Re-render everything
+                    renderLocations();
+                    renderRegions();
+                    applyTransform();
+                    updateFiltersUI();
+
+                    console.log("✅ Données utilisateur complètement chargées");
+                } else if (response.status === 404) {
+                    console.log("ℹ️ Aucune donnée utilisateur trouvée, utilisation des données par défaut");
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des données utilisateur:", error);
+            }
+        }
+
+        function updateFiltersUI() {
+            // Mettre à jour l'interface des filtres
+            document.getElementById('filter-known').checked = activeFilters.known;
+            document.getElementById('filter-visited').checked = activeFilters.visited;
+            document.getElementById('filter-show-regions').checked = true;
+            document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
+                cb.checked = activeFilters.colors.includes(cb.dataset.color);
+            });
+        }
+
         // --- Load data and start the app ---
         function startApp() {
             console.log("🚀 Starting application...");
@@ -2440,6 +2555,7 @@
 
         function saveRegionsToLocal() {
             localStorage.setItem('middleEarthRegions', JSON.stringify(regionsData));
+            scheduleAutoSync(); // Synchroniser après modification
         }
 
         function loadRegionsFromLocal() {
@@ -2702,7 +2818,10 @@
         document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
-        function saveLocationsToLocal() { localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData)); }
+        function saveLocationsToLocal() { 
+            localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData)); 
+            scheduleAutoSync(); // Synchroniser après modification
+        }
         function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         function importLocationsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.locations)) { locationsData = importedData; renderLocations(); saveLocationsToLocal(); } else { alert("Fichier JSON invalide."); } } catch (err) { alert("Erreur lors de la lecture du fichier."); console.error(err); } }; reader.readAsText(file); }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
@@ -2979,6 +3098,7 @@
                 }
 
                 loadSavedContexts(); // Load contexts after confirming login
+                enableAutoSync(); // Activer la synchronisation automatique
             } else {
                 logAuth("Affichage du panneau utilisateur non connecté");
                 loggedInPanel.classList.add('hidden');
@@ -2989,6 +3109,8 @@
                 authIcon.classList.remove('hidden');
                 authIcon.className = 'fas fa-user';
                 authBtn.title = 'Authentification et sauvegarde';
+                
+                disableAutoSync(); // Désactiver la synchronisation
             }
         }
 

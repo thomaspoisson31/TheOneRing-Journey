@@ -361,6 +361,64 @@ def view_shared_context(share_token):
     # Servir l'interface en mode lecture seule
     return send_from_directory('.', 'index.html')
 
+@app.route('/api/user/data', methods=['GET'])
+def get_user_data():
+    """Obtenir les données personnelles de l'utilisateur (lieux, régions, etc.)"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    conn = get_db_connection()
+    
+    # Chercher les données utilisateur dans un contexte spécial "user_data"
+    user_data = conn.execute(
+        'SELECT data_json FROM travel_contexts WHERE user_id = ? AND name = "_user_data_"',
+        (session['user_id'],)
+    ).fetchone()
+    
+    conn.close()
+
+    if user_data is None:
+        return jsonify({'error': 'Aucune donnée utilisateur trouvée'}), 404
+
+    return jsonify(json.loads(user_data['data_json']))
+
+@app.route('/api/user/data', methods=['PUT'])
+def update_user_data():
+    """Mettre à jour les données personnelles de l'utilisateur"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    data = request.json
+    if not data:
+        return jsonify({'error': 'Données manquantes'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Vérifier si un enregistrement de données utilisateur existe déjà
+    existing = conn.execute(
+        'SELECT id FROM travel_contexts WHERE user_id = ? AND name = "_user_data_"',
+        (session['user_id'],)
+    ).fetchone()
+
+    if existing:
+        # Mettre à jour l'enregistrement existant
+        cursor.execute(
+            'UPDATE travel_contexts SET data_json = ?, updated_at = ? WHERE user_id = ? AND name = "_user_data_"',
+            (json.dumps(data), datetime.now(), session['user_id'])
+        )
+    else:
+        # Créer un nouvel enregistrement
+        cursor.execute(
+            'INSERT INTO travel_contexts (user_id, name, data_json, updated_at) VALUES (?, ?, ?, ?)',
+            (session['user_id'], '_user_data_', json.dumps(data), datetime.now())
+        )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Données utilisateur sauvegardées avec succès'})
+
 # Routes pour servir les fichiers statiques existants
 @app.route('/<path:filename>')
 def serve_static(filename):
