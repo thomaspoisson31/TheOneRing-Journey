@@ -20,11 +20,7 @@ else:
 # Configuration ProxyFix pour Replit (gestion des headers X-Forwarded)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configuration de session pour Replit
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_KEY_PREFIX'] = 'tor-journey:'
+# Configuration de session pour Replit - utiliser les sessions Flask par défaut
 
 # Configuration Google OAuth
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
