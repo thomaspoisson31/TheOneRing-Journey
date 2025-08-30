@@ -3253,6 +3253,9 @@
                 item.removeAttribute('title');
                 
                 item.addEventListener('mouseenter', (e) => {
+                    // Highlight the corresponding location or region on the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+                    
                     const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
                     
                     if (tooltipContent) {
@@ -3303,10 +3306,55 @@
                 });
                 
                 item.addEventListener('mouseleave', () => {
+                    // Remove highlight from the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, false);
+                    
                     const tooltips = document.querySelectorAll('.discovery-tooltip');
                     tooltips.forEach(tooltip => tooltip.remove());
                 });
             });
+        }
+
+        function highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
+            if (discoveryType === 'location') {
+                // Find and highlight location marker
+                const locationMarkers = document.querySelectorAll('.location-marker');
+                locationMarkers.forEach(marker => {
+                    const locationId = parseInt(marker.dataset.id, 10);
+                    const location = locationsData.locations.find(loc => loc.id === locationId);
+                    
+                    if (location && location.name === discoveryName) {
+                        if (highlight) {
+                            marker.style.borderColor = '#60a5fa'; // Light blue
+                            marker.style.borderWidth = '6px';
+                            marker.style.zIndex = '1000';
+                        } else {
+                            // Restore original border
+                            marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                            marker.style.borderWidth = '4px';
+                            marker.style.zIndex = '';
+                        }
+                    }
+                });
+            } else if (discoveryType === 'region') {
+                // Find and highlight region path
+                const regionPaths = regionsLayer.querySelectorAll('.region');
+                regionPaths.forEach(path => {
+                    const regionId = parseInt(path.dataset.regionId, 10);
+                    const region = regionsData.regions.find(reg => reg.id === regionId);
+                    
+                    if (region && region.name === discoveryName) {
+                        if (highlight) {
+                            path.style.stroke = '#60a5fa'; // Light blue
+                            path.style.strokeWidth = '4';
+                        } else {
+                            // Restore original stroke
+                            path.style.stroke = colorMap[region.color] || colorMap.green;
+                            path.style.strokeWidth = '2';
+                        }
+                    }
+                });
+            }
         }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
