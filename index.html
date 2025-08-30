@@ -232,11 +232,12 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .image-tabs {
             display: flex;
             border-bottom: 1px solid #4b5563;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             flex-shrink: 0;
         }
         .image-tab-button {
@@ -259,10 +260,16 @@
         }
         .image-content {
             display: none;
-            height: 100%;
+            height: calc(100% - 3rem);
+            overflow: hidden;
         }
         .image-content.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+        }
+        .image-content .image-view {
+            height: 100%;
+            padding: 0.5rem;
         }
 
         /* Image editing styles */
@@ -278,39 +285,53 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             height: 100%;
             text-align: center;
             padding: 1rem;
-            cursor: default; /* Default cursor for image view */
+            cursor: default;
+            overflow: hidden;
         }
         .image-view.expanded-mode {
-            justify-content: flex-start; /* Anchor to top */
-            align-items: center; /* Center horizontally */
-            height: 100%; /* Full height */
-            overflow: hidden; /* Prevent overflow */
+            justify-content: flex-start;
+            align-items: center;
+            height: 100%;
+            overflow: hidden;
+            padding: 0.5rem;
         }
         .image-view.expanded-mode img {
-            max-height: 100%; /* Allow image to fill available height */
+            max-width: calc(100% - 1rem);
+            max-height: calc(100% - 1rem);
             width: auto;
             height: auto;
-            object-fit: contain; /* Ensure it fits */
-            cursor: pointer; /* Indicate clickability */
+            object-fit: contain;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
         .image-view.compact-mode {
-            justify-content: center; /* Center vertically in compact mode */
+            justify-content: center;
+            padding: 1rem;
         }
-        .image-view img {
-            max-width: 100%;
+        .image-view.compact-mode img {
+            max-width: calc(100% - 2rem);
             max-height: calc(100% - 6rem);
             width: auto;
             height: auto;
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
         }
-        .image-view .modal-image { /* New class for modal images */
-            max-height: calc(100% - 4rem); /* Adjust max-height for expanded view */
+        .image-view img {
+            max-width: calc(100% - 1rem);
+            max-height: calc(100% - 2rem);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
         }
         .image-view .image-caption {
             margin-top: 1rem;
