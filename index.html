@@ -257,10 +257,6 @@
             color: white;
             border-bottom-color: #3b82f6;
         }
-        .image-contents {
-            flex: 1;
-            position: relative;
-        }
         .image-content {
             display: none;
             height: 100%;
@@ -286,6 +282,23 @@
             height: 100%;
             text-align: center;
             padding: 1rem;
+            cursor: default; /* Default cursor for image view */
+        }
+        .image-view.expanded-mode {
+            justify-content: flex-start; /* Anchor to top */
+            align-items: center; /* Center horizontally */
+            height: 100%; /* Full height */
+            overflow: hidden; /* Prevent overflow */
+        }
+        .image-view.expanded-mode img {
+            max-height: 100%; /* Allow image to fill available height */
+            width: auto;
+            height: auto;
+            object-fit: contain; /* Ensure it fits */
+            cursor: pointer; /* Indicate clickability */
+        }
+        .image-view.compact-mode {
+            justify-content: center; /* Center vertically in compact mode */
         }
         .image-view img {
             max-width: 100%;
@@ -1015,7 +1028,7 @@
 
                     const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
+                            <div class="image-view expanded-mode">
                                 <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
@@ -1033,11 +1046,13 @@
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                    const isExpanded = infoBox.classList.contains('expanded');
+                    const titleHtml = !isExpanded ? `<div class="compact-title">
                                     <span style="font-family: 'Merriweather', serif;">${location.name}</span>
                                 </div>` : '';
+                    const imageViewClass = isExpanded ? 'expanded-mode' : 'compact-mode';
                     imageTab.innerHTML = `
-                        <div class="image-view">
+                        <div class="image-view ${imageViewClass}">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
@@ -1131,7 +1146,7 @@
             const deleteBtn = document.getElementById('info-box-delete');
             const expandBtn = document.getElementById('info-box-expand');
 
-            // Clone and replace buttons to remove all existing event listeners
+            // Remove existing event listeners by cloning the elements
             if (editBtn) {
                 const newEditBtn = editBtn.cloneNode(true);
                 editBtn.parentNode.replaceChild(newEditBtn, editBtn);
@@ -1231,24 +1246,34 @@
 
         function setupImageClickHandlers() {
             // Add click listener to make images toggle fullscreen
-            document.querySelectorAll('.modal-image').forEach(img => {
-                img.addEventListener('click', (e) => {
+            document.querySelectorAll('.image-view img').forEach(img => {
+                // Remove any existing listener to avoid duplicates
+                const newImg = img.cloneNode(true);
+                img.parentNode.replaceChild(newImg, img);
+
+                newImg.addEventListener('click', (e) => {
                     // Prevent event from propagating to parent elements if needed
                     e.stopPropagation();
 
-                    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+                    // Check if the image is already in fullscreen mode (e.g., by checking parent element's state)
+                    const isCurrentlyFullscreen = document.fullscreenElement === newImg.parentElement ||
+                                                document.webkitFullscreenElement === newImg.parentElement ||
+                                                document.mozFullScreenElement === newImg.parentElement ||
+                                                document.msFullscreenElement === newImg.parentElement;
 
-                    if (!isFullscreen) {
-                        // Request fullscreen
-                        const element = img.parentElement.parentElement; // Go up to the .image-view or .image-content container
-                        if (element.requestFullscreen) {
-                            element.requestFullscreen();
-                        } else if (element.webkitRequestFullscreen) { /* Safari */
-                            element.webkitRequestFullscreen();
-                        } else if (element.mozRequestFullScreen) { /* Firefox */
-                            element.mozRequestFullScreen();
-                        } else if (element.msRequestFullscreen) { /* IE11 */
-                            element.msRequestFullscreen();
+                    if (!isCurrentlyFullscreen) {
+                        // Request fullscreen for the image's container (.image-view)
+                        const element = newImg.closest('.image-view'); // Go up to the .image-view container
+                        if (element) {
+                            if (element.requestFullscreen) {
+                                element.requestFullscreen();
+                            } else if (element.webkitRequestFullscreen) { /* Safari */
+                                element.webkitRequestFullscreen();
+                            } else if (element.mozRequestFullScreen) { /* Firefox */
+                                element.mozRequestFullScreen();
+                            } else if (element.msRequestFullscreen) { /* IE11 */
+                                element.msRequestFullscreen();
+                            }
                         }
                     } else {
                         // Exit fullscreen
@@ -1644,7 +1669,7 @@
 
                     const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
+                            <div class="image-view expanded-mode">
                                 <img src="${img}" alt="${location.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
@@ -1662,11 +1687,13 @@
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                    const isExpanded = infoBox.classList.contains('expanded');
+                    const titleHtml = !isExpanded ? `<div class="compact-title">
                                     <span style="font-family: 'Merriweather', serif;">${location.name}</span>
                                 </div>` : '';
+                    const imageViewClass = isExpanded ? 'expanded-mode' : 'compact-mode';
                     imageTab.innerHTML = `
-                        <div class="image-view">
+                        <div class="image-view ${imageViewClass}">
                             ${titleHtml}
                             <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
@@ -2157,7 +2184,7 @@
 
                     const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
+                            <div class="image-view expanded-mode">
                                 <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
@@ -2447,7 +2474,7 @@
 
                     const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
+                            <div class="image-view expanded-mode">
                                 <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
