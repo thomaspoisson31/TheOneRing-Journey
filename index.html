@@ -2908,14 +2908,21 @@
             traversedRegions.clear();
             nearbyLocations.clear();
             
+            // Track region segments for duration calculation
+            let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
+            let currentRegions = new Set(); // regions currently being traversed
+            
             // Process each point in the journey path to maintain chronological order
             for (let i = 0; i < journeyPath.length; i++) {
                 const currentPoint = journeyPath[i];
                 
-                // Check regions at this point
+                // Check which regions this point is in
+                let pointRegions = new Set();
                 regionsData.regions.forEach(region => {
                     if (region.points && region.points.length >= 3) {
                         if (isPointInPolygon(currentPoint, region.points)) {
+                            pointRegions.add(region.name);
+                            
                             if (!traversedRegions.has(region.name)) {
                                 traversedRegions.add(region.name);
                                 // Add to chronological discoveries if not already present
@@ -2926,10 +2933,31 @@
                                         discoveryIndex: i
                                     });
                                 }
+                                // Mark entry point for this region
+                                regionSegments.set(region.name, {entryIndex: i, exitIndex: i});
+                            } else {
+                                // Update exit point for this region
+                                let segment = regionSegments.get(region.name);
+                                if (segment) {
+                                    segment.exitIndex = i;
+                                }
                             }
                         }
                     }
                 });
+                
+                // Check for regions we're exiting
+                currentRegions.forEach(regionName => {
+                    if (!pointRegions.has(regionName)) {
+                        // We've exited this region, finalize its segment
+                        let segment = regionSegments.get(regionName);
+                        if (segment) {
+                            segment.exitIndex = i - 1; // Previous point was the last point in region
+                        }
+                    }
+                });
+                
+                currentRegions = pointRegions;
                 
                 // Check locations at this point
                 locationsData.locations.forEach(location => {
@@ -2957,6 +2985,9 @@
                     }
                 });
             }
+            
+            // Store region segments for duration calculation
+            window.regionSegments = regionSegments;
         }
 
         function isPointInPolygon(point, polygon) {
@@ -2970,6 +3001,32 @@
             return inside;
         }
 
+        function calculatePathDistance(startIndex, endIndex) {
+            if (startIndex >= endIndex || startIndex < 0 || endIndex >= journeyPath.length) {
+                return 0;
+            }
+            
+            let distance = 0;
+            for (let i = startIndex; i < endIndex; i++) {
+                const point1 = journeyPath[i];
+                const point2 = journeyPath[i + 1];
+                distance += Math.sqrt(
+                    Math.pow(point2.x - point1.x, 2) + 
+                    Math.pow(point2.y - point1.y, 2)
+                );
+            }
+            return distance;
+        }
+
+        function pixelsToMiles(pixels) {
+            return pixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+        }
+
+        function milesToDays(miles) {
+            const days = miles / 20; // 20 miles per day
+            return Math.round(days * 2) / 2; // Round to nearest half day
+        }
+
         function displayJourneyInfo() {
             const traversedRegionsInfo = document.getElementById('traversed-regions-info');
             const traversedRegionsList = document.getElementById('traversed-regions-list');
@@ -2980,10 +3037,41 @@
             const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
 
             if (chronologicalDiscoveries.length > 0) {
-                // Create a single list with icons to differentiate regions and locations
-                const discoveryList = chronologicalDiscoveries.map(discovery => {
+                // Calculate travel times for each discovery
+                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                    return `${icon} ${discovery.name}`;
+                    
+                    // Calculate travel time to reach this discovery
+                    let startIndex = 0;
+                    if (index > 0) {
+                        // Find the end point of the previous discovery
+                        const prevDiscovery = chronologicalDiscoveries[index - 1];
+                        if (prevDiscovery.type === 'region' && window.regionSegments) {
+                            const segment = window.regionSegments.get(prevDiscovery.name);
+                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
+                        } else {
+                            startIndex = prevDiscovery.discoveryIndex;
+                        }
+                    }
+                    
+                    const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
+                    const reachMiles = pixelsToMiles(reachDistance);
+                    const reachDays = milesToDays(reachMiles);
+                    
+                    let displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                    
+                    // For regions, also calculate duration inside the region
+                    if (discovery.type === 'region' && window.regionSegments) {
+                        const segment = window.regionSegments.get(discovery.name);
+                        if (segment) {
+                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
+                            const regionMiles = pixelsToMiles(regionDistance);
+                            const regionDays = milesToDays(regionMiles);
+                            displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                        }
+                    }
+                    
+                    return displayText;
                 }).join(', ');
 
                 // Show only one section with all discoveries
