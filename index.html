@@ -157,22 +157,6 @@
             color: white;
             background-color: rgba(59, 130, 246, 0.2);
         }
-        #info-box-edit {
-            cursor: pointer;
-            color: #9ca3af;
-            font-size: 18px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s ease;
-        }
-        #info-box-edit:hover {
-            color: white;
-            background-color: rgba(34, 197, 94, 0.2);
-        }
         #info-box-delete {
             cursor: pointer;
             color: #9ca3af;
@@ -311,6 +295,9 @@
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .image-view .modal-image { /* New class for modal images */
+            max-height: calc(100% - 4rem); /* Adjust max-height for expanded view */
         }
         .image-view .image-caption {
             margin-top: 1rem;
@@ -1042,6 +1029,7 @@
                     `;
 
                     setupImageTabSwitching();
+                    setupImageClickHandlers();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
@@ -1051,9 +1039,10 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
+                    setupImageClickHandlers();
                 }
             } else {
                 // No image - show title instead of placeholder in compact mode
@@ -1109,11 +1098,20 @@
             document.getElementById('info-box-content').classList.remove('hidden');
 
             infoBox.style.display = 'block';
-            if (infoBox.classList.contains('expanded')) {
-                positionInfoBoxExpanded();
-            } else {
-                positionInfoBoxCompact(event);
+            // Ouvrir en mode étendu par défaut
+            if (!infoBox.classList.contains('expanded')) {
+                infoBox.classList.add('expanded');
+                const expandBtn = document.getElementById('info-box-expand');
+                if (expandBtn) {
+                    expandBtn.className = 'fas fa-compress';
+                    expandBtn.title = 'Vue compacte';
+                }
+                const titleElement = document.getElementById('info-box-title');
+                const deleteBtn = document.getElementById('info-box-delete');
+                titleElement.classList.remove('hidden');
+                deleteBtn.classList.remove('hidden');
             }
+            positionInfoBoxExpanded();
 
             // Set up tab switching
             setupTabSwitching();
@@ -1230,6 +1228,44 @@
                 });
             });
         }
+
+        function setupImageClickHandlers() {
+            // Add click listener to make images toggle fullscreen
+            document.querySelectorAll('.modal-image').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    // Prevent event from propagating to parent elements if needed
+                    e.stopPropagation();
+
+                    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+                    if (!isFullscreen) {
+                        // Request fullscreen
+                        const element = img.parentElement.parentElement; // Go up to the .image-view or .image-content container
+                        if (element.requestFullscreen) {
+                            element.requestFullscreen();
+                        } else if (element.webkitRequestFullscreen) { /* Safari */
+                            element.webkitRequestFullscreen();
+                        } else if (element.mozRequestFullScreen) { /* Firefox */
+                            element.mozRequestFullScreen();
+                        } else if (element.msRequestFullscreen) { /* IE11 */
+                            element.msRequestFullscreen();
+                        }
+                    } else {
+                        // Exit fullscreen
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) { /* Safari */
+                            document.webkitExitFullscreen();
+                        } else if (document.mozCancelFullScreen) { /* Firefox */
+                            document.mozCancelFullScreen();
+                        } else if (document.msExitFullscreen) { /* IE11 */
+                            document.msExitFullscreen();
+                        }
+                    }
+                });
+            });
+        }
+
 
         function getRegionImages(region) {
             if (region.images && Array.isArray(region.images)) {
@@ -1622,6 +1658,7 @@
                     `;
 
                     setupImageTabSwitching();
+                    setupImageClickHandlers();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultLocationImage(location);
@@ -1631,9 +1668,10 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${location.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
+                    setupImageClickHandlers();
                 }
             } else {
                 // No image - show title instead of placeholder in compact mode
@@ -2133,6 +2171,7 @@
                     `;
 
                     setupImageTabSwitching();
+                    setupImageClickHandlers();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultRegionImage(region);
@@ -2142,9 +2181,10 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
+                    setupImageClickHandlers();
                 }
             } else {
                 // No image - show title instead of placeholder in compact mode
@@ -2200,11 +2240,20 @@
             document.getElementById('info-box-content').classList.remove('hidden');
 
             infoBox.style.display = 'block';
-            if (infoBox.classList.contains('expanded')) {
-                positionInfoBoxExpanded();
-            } else {
-                positionInfoBoxCompact(event);
+            // Ouvrir en mode étendu par défaut
+            if (!infoBox.classList.contains('expanded')) {
+                infoBox.classList.add('expanded');
+                const expandBtn = document.getElementById('info-box-expand');
+                if (expandBtn) {
+                    expandBtn.className = 'fas fa-compress';
+                    expandBtn.title = 'Vue compacte';
+                }
+                const titleElement = document.getElementById('info-box-title');
+                const deleteBtn = document.getElementById('info-box-delete');
+                titleElement.classList.remove('hidden');
+                deleteBtn.classList.remove('hidden');
             }
+            positionInfoBoxExpanded();
 
             // Set up event listeners for regions
             const editBtn = document.getElementById('info-box-edit');
@@ -2412,6 +2461,7 @@
                     `;
 
                     setupImageTabSwitching();
+                    setupImageClickHandlers();
                 } else {
                     // Single image view (compact mode or single image)
                     const defaultImage = getDefaultRegionImage(region);
@@ -2421,9 +2471,10 @@
                     imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)">
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
+                    setupImageClickHandlers();
                 }
             } else {
                 // No image - show title instead of placeholder in compact mode
@@ -2936,25 +2987,25 @@
             // Reset tracking
             traversedRegions.clear();
             nearbyLocations.clear();
-            
+
             // Track region segments for duration calculation
             let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
             let currentRegions = new Set(); // regions currently being traversed
-            
+
             // Track location proximity types
             let locationProximityTypes = new Map(); // location name -> 'traversed' or 'nearby'
-            
+
             // Process each point in the journey path to maintain chronological order
             for (let i = 0; i < journeyPath.length; i++) {
                 const currentPoint = journeyPath[i];
-                
+
                 // Check which regions this point is in
                 let pointRegions = new Set();
                 regionsData.regions.forEach(region => {
                     if (region.points && region.points.length >= 3) {
                         if (isPointInPolygon(currentPoint, region.points)) {
                             pointRegions.add(region.name);
-                            
+
                             if (!traversedRegions.has(region.name)) {
                                 traversedRegions.add(region.name);
                                 // Add to chronological discoveries if not already present
@@ -2977,7 +3028,7 @@
                         }
                     }
                 });
-                
+
                 // Check for regions we're exiting
                 currentRegions.forEach(regionName => {
                     if (!pointRegions.has(regionName)) {
@@ -2988,36 +3039,36 @@
                         }
                     }
                 });
-                
+
                 currentRegions = pointRegions;
-                
+
                 // Check locations at this point
                 locationsData.locations.forEach(location => {
                     if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
                         return;
                     }
-                    
+
                     const distance = Math.sqrt(
                         Math.pow(location.coordinates.x - currentPoint.x, 2) +
                         Math.pow(location.coordinates.y - currentPoint.y, 2)
                     );
-                    
+
                     if (distance <= PROXIMITY_DISTANCE) {
                         if (!nearbyLocations.has(location.name)) {
                             nearbyLocations.add(location.name);
-                            
+
                             // Determine proximity type based on distance
                             let proximityType = 'nearby'; // default for 11-50 pixels
                             if (distance <= 10) {
                                 proximityType = 'traversed'; // 0-10 pixels
                             }
-                            
+
                             // If location already exists with 'nearby', upgrade to 'traversed' if applicable
                             const existingType = locationProximityTypes.get(location.name);
                             if (!existingType || (existingType === 'nearby' && proximityType === 'traversed')) {
                                 locationProximityTypes.set(location.name, proximityType);
                             }
-                            
+
                             // Add to chronological discoveries if not already present
                             if (!journeyDiscoveries.some(d => d.name === location.name && d.type === 'location')) {
                                 journeyDiscoveries.push({
@@ -3039,7 +3090,7 @@
                             if (distance <= 10) {
                                 proximityType = 'traversed';
                             }
-                            
+
                             const existingType = locationProximityTypes.get(location.name);
                             if (existingType === 'nearby' && proximityType === 'traversed') {
                                 locationProximityTypes.set(location.name, proximityType);
@@ -3053,7 +3104,7 @@
                     }
                 });
             }
-            
+
             // Store region segments and location proximity types for duration calculation
             window.regionSegments = regionSegments;
             window.locationProximityTypes = locationProximityTypes;
@@ -3074,13 +3125,13 @@
             if (startIndex >= endIndex || startIndex < 0 || endIndex >= journeyPath.length) {
                 return 0;
             }
-            
+
             let distance = 0;
             for (let i = startIndex; i < endIndex; i++) {
                 const point1 = journeyPath[i];
                 const point2 = journeyPath[i + 1];
                 distance += Math.sqrt(
-                    Math.pow(point2.x - point1.x, 2) + 
+                    Math.pow(point2.x - point1.x, 2) +
                     Math.pow(point2.y - point1.y, 2)
                 );
             }
@@ -3103,14 +3154,14 @@
             } else if (type === 'region') {
                 data = regionsData.regions.find(reg => reg.name === discoveryName);
             }
-            
+
             if (!data) return '';
-            
+
             let content = '';
             if (data.description) {
                 content += `<div><strong>Description :</strong><br>${data.description}</div>`;
             }
-            
+
             return content;
         }
 
@@ -3127,7 +3178,7 @@
                 // Calculate travel times for each discovery
                 const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                    
+
                     // Calculate travel time to reach this discovery
                     let startIndex = 0;
                     if (index > 0) {
@@ -3140,11 +3191,11 @@
                             startIndex = prevDiscovery.discoveryIndex;
                         }
                     }
-                    
+
                     const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
                     const reachMiles = pixelsToMiles(reachDistance);
                     const reachDays = milesToDays(reachMiles);
-                    
+
                     // Check if this is a starting location (close to journey start)
                     let travelInfo;
                     if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
@@ -3189,9 +3240,9 @@
                         }
                         travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                     }
-                    
+
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
-                    
+
                     // For regions, also calculate duration inside the region
                     if (discovery.type === 'region' && window.regionSegments) {
                         const segment = window.regionSegments.get(discovery.name);
@@ -3199,7 +3250,7 @@
                             const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
-                            
+
                             // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
@@ -3208,10 +3259,10 @@
                             }
                         }
                     }
-                    
+
                     // Get tooltip content
                     const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
-                    
+
                     // Create span sans tooltip par défaut
                     return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
                 });
@@ -3223,7 +3274,7 @@
                 traversedRegionsInfo.classList.remove('hidden');
                 traversedRegionsList.innerHTML = discoveryListHTML;
                 nearbyLocationsInfo.classList.add('hidden');
-                
+
                 // Update the title to reflect mixed content
                 const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
                 if (regionsTitle) {
@@ -3248,20 +3299,20 @@
             existingTooltips.forEach(tooltip => tooltip.remove());
 
             const discoveryItems = document.querySelectorAll('.discovery-item');
-            
+
             discoveryItems.forEach(item => {
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
-                
+
                 // Remove the default browser tooltip
                 item.removeAttribute('title');
-                
+
                 item.addEventListener('mouseenter', (e) => {
                     // Highlight the corresponding location or region on the map
                     highlightDiscoveryOnMap(discoveryName, discoveryType, true);
-                    
+
                     const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
-                    
+
                     if (tooltipContent) {
                         const tooltip = document.createElement('div');
                         tooltip.className = 'discovery-tooltip';
@@ -3279,40 +3330,40 @@
                             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
                             line-height: 1.4;
                         `;
-                        
+
                         document.body.appendChild(tooltip);
-                        
+
                         // Position tooltip à gauche de l'élément
                         const rect = item.getBoundingClientRect();
                         const tooltipRect = tooltip.getBoundingClientRect();
-                        
+
                         let left = rect.left + window.scrollX - tooltipRect.width - 10;
                         let top = rect.top + window.scrollY;
-                        
+
                         // Si le tooltip déborde à gauche, le placer à droite
                         if (left < 10) {
                             left = rect.right + window.scrollX + 10;
                         }
-                        
+
                         // Ajuster si le tooltip déborde en haut
                         if (top < window.scrollY + 10) {
                             top = window.scrollY + 10;
                         }
-                        
+
                         // Ajuster si le tooltip déborde en bas
                         if (top + tooltipRect.height > window.innerHeight + window.scrollY - 10) {
                             top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
                         }
-                        
+
                         tooltip.style.left = left + 'px';
                         tooltip.style.top = top + 'px';
                     }
                 });
-                
+
                 item.addEventListener('mouseleave', () => {
                     // Remove highlight from the map
                     highlightDiscoveryOnMap(discoveryName, discoveryType, false);
-                    
+
                     const tooltips = document.querySelectorAll('.discovery-tooltip');
                     tooltips.forEach(tooltip => tooltip.remove());
                 });
@@ -3321,7 +3372,7 @@
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    
+
                     if (discoveryType === 'location') {
                         const location = locationsData.locations.find(loc => loc.name === discoveryName);
                         if (location) {
@@ -3331,9 +3382,9 @@
                                 stopPropagation: () => {},
                                 preventDefault: () => {}
                             };
-                            
+
                             showInfoBox(fakeEvent);
-                            
+
                             // Force expand the info box
                             if (!infoBox.classList.contains('expanded')) {
                                 toggleInfoBoxExpand();
@@ -3347,9 +3398,9 @@
                                 stopPropagation: () => {},
                                 preventDefault: () => {}
                             };
-                            
+
                             showRegionInfo(fakeEvent, region);
-                            
+
                             // Force expand the info box
                             if (!infoBox.classList.contains('expanded')) {
                                 toggleInfoBoxExpand();
@@ -3367,7 +3418,7 @@
                 locationMarkers.forEach(marker => {
                     const locationId = parseInt(marker.dataset.id, 10);
                     const location = locationsData.locations.find(loc => loc.id === locationId);
-                    
+
                     if (location && location.name === discoveryName) {
                         if (highlight) {
                             marker.style.borderColor = '#60a5fa'; // Light blue
@@ -3387,7 +3438,7 @@
                 regionPaths.forEach(path => {
                     const regionId = parseInt(path.dataset.regionId, 10);
                     const region = regionsData.regions.find(reg => reg.id === regionId);
-                    
+
                     if (region && region.name === discoveryName) {
                         if (highlight) {
                             path.style.stroke = '#1e40af'; // Dark blue
@@ -3420,7 +3471,7 @@
                 // Récupérer la clé API depuis le serveur
                 const configResponse = await fetch('/api/gemini/config');
                 const config = await configResponse.json();
-                
+
                 if (!config.api_key_configured || !config.api_key) {
                     console.error("Gemini API key not configured on server.");
                     buttonIcon.innerHTML = originalContent;
@@ -3435,7 +3486,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
+
                 if (!response.ok) {
                     // Try to get more details from the response body if available
                     let errorMsg = `API request failed with status ${response.status}`;
@@ -3447,7 +3498,7 @@
                     }
                     throw new Error(errorMsg);
                 }
-                
+
                 const result = await response.json();
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
                     return result.candidates[0].content.parts[0].text;
@@ -3499,10 +3550,10 @@
             if (journeyDiscoveries && journeyDiscoveries.length > 0) {
                 // Trier par ordre de découverte
                 const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-                
+
                 const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                    
+
                     // Calculer le temps pour atteindre cette découverte
                     let startIndex = 0;
                     if (index > 0) {
@@ -3514,14 +3565,15 @@
                             startIndex = prevDiscovery.discoveryIndex;
                         }
                     }
-                    
+
                     const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
                     const reachMiles = pixelsToMiles(reachDistance);
                     const reachDays = milesToDays(reachMiles);
-                    
+
                     // Vérifier si c'est un point de départ
                     let travelInfo;
                     if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
+                        // Find the actual location to check distance from start point
                         const location = locationsData.locations.find(loc => loc.name === discovery.name);
                         if (location && location.coordinates) {
                             const distanceFromStart = Math.sqrt(
@@ -3559,9 +3611,9 @@
                         }
                         travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                     }
-                    
+
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
-                    
+
                     // Pour les régions, ajouter la durée de traversée
                     if (discovery.type === 'region' && window.regionSegments) {
                         const segment = window.regionSegments.get(discovery.name);
@@ -3569,7 +3621,7 @@
                             const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
-                            
+
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -3577,7 +3629,7 @@
                             }
                         }
                     }
-                    
+
                     return displayText;
                 }).join(', ');
 
