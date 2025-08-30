@@ -405,6 +405,25 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        /* Discovery item styles */
+        .discovery-item {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            display: inline-block;
+            margin: 1px 0;
+        }
+        .discovery-item:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        /* Discovery tooltip styles */
+        .discovery-tooltip {
+            pointer-events: none;
+        }
+        .discovery-tooltip strong {
+            color: #60a5fa;
+        }
     </style>
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
@@ -3067,6 +3086,30 @@
             return Math.round(days * 2) / 2; // Round to nearest half day
         }
 
+        function getDiscoveryTooltipContent(discoveryName, type) {
+            let data;
+            if (type === 'location') {
+                data = locationsData.locations.find(loc => loc.name === discoveryName);
+            } else if (type === 'region') {
+                data = regionsData.regions.find(reg => reg.name === discoveryName);
+            }
+            
+            if (!data) return '';
+            
+            let content = '';
+            if (data.description) {
+                content += `<div><strong>Description :</strong><br>${data.description}</div>`;
+            }
+            if (data.Rumeur && data.Rumeur !== 'A définir') {
+                content += `<div style="margin-top: 10px;"><strong>Rumeurs :</strong><br>${data.Rumeur}</div>`;
+            }
+            if (data.Tradition_Ancienne && data.Tradition_Ancienne !== 'A définir') {
+                content += `<div style="margin-top: 10px;"><strong>Traditions Anciennes :</strong><br>${data.Tradition_Ancienne}</div>`;
+            }
+            
+            return content;
+        }
+
         function displayJourneyInfo() {
             const traversedRegionsInfo = document.getElementById('traversed-regions-info');
             const traversedRegionsList = document.getElementById('traversed-regions-list');
@@ -3078,7 +3121,7 @@
 
             if (chronologicalDiscoveries.length > 0) {
                 // Calculate travel times for each discovery
-                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
+                const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
                     
                     // Calculate travel time to reach this discovery
@@ -3162,12 +3205,19 @@
                         }
                     }
                     
-                    return displayText;
-                }).join(', ');
+                    // Get tooltip content
+                    const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
+                    
+                    // Create span with tooltip
+                    return `<span class="discovery-item" title="${tooltipContent.replace(/"/g, '&quot;').replace(/\n/g, ' ')}" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
+                });
+
+                // Join with line breaks instead of commas
+                const discoveryListHTML = discoveryElements.join('<br>');
 
                 // Show only one section with all discoveries
                 traversedRegionsInfo.classList.remove('hidden');
-                traversedRegionsList.innerHTML = discoveryList;
+                traversedRegionsList.innerHTML = discoveryListHTML;
                 nearbyLocationsInfo.classList.add('hidden');
                 
                 // Update the title to reflect mixed content
@@ -3177,12 +3227,76 @@
                     regionsTitle.className = 'font-semibold text-blue-400 mb-1';
                 }
 
+                // Setup enhanced tooltips
+                setupDiscoveryTooltips();
+
                 console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
             } else {
                 traversedRegionsInfo.classList.add('hidden');
                 nearbyLocationsInfo.classList.add('hidden');
                 console.log("🌟 No discoveries made");
             }
+        }
+
+        function setupDiscoveryTooltips() {
+            // Remove existing tooltips
+            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            const discoveryItems = document.querySelectorAll('.discovery-item');
+            
+            discoveryItems.forEach(item => {
+                const discoveryName = item.dataset.discoveryName;
+                const discoveryType = item.dataset.discoveryType;
+                
+                item.addEventListener('mouseenter', (e) => {
+                    const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
+                    
+                    if (tooltipContent) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'discovery-tooltip';
+                        tooltip.innerHTML = tooltipContent;
+                        tooltip.style.cssText = `
+                            position: absolute;
+                            background: rgba(17, 24, 39, 0.95);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 8px;
+                            border: 1px solid #4b5563;
+                            font-size: 14px;
+                            max-width: 320px;
+                            z-index: 1000;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                            line-height: 1.4;
+                        `;
+                        
+                        document.body.appendChild(tooltip);
+                        
+                        // Position tooltip
+                        const rect = item.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        
+                        let left = rect.left + window.scrollX;
+                        let top = rect.bottom + window.scrollY + 5;
+                        
+                        // Adjust if tooltip goes off screen
+                        if (left + tooltipRect.width > window.innerWidth) {
+                            left = window.innerWidth - tooltipRect.width - 10;
+                        }
+                        if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+                            top = rect.top + window.scrollY - tooltipRect.height - 5;
+                        }
+                        
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
+                    }
+                });
+                
+                item.addEventListener('mouseleave', () => {
+                    const tooltips = document.querySelectorAll('.discovery-tooltip');
+                    tooltips.forEach(tooltip => tooltip.remove());
+                });
+            });
         }
         document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
