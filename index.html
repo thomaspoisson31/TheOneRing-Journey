@@ -3365,7 +3365,7 @@
                 journeyDetails = `\n\nVoici son déroulement :\n${discoveryList}`;
             }
 
-            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage fait environ ${miles} miles et dure ${days} jours.${journeyDetails}\n\nDécris les paysages et lieux traversés de manière évocatrice, au temps présent. Intègre les découvertes du voyage dans un récit fluide et évocateur.`;
+            const prompt = `Rédige une courte chronique de voyage, pour un périple en Terre du Milieu de JRR Tolkien. Le voyage dure ${days} jours. Voici les étapes du voyage et leur durée associée : ${journeyDetails}.\n\n Crée un paragraphe pour chaque étape, en indiquant les jours ("Jour 1 à 3", "Jour 4", etc). Dans ces paragraphes, fais une liste à puce d'éléments de paysage ou d'ambiance notables, de manière évocatrice mais sans faire de phrase.`;
 
             const journeyLogContent = document.getElementById('journey-log-content');
             journeyLogContent.innerHTML = '<p>Génération de la chronique en cours...</p>';
