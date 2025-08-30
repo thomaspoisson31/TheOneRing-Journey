@@ -3058,7 +3058,29 @@
                     const reachMiles = pixelsToMiles(reachDistance);
                     const reachDays = milesToDays(reachMiles);
                     
-                    let displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                    // Check if this is a starting location (close to journey start)
+                    let travelInfo;
+                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
+                        // Find the actual location to check distance from start point
+                        const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                        if (location && location.coordinates) {
+                            const distanceFromStart = Math.sqrt(
+                                Math.pow(location.coordinates.x - startPoint.x, 2) +
+                                Math.pow(location.coordinates.y - startPoint.y, 2)
+                            );
+                            if (distanceFromStart <= 20) {
+                                travelInfo = "(point de départ)";
+                            } else {
+                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                            }
+                        } else {
+                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                        }
+                    } else {
+                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                    }
+                    
+                    let displayText = `${icon} ${discovery.name} ${travelInfo}`;
                     
                     // For regions, also calculate duration inside the region
                     if (discovery.type === 'region' && window.regionSegments) {
@@ -3067,7 +3089,13 @@
                             const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
-                            displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            
+                            // Replace travelInfo for regions to include duration
+                            if (travelInfo === "(point de départ)") {
+                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            } else {
+                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            }
                         }
                     }
                     
