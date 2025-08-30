@@ -3275,7 +3275,97 @@
             const miles = Math.round(totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH));
             const days = (Math.ceil((miles / 20) * 2) / 2).toFixed(1);
 
-            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage fait environ ${miles} miles et dure ${days} jours. Il commence près de '${startLocation.name}' et se termine près de '${endLocation.name}' en Eriador. Décris brièvement les paysages traversés (collines, marais, ruines...), les défis potentiels (météo, créatures errantes) et l'ambiance générale du voyage. Sois concis et évocateur.`;
+            // Générer la liste des découvertes chronologiques pour le prompt
+            let journeyDetails = '';
+            if (journeyDiscoveries && journeyDiscoveries.length > 0) {
+                // Trier par ordre de découverte
+                const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+                
+                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
+                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
+                    
+                    // Calculer le temps pour atteindre cette découverte
+                    let startIndex = 0;
+                    if (index > 0) {
+                        const prevDiscovery = chronologicalDiscoveries[index - 1];
+                        if (prevDiscovery.type === 'region' && window.regionSegments) {
+                            const segment = window.regionSegments.get(prevDiscovery.name);
+                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
+                        } else {
+                            startIndex = prevDiscovery.discoveryIndex;
+                        }
+                    }
+                    
+                    const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
+                    const reachMiles = pixelsToMiles(reachDistance);
+                    const reachDays = milesToDays(reachMiles);
+                    
+                    // Vérifier si c'est un point de départ
+                    let travelInfo;
+                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
+                        const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                        if (location && location.coordinates) {
+                            const distanceFromStart = Math.sqrt(
+                                Math.pow(location.coordinates.x - startPoint.x, 2) +
+                                Math.pow(location.coordinates.y - startPoint.y, 2)
+                            );
+                            if (distanceFromStart <= 20) {
+                                travelInfo = "(point de départ)";
+                            } else {
+                                let proximityText = '';
+                                if (discovery.proximityType === 'traversed') {
+                                    proximityText = ', traversé';
+                                } else if (discovery.proximityType === 'nearby') {
+                                    proximityText = ', passage à proximité';
+                                }
+                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                            }
+                        } else {
+                            let proximityText = '';
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                        }
+                    } else {
+                        let proximityText = '';
+                        if (discovery.type === 'location') {
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                        }
+                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                    }
+                    
+                    let displayText = `${icon} ${discovery.name} ${travelInfo}`;
+                    
+                    // Pour les régions, ajouter la durée de traversée
+                    if (discovery.type === 'region' && window.regionSegments) {
+                        const segment = window.regionSegments.get(discovery.name);
+                        if (segment) {
+                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
+                            const regionMiles = pixelsToMiles(regionDistance);
+                            const regionDays = milesToDays(regionMiles);
+                            
+                            if (travelInfo === "(point de départ)") {
+                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            } else {
+                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            }
+                        }
+                    }
+                    
+                    return displayText;
+                }).join(', ');
+
+                journeyDetails = `\n\nVoici son déroulement :\n${discoveryList}`;
+            }
+
+            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage fait environ ${miles} miles et dure ${days} jours.${journeyDetails}\n\nDécris les paysages et lieux traversés de manière évocatrice, au temps présent. Intègre les découvertes du voyage dans un récit fluide et évocateur.`;
 
             const journeyLogContent = document.getElementById('journey-log-content');
             journeyLogContent.innerHTML = '<p>Génération de la chronique en cours...</p>';
