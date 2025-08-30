@@ -424,6 +424,16 @@
         .discovery-tooltip strong {
             color: #60a5fa;
         }
+        /* Clickable discovery styles */
+        .clickable-discovery {
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-color: rgba(59, 130, 246, 0.5);
+        }
+        .clickable-discovery:hover {
+            text-decoration-color: rgba(59, 130, 246, 1);
+            background-color: rgba(59, 130, 246, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
@@ -3209,7 +3219,7 @@
                     const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
                     
                     // Create span sans tooltip par défaut
-                    return `<span class="discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
+                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
                 });
 
                 // Join with line breaks instead of commas
@@ -3311,6 +3321,47 @@
                     
                     const tooltips = document.querySelectorAll('.discovery-tooltip');
                     tooltips.forEach(tooltip => tooltip.remove());
+                });
+
+                // Add click event listener to open modal
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (discoveryType === 'location') {
+                        const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                        if (location) {
+                            // Simulate a click event on the location marker to open its info box
+                            const fakeEvent = {
+                                currentTarget: { dataset: { id: location.id.toString() } },
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+                            
+                            showInfoBox(fakeEvent);
+                            
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    } else if (discoveryType === 'region') {
+                        const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                        if (region) {
+                            // Simulate a click event on the region to open its info box
+                            const fakeEvent = {
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+                            
+                            showRegionInfo(fakeEvent, region);
+                            
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    }
                 });
             });
         }
