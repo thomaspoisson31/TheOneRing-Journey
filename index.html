@@ -3197,24 +3197,26 @@
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
 
-            // Placeholder for API Key - ideally fetch from environment variables or secure storage
-            const apiKey = "YOUR_GEMINI_API_KEY"; // IMPORTANT: Replace with your actual Gemini API key.
-
-            if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
-                 console.error("Gemini API key not configured. Please set it in the code or environment variables.");
-                 buttonIcon.innerHTML = originalContent;
-                 button.disabled = false;
-                 return "Erreur: Clé API Gemini non configurée.";
-            }
-
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
             try {
+                // Récupérer la clé API depuis le serveur
+                const configResponse = await fetch('/api/gemini/config');
+                const config = await configResponse.json();
+                
+                if (!config.api_key_configured || !config.api_key) {
+                    console.error("Gemini API key not configured on server.");
+                    buttonIcon.innerHTML = originalContent;
+                    button.disabled = false;
+                    return "Erreur: Clé API Gemini non configurée sur le serveur.";
+                }
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.api_key}`;
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                
                 if (!response.ok) {
                     // Try to get more details from the response body if available
                     let errorMsg = `API request failed with status ${response.status}`;
@@ -3222,10 +3224,11 @@
                         const errorData = await response.json();
                         errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
                     } catch (jsonError) {
-
+                        // Ignore JSON parsing errors
                     }
                     throw new Error(errorMsg);
                 }
+                
                 const result = await response.json();
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
                     return result.candidates[0].content.parts[0].text;

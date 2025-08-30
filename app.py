@@ -26,6 +26,9 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 
+# Configuration Google Gemini API
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+
 # Configuration OAuth pour Replit
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permet OAuth en développement
 
@@ -700,6 +703,14 @@ def session_test():
         'all_session_data': dict(session),
         'cookie_domain': app.config.get('SESSION_COOKIE_DOMAIN'),
         'cookie_secure': app.config.get('SESSION_COOKIE_SECURE')
+    })
+
+@app.route('/api/gemini/config')
+def get_gemini_config():
+    """Obtenir la configuration Gemini API"""
+    return jsonify({
+        'api_key_configured': bool(GOOGLE_API_KEY),
+        'api_key': GOOGLE_API_KEY if GOOGLE_API_KEY else None
     })
 
 @app.route('/auth/verify-config')
