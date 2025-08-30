@@ -3345,12 +3345,14 @@
                     
                     if (region && region.name === discoveryName) {
                         if (highlight) {
-                            path.style.stroke = '#60a5fa'; // Light blue
-                            path.style.strokeWidth = '4';
+                            path.style.stroke = '#1e40af'; // Dark blue
+                            path.style.strokeWidth = '6'; // Thicker border
+                            path.style.zIndex = '1000';
                         } else {
                             // Restore original stroke
                             path.style.stroke = colorMap[region.color] || colorMap.green;
                             path.style.strokeWidth = '2';
+                            path.style.zIndex = '';
                         }
                     }
                 });
