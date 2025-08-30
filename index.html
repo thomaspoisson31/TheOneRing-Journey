@@ -3208,8 +3208,8 @@
                     // Get tooltip content
                     const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
                     
-                    // Create span with tooltip
-                    return `<span class="discovery-item" title="${tooltipContent.replace(/"/g, '&quot;').replace(/\n/g, ' ')}" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
+                    // Create span sans tooltip par défaut
+                    return `<span class="discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
                 });
 
                 // Join with line breaks instead of commas
@@ -3249,6 +3249,9 @@
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
                 
+                // Remove the default browser tooltip
+                item.removeAttribute('title');
+                
                 item.addEventListener('mouseenter', (e) => {
                     const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
                     
@@ -3272,19 +3275,26 @@
                         
                         document.body.appendChild(tooltip);
                         
-                        // Position tooltip
+                        // Position tooltip à gauche de l'élément
                         const rect = item.getBoundingClientRect();
                         const tooltipRect = tooltip.getBoundingClientRect();
                         
-                        let left = rect.left + window.scrollX;
-                        let top = rect.bottom + window.scrollY + 5;
+                        let left = rect.left + window.scrollX - tooltipRect.width - 10;
+                        let top = rect.top + window.scrollY;
                         
-                        // Adjust if tooltip goes off screen
-                        if (left + tooltipRect.width > window.innerWidth) {
-                            left = window.innerWidth - tooltipRect.width - 10;
+                        // Si le tooltip déborde à gauche, le placer à droite
+                        if (left < 10) {
+                            left = rect.right + window.scrollX + 10;
                         }
-                        if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
-                            top = rect.top + window.scrollY - tooltipRect.height - 5;
+                        
+                        // Ajuster si le tooltip déborde en haut
+                        if (top < window.scrollY + 10) {
+                            top = window.scrollY + 10;
+                        }
+                        
+                        // Ajuster si le tooltip déborde en bas
+                        if (top + tooltipRect.height > window.innerHeight + window.scrollY - 10) {
+                            top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
                         }
                         
                         tooltip.style.left = left + 'px';
