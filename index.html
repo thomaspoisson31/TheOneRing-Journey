@@ -2912,6 +2912,9 @@
             let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
             let currentRegions = new Set(); // regions currently being traversed
             
+            // Track location proximity types
+            let locationProximityTypes = new Map(); // location name -> 'traversed' or 'nearby'
+            
             // Process each point in the journey path to maintain chronological order
             for (let i = 0; i < journeyPath.length; i++) {
                 const currentPoint = journeyPath[i];
@@ -2973,21 +2976,58 @@
                     if (distance <= PROXIMITY_DISTANCE) {
                         if (!nearbyLocations.has(location.name)) {
                             nearbyLocations.add(location.name);
+                            
+                            // Determine proximity type based on distance
+                            let proximityType = 'nearby'; // default for 11-50 pixels
+                            if (distance <= 10) {
+                                proximityType = 'traversed'; // 0-10 pixels
+                            }
+                            
+                            // If location already exists with 'nearby', upgrade to 'traversed' if applicable
+                            const existingType = locationProximityTypes.get(location.name);
+                            if (!existingType || (existingType === 'nearby' && proximityType === 'traversed')) {
+                                locationProximityTypes.set(location.name, proximityType);
+                            }
+                            
                             // Add to chronological discoveries if not already present
                             if (!journeyDiscoveries.some(d => d.name === location.name && d.type === 'location')) {
                                 journeyDiscoveries.push({
                                     name: location.name,
                                     type: 'location',
-                                    discoveryIndex: i
+                                    discoveryIndex: i,
+                                    proximityType: locationProximityTypes.get(location.name)
                                 });
+                            } else {
+                                // Update existing discovery with new proximity type if better
+                                const existingDiscovery = journeyDiscoveries.find(d => d.name === location.name && d.type === 'location');
+                                if (existingDiscovery) {
+                                    existingDiscovery.proximityType = locationProximityTypes.get(location.name);
+                                }
+                            }
+                        } else {
+                            // Location already discovered, but check if we need to upgrade proximity type
+                            let proximityType = 'nearby';
+                            if (distance <= 10) {
+                                proximityType = 'traversed';
+                            }
+                            
+                            const existingType = locationProximityTypes.get(location.name);
+                            if (existingType === 'nearby' && proximityType === 'traversed') {
+                                locationProximityTypes.set(location.name, proximityType);
+                                // Update existing discovery
+                                const existingDiscovery = journeyDiscoveries.find(d => d.name === location.name && d.type === 'location');
+                                if (existingDiscovery) {
+                                    existingDiscovery.proximityType = proximityType;
+                                }
                             }
                         }
                     }
                 });
             }
             
-            // Store region segments for duration calculation
+            // Store region segments and location proximity types for duration calculation
             window.regionSegments = regionSegments;
+            window.locationProximityTypes = locationProximityTypes;
         }
 
         function isPointInPolygon(point, polygon) {
@@ -3071,13 +3111,36 @@
                             if (distanceFromStart <= 20) {
                                 travelInfo = "(point de départ)";
                             } else {
-                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                                // Add proximity information for locations
+                                let proximityText = '';
+                                if (discovery.proximityType === 'traversed') {
+                                    proximityText = ', traversé';
+                                } else if (discovery.proximityType === 'nearby') {
+                                    proximityText = ', passage à proximité';
+                                }
+                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                             }
                         } else {
-                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                            // Add proximity information for locations
+                            let proximityText = '';
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                         }
                     } else {
-                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''})`;
+                        // Add proximity information for locations
+                        let proximityText = '';
+                        if (discovery.type === 'location') {
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                        }
+                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                     }
                     
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
