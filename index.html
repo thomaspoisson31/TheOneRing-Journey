@@ -304,35 +304,30 @@
             box-sizing: border-box;
         }
         .image-view.expanded-mode img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
+            max-width: calc(100vw - 120px);
+            max-height: calc(100vh - 200px);
+            width: auto !important;
+            height: auto !important;
             object-fit: contain;
             cursor: pointer;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
-        .image-view.compact-mode {
-            justify-content: center;
-            padding: 1rem;
-            box-sizing: border-box;
-        }
         .image-view.compact-mode img {
-            max-width: 100%;
-            max-height: calc(100% - 4rem);
-            width: auto;
-            height: auto;
+            max-width: 260px;
+            max-height: 180px;
+            width: auto !important;
+            height: auto !important;
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             cursor: pointer;
         }
         .image-view img {
-            max-width: 100%;
-            max-height: calc(100% - 4rem);
-            width: auto;
-            height: auto;
+            max-width: 260px;
+            max-height: 180px;
+            width: auto !important;
+            height: auto !important;
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
@@ -1771,12 +1766,6 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
-        }
-
-        // --- Info box sizing/positioning ---
-        function getToolbarRect() {
-            const toolbar = document.getElementById('toolbar');
-            return toolbar ? toolbar.getBoundingClientRect() : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
         }
 
         function positionInfoBoxCompact(event) {
@@ -3667,7 +3656,7 @@
 
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
 
-                    // Pour les régions, ajouter la durée de traversée
+                    // For regions, also calculate duration inside the region
                     if (discovery.type === 'region' && window.regionSegments) {
                         const segment = window.regionSegments.get(discovery.name);
                         if (segment) {
@@ -3675,6 +3664,7 @@
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
 
+                            // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -3683,38 +3673,260 @@
                         }
                     }
 
-                    return displayText;
-                }).join(', ');
+                    // Get tooltip content
+                    const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
 
-                journeyDetails = `\n\nVoici son déroulement :\n${discoveryList}`;
+                    // Create span sans tooltip par défaut
+                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
+                });
+
+                // Join with line breaks instead of commas
+                const discoveryListHTML = discoveryElements.join('<br>');
+
+                // Show only one section with all discoveries
+                traversedRegionsInfo.classList.remove('hidden');
+                traversedRegionsList.innerHTML = discoveryListHTML;
+                nearbyLocationsInfo.classList.add('hidden');
+
+                // Update the title to reflect mixed content
+                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
+                if (regionsTitle) {
+                    regionsTitle.textContent = 'Découvertes du voyage :';
+                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
+                }
+
+                // Setup enhanced tooltips
+                setupDiscoveryTooltips();
+
+                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
+            } else {
+                traversedRegionsInfo.classList.add('hidden');
+                nearbyLocationsInfo.classList.add('hidden');
+                console.log("🌟 No discoveries made");
             }
-
-            const prompt = `Rédige une courte chronique de voyage, pour un périple en Terre du Milieu de JRR Tolkien. Le voyage dure ${days} jours. Voici les étapes du voyage et leur durée associée : ${journeyDetails}.\n\n Crée un paragraphe pour chaque étape, en indiquant les jours ("Jour 1 à 3", "Jour 4", etc). Dans ces paragraphes, fais une liste à puce d'éléments de paysage ou d'ambiance notables, de manière évocatrice mais sans faire de phrase.`;
-
-            const journeyLogContent = document.getElementById('journey-log-content');
-            journeyLogContent.innerHTML = '<p>Génération de la chronique en cours...</p>';
-            journeyLogModal.classList.remove('hidden');
-
-            const result = await callGemini(prompt, button);
-            journeyLogContent.innerHTML = result.replace(/\n/g, '<br>');
         }
 
-        async function handleGenerateDescription(event) {
-            const button = event.currentTarget;
-            const modal = button.closest('.bg-gray-900');
-            const nameInput = modal.querySelector('input[type="text"]');
-            const descTextarea = modal.querySelector('textarea');
-            const locationName = nameInput.value;
+        function setupDiscoveryTooltips() {
+            // Remove existing tooltips
+            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
 
-            if (!locationName) {
-                alert("Veuillez d'abord entrer un nom pour le lieu.");
-                return;
+            const discoveryItems = document.querySelectorAll('.discovery-item');
+
+            discoveryItems.forEach(item => {
+                const discoveryName = item.dataset.discoveryName;
+                const discoveryType = item.dataset.discoveryType;
+
+                // Remove the default browser tooltip
+                item.removeAttribute('title');
+
+                item.addEventListener('mouseenter', (e) => {
+                    // Highlight the corresponding location or region on the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+
+                    const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
+
+                    if (tooltipContent) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'discovery-tooltip';
+                        tooltip.innerHTML = tooltipContent;
+                        tooltip.style.cssText = `
+                            position: absolute;
+                            background: rgba(17, 24, 39, 0.95);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 8px;
+                            border: 1px solid #4b5563;
+                            font-size: 14px;
+                            max-width: 320px;
+                            z-index: 1000;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                            line-height: 1.4;
+                        `;
+
+                        document.body.appendChild(tooltip);
+
+                        // Position tooltip à gauche de l'élément
+                        const rect = item.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
+
+                        let left = rect.left + window.scrollX - tooltipRect.width - 10;
+                        let top = rect.top + window.scrollY;
+
+                        // Si le tooltip déborde à gauche, le placer à droite
+                        if (left < 10) {
+                            left = rect.right + window.scrollX + 10;
+                        }
+
+                        // Ajuster si le tooltip déborde en haut
+                        if (top < window.scrollY + 10) {
+                            top = window.scrollY + 10;
+                        }
+
+                        // Ajuster si le tooltip déborde en bas
+                        if (top + tooltipRect.height > window.innerHeight + window.scrollY - 10) {
+                            top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+                        }
+
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
+                    }
+                });
+
+                item.addEventListener('mouseleave', () => {
+                    // Remove highlight from the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, false);
+
+                    const tooltips = document.querySelectorAll('.discovery-tooltip');
+                    tooltips.forEach(tooltip => tooltip.remove());
+                });
+
+                // Add click event listener to open modal
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (discoveryType === 'location') {
+                        const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                        if (location) {
+                            // Simulate a click event on the location marker to open its info box
+                            const fakeEvent = {
+                                currentTarget: { dataset: { id: location.id.toString() } },
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+
+                            showInfoBox(fakeEvent);
+
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    } else if (discoveryType === 'region') {
+                        const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                        if (region) {
+                            // Simulate a click event on the region to open its info box
+                            const fakeEvent = {
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+
+                            showRegionInfo(fakeEvent, region);
+
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
+            if (discoveryType === 'location') {
+                // Find and highlight location marker
+                const locationMarkers = document.querySelectorAll('.location-marker');
+                locationMarkers.forEach(marker => {
+                    const locationId = parseInt(marker.dataset.id, 10);
+                    const location = locationsData.locations.find(loc => loc.id === locationId);
+
+                    if (location && location.name === discoveryName) {
+                        if (highlight) {
+                            marker.style.borderColor = '#60a5fa'; // Light blue
+                            marker.style.borderWidth = '6px';
+                            marker.style.zIndex = '1000';
+                        } else {
+                            // Restore original border
+                            marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                            marker.style.borderWidth = '4px';
+                            marker.style.zIndex = '';
+                        }
+                    }
+                });
+            } else if (discoveryType === 'region') {
+                // Find and highlight region path
+                const regionPaths = regionsLayer.querySelectorAll('.region');
+                regionPaths.forEach(path => {
+                    const regionId = parseInt(path.dataset.regionId, 10);
+                    const region = regionsData.regions.find(reg => reg.id === regionId);
+
+                    if (region && region.name === discoveryName) {
+                        if (highlight) {
+                            path.style.stroke = '#1e40af'; // Dark blue
+                            path.style.strokeWidth = '6'; // Thicker border
+                            path.style.zIndex = '1000';
+                        } else {
+                            // Restore original stroke
+                            path.style.stroke = colorMap[region.color] || colorMap.green;
+                            path.style.strokeWidth = '2';
+                            path.style.zIndex = '';
+                        }
+                    }
+                });
             }
+        }
+        document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
+        document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
-            const prompt = `Rédige une courte description évocatrice pour un lieu de la Terre du Milieu nommé '${locationName}'. Décris son apparence, son atmosphère et son histoire possible, dans le style de J.R.R. Tolkien. Sois concis.`;
+        // --- Gemini API Functions ---
+        async function callGemini(prompt, button) {
+            const buttonIcon = button.querySelector('.gemini-icon') || button;
+            const originalContent = buttonIcon.innerHTML;
+            buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
+            button.disabled = true;
 
-            const result = await callGemini(prompt, button);
-            descTextarea.value = result;
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+
+            try {
+                // Récupérer la clé API depuis le serveur
+                const configResponse = await fetch('/api/gemini/config');
+                const config = await configResponse.json();
+
+                if (!config.api_key_configured || !config.api_key) {
+                    console.error("Gemini API key not configured on server.");
+                    buttonIcon.innerHTML = originalContent;
+                    button.disabled = false;
+                    return "Erreur: Clé API Gemini non configurée sur le serveur.";
+                }
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.api_key}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    // Try to get more details from the response body if available
+                    let errorMsg = `API request failed with status ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
+                    } catch (jsonError) {
+                        // Ignore JSON parsing errors
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    // Handle cases where the response might be empty or malformed
+                    console.warn("Received empty or malformed response from Gemini API:", result);
+                    throw new Error("Invalid response structure from API");
+                }
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                return `Désolé, une erreur est survenue lors de la génération du texte: ${error.message}`;
+            } finally {
+                buttonIcon.innerHTML = originalContent;
+                button.disabled = false;
+            }
         }
 
         // --- Google Authentication Functions ---
