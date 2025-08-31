@@ -4117,6 +4117,19 @@
             currentSegmentIndex = voyageSegments.length - 1;
 
             console.log(`✅ Segment ${newSegment.id} confirmé:`, newSegment);
+            
+            // Check if we need to continue with more segments
+            const totalJourneyDays = getTotalJourneyDays();
+            const totalSegmentDays = getTotalSegmentDays();
+            
+            console.log(`📊 Durée totale du voyage: ${totalJourneyDays} jours, segments couverts: ${totalSegmentDays} jours`);
+            
+            if (totalSegmentDays < totalJourneyDays) {
+                // Still need more segments, reset to new segment form
+                currentSegmentIndex = -1;
+                console.log(`🔄 Segments supplémentaires nécessaires (${totalJourneyDays - totalSegmentDays} jours restants)`);
+            }
+            
             updateVoyageSegmentsDisplay();
             scheduleAutoSync();
         }
@@ -4137,45 +4150,28 @@
                 return [];
             }
 
-            // Calculate the starting point for this segment
+            // Calculate the starting point for this segment (cumulative duration of previous segments)
             let totalPreviousDuration = 0;
             for (let i = 0; i < voyageSegments.length; i++) {
                 totalPreviousDuration += voyageSegments[i].duration;
             }
 
             const steps = [];
-            let currentDuration = 0;
 
             // Sort discoveries by discovery order
             const sortedDiscoveries = [...currentVoyage.journeyDiscoveries].sort((a, b) => a.discoveryIndex - b.discoveryIndex);
 
+            // Calculate the reach time for each discovery from the start of the journey
             for (const discovery of sortedDiscoveries) {
-                // Calculate when this discovery is reached
                 let reachTime = 0;
-                let previousDiscoveryIndex = 0;
 
-                for (let i = 0; i < sortedDiscoveries.length; i++) {
-                    if (sortedDiscoveries[i].name === discovery.name && sortedDiscoveries[i].type === discovery.type) {
-                        break;
-                    }
-                    const prevDiscovery = sortedDiscoveries[i];
-
-                    if (prevDiscovery.type === 'region' && window.regionSegments) {
-                        const segment = window.regionSegments.get(prevDiscovery.name);
-                        if (segment) {
-                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
-                            const regionMiles = pixelsToMiles(regionDistance);
-                            const regionDays = milesToDays(regionMiles);
-                            reachTime += regionDays;
-                        }
-                    }
-
-                    const reachDistance = calculatePathDistance(previousDiscoveryIndex, prevDiscovery.discoveryIndex);
+                // Calculate reach time based on discovery index in journey path
+                if (discovery.discoveryIndex > 0) {
+                    const reachDistance = calculatePathDistance(0, discovery.discoveryIndex);
                     const reachMiles = pixelsToMiles(reachDistance);
-                    const reachDays = milesToDays(reachMiles);
-                    reachTime += reachDays;
-
-                    previousDiscoveryIndex = prevDiscovery.discoveryIndex;
+                    reachTime = milesToDays(reachMiles);
+                } else {
+                    reachTime = 0; // Starting point
                 }
 
                 // Check if this discovery falls within the current segment timeframe
@@ -4188,6 +4184,17 @@
                             stepDescription += ' (traversé)';
                         } else if (discovery.proximityType === 'nearby') {
                             stepDescription += ' (passage à proximité)';
+                        }
+                    }
+
+                    // Add timing information for regions
+                    if (discovery.type === 'region' && window.regionSegments) {
+                        const segment = window.regionSegments.get(discovery.name);
+                        if (segment) {
+                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
+                            const regionMiles = pixelsToMiles(regionDistance);
+                            const regionDays = milesToDays(regionMiles);
+                            stepDescription += ` (durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                         }
                     }
 
@@ -4244,10 +4251,22 @@
                 }
             }
 
-            // Update segments list
+            // Update segments list with voyage progress info
             if (voyageSegments.length === 0) {
                 segmentsList.innerHTML = '<em class="text-gray-500 text-sm">Aucun segment</em>';
             } else {
+                const totalJourneyDays = getTotalJourneyDays();
+                const totalSegmentDays = getTotalSegmentDays();
+                const remainingDays = getRemainingJourneyDays();
+                
+                const progressInfo = isVoyageActive ? `
+                    <div class="mb-3 p-2 bg-blue-900/30 border border-blue-700 rounded text-xs">
+                        <div class="font-semibold text-blue-300">Progression du voyage:</div>
+                        <div class="text-gray-300">${totalSegmentDays.toFixed(1)} / ${totalJourneyDays.toFixed(1)} jours</div>
+                        ${remainingDays > 0 ? `<div class="text-yellow-300">${remainingDays.toFixed(1)} jours restants</div>` : '<div class="text-green-300">Voyage complet!</div>'}
+                    </div>
+                ` : '';
+
                 const segmentsHtml = voyageSegments.map((segment, index) => `
                     <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-2 ring-blue-500' : ''}" 
                          onclick="selectSegment(${index})">
@@ -4256,7 +4275,8 @@
                         <div class="text-xs text-green-400">${segment.status === 'completed' ? 'Terminé' : 'En cours'}</div>
                     </div>
                 `).join('');
-                segmentsList.innerHTML = segmentsHtml;
+                
+                segmentsList.innerHTML = progressInfo + segmentsHtml;
             }
 
             // Update right panel
@@ -4278,9 +4298,20 @@
                 displaySelectedSegment();
             }
 
-            // Show new segment form if voyage is active and no specific segment is selected
+            // Update new segment form title and finish button visibility
             if (isVoyageActive && currentSegmentIndex === -1) {
-                newSegmentForm.classList.remove('hidden');
+                const remainingDays = getRemainingJourneyDays();
+                const formTitle = document.querySelector('#new-segment-form h4');
+                if (formTitle) {
+                    if (remainingDays > 0) {
+                        formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)} jours restants)`;
+                        document.getElementById('finish-voyage-btn').style.display = 'inline-block';
+                    } else {
+                        formTitle.textContent = 'Voyage Terminé';
+                        document.getElementById('finish-voyage-btn').style.display = 'inline-block';
+                        document.getElementById('confirm-segment-btn').style.display = 'none';
+                    }
+                }
             }
         }
 
@@ -4308,6 +4339,22 @@
 
             // Hide event for now (will be implemented later)
             document.getElementById('segment-event').classList.add('hidden');
+        }
+
+        function getTotalJourneyDays() {
+            if (!currentVoyage || !currentVoyage.totalDistance) {
+                return 0;
+            }
+            const totalMiles = pixelsToMiles(currentVoyage.totalDistance);
+            return milesToDays(totalMiles);
+        }
+
+        function getTotalSegmentDays() {
+            return voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+        }
+
+        function getRemainingJourneyDays() {
+            return Math.max(0, getTotalJourneyDays() - getTotalSegmentDays());
         }
 
         // Make selectSegment available globally
