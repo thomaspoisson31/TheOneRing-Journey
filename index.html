@@ -466,10 +466,7 @@
             <button id="gemini-btn" title="Générer du texte avec Gemini" class="w-10 h-10 bg-gray-700 hover:bg-purple-600 rounded transition-colors">
                 <i class="fas fa-magic"></i>
             </button>
-            <!-- Voyager Button -->
-            <button id="voyage-segments-btn" title="Gérer les segments de voyage" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
-                <i class="fas fa-route"></i>
-            </button>
+            
         </div>
 
         <!-- Filter Panel -->
@@ -510,10 +507,13 @@
 
         <!-- Distance Display -->
         <div id="distance-container" class="hidden absolute top-4 right-4 z-10 bg-gray-900 bg-opacity-80 p-3 rounded-lg shadow-xl border border-gray-700 text-sm max-w-xs">
-            <div class="flex items-center space-x-4 mb-2">
+            <div class="flex items-center space-x-2 mb-2">
                 <div id="distance-display" class="text-lg"></div>
                 <button id="generate-journey-log" title="Générer une chronique de voyage" class="bg-purple-600 hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
                     <span class="gemini-icon">✨</span>
+                </button>
+                <button id="voyage-segments-btn" title="Gérer les segments de voyage" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
+                    <i class="fas fa-route"></i>
                 </button>
             </div>
             <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2">
@@ -738,66 +738,71 @@
         </div>
 
         <!-- Voyage Segments Modal -->
-        <div id="voyage-segments-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4">
-            <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Gestion des Segments de Voyage</h3>
-                    <button id="close-voyage-segments" class="text-gray-400 hover:text-white"><i class="fas fa-times fa-lg"></i></button>
+        <div id="voyage-segments-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center p-4">
+            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col absolute top-4 right-4">
+                <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                    <h3 class="text-lg font-bold">Segments de Voyage</h3>
+                    <button id="close-voyage-segments" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
 
-                <div class="flex flex-grow overflow-hidden space-x-4">
-                    <!-- Segments List Panel -->
-                    <div class="w-1/3 bg-gray-850 rounded-lg p-4 overflow-y-auto border border-gray-700">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold">Segments</h4>
-                            <button id="start-voyage-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">Démarrer un voyage</button>
+                <div class="flex-grow overflow-hidden flex flex-col">
+                    <!-- Control Panel -->
+                    <div class="p-4 border-b border-gray-700">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-semibold text-sm">Contrôles</h4>
+                            <button id="start-voyage-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer</button>
                         </div>
-                        <div id="segments-list">
-                            <em class="text-gray-500 text-sm">Tracez un chemin pour démarrer.</em>
+                        <div id="voyage-progress" class="hidden text-xs bg-blue-900/30 border border-blue-700 rounded p-2">
+                            <div class="font-semibold text-blue-300">Progression:</div>
+                            <div id="progress-text" class="text-gray-300"></div>
                         </div>
                     </div>
 
-                    <!-- Segment Details Panel -->
-                    <div class="w-2/3 bg-gray-850 rounded-lg p-4 overflow-y-auto border border-gray-700 flex flex-col">
-                        <div id="no-voyage-message" class="flex-1 flex items-center justify-center text-center text-gray-500">
-                            Tracez un chemin sur la carte et cliquez sur l'icône <i class="fas fa-route mx-1 text-green-500"></i> pour démarrer un voyage.
+                    <!-- Segments List -->
+                    <div class="p-4 border-b border-gray-700">
+                        <h4 class="font-semibold text-sm mb-3">Segments créés</h4>
+                        <div id="segments-list" class="space-y-2 max-h-32 overflow-y-auto">
+                            <em class="text-gray-500 text-xs">Aucun segment</em>
+                        </div>
+                    </div>
+
+                    <!-- Active Panel -->
+                    <div class="flex-1 p-4 overflow-y-auto">
+                        <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-32">
+                            Tracez un chemin sur la carte et cliquez "Démarrer" pour créer un voyage.
                         </div>
 
-                        <div id="new-segment-form" class="hidden flex-1 flex flex-col justify-between">
-                            <div>
-                                <h4 class="font-bold text-lg mb-3">Nouveau Segment</h4>
-                                <label for="segment-duration" class="block text-sm font-medium text-gray-300 mb-2">Durée du segment (jours, 1-6)</label>
+                        <div id="new-segment-form" class="hidden">
+                            <h4 class="font-semibold text-sm mb-3">Nouveau Segment</h4>
+                            <div class="mb-3">
+                                <label for="segment-duration" class="block text-xs font-medium text-gray-300 mb-1">Durée (jours)</label>
                                 <input type="range" id="segment-duration" min="1" max="6" value="3" class="w-full accent-blue-500">
                                 <div class="flex justify-between text-xs text-gray-400"><span>1</span><span>6</span></div>
-                                <div class="mt-4 mb-3 text-sm font-semibold">Aperçu des étapes :</div>
-                                <div id="segment-preview" class="bg-gray-700 p-3 rounded-md text-sm h-40 overflow-y-auto border border-gray-600">
-                                    <em class="text-gray-500">Ajustez la durée pour voir l'aperçu.</em>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-xs font-semibold mb-1">Aperçu des étapes:</div>
+                                <div id="segment-preview" class="bg-gray-800 p-2 rounded text-xs h-24 overflow-y-auto border border-gray-600">
+                                    <em class="text-gray-500">Ajustez la durée...</em>
                                 </div>
                             </div>
-                            <div class="mt-4 flex justify-end">
-                                <button id="confirm-segment-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg mr-2">Confirmer le segment</button>
-                                <button id="finish-voyage-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">Terminer le voyage</button>
+                            <div class="flex gap-2">
+                                <button id="confirm-segment-btn" class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 rounded text-sm">Confirmer</button>
+                                <button id="finish-voyage-btn" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-sm">Terminer</button>
                             </div>
                         </div>
 
-                        <div id="segment-display" class="hidden flex-1 flex flex-col justify-between">
-                            <div>
-                                <h4 class="font-bold text-lg mb-3" id="segment-title"></h4>
-                                <div class="mb-3">
-                                    <span class="text-sm font-semibold">Durée : </span>
-                                    <span id="segment-duration-display"></span> jours
-                                </div>
-                                <div class="mb-3">
-                                    <span class="text-sm font-semibold">Statut : </span>
-                                    <span id="segment-status" class="px-2 py-1 rounded text-xs"></span>
-                                </div>
-                                <div class="text-sm font-semibold mb-2">Étapes du segment :</div>
-                                <div id="segment-steps" class="text-gray-300 h-40 overflow-y-auto border border-gray-600 p-3 rounded-md"></div>
-                                <div id="segment-event" class="mt-4 p-3 bg-yellow-900/50 border border-yellow-700 rounded-md hidden">
-                                    <div class="font-semibold text-yellow-400 mb-1">Événement de voyage :</div>
-                                    <p class="text-sm text-gray-300">À définir plus tard...</p>
-                                </div>
+                        <div id="segment-display" class="hidden">
+                            <h4 class="font-semibold text-sm mb-2" id="segment-title"></h4>
+                            <div class="text-xs mb-2">
+                                <span class="font-semibold">Durée: </span>
+                                <span id="segment-duration-display"></span> jours
                             </div>
+                            <div class="text-xs mb-3">
+                                <span class="font-semibold">Statut: </span>
+                                <span id="segment-status" class="px-1 py-0.5 rounded text-xs"></span>
+                            </div>
+                            <div class="text-xs font-semibold mb-1">Étapes:</div>
+                            <div id="segment-steps" class="text-xs text-gray-300 h-32 overflow-y-auto border border-gray-600 p-2 rounded bg-gray-800"></div>
                         </div>
                     </div>
                 </div>
@@ -4237,12 +4242,25 @@
             const noVoyageMessage = document.getElementById('no-voyage-message');
             const newSegmentForm = document.getElementById('new-segment-form');
             const segmentDisplay = document.getElementById('segment-display');
+            const voyageProgress = document.getElementById('voyage-progress');
+            const progressText = document.getElementById('progress-text');
 
             // Update start button
             if (isVoyageActive) {
                 startBtn.style.display = 'none';
+                voyageProgress.classList.remove('hidden');
+                
+                const totalJourneyDays = getTotalJourneyDays();
+                const totalSegmentDays = getTotalSegmentDays();
+                const remainingDays = getRemainingJourneyDays();
+                
+                progressText.innerHTML = `
+                    <div>${totalSegmentDays.toFixed(1)} / ${totalJourneyDays.toFixed(1)} jours</div>
+                    ${remainingDays > 0 ? `<div class="text-yellow-300">${remainingDays.toFixed(1)} jours restants</div>` : '<div class="text-green-300">Complet!</div>'}
+                `;
             } else {
                 startBtn.style.display = 'inline-block';
+                voyageProgress.classList.add('hidden');
                 startBtn.disabled = journeyPath.length === 0;
                 if (journeyPath.length === 0) {
                     startBtn.title = "Tracez d'abord un chemin sur la carte";
@@ -4251,35 +4269,22 @@
                 }
             }
 
-            // Update segments list with voyage progress info
+            // Update segments list
             if (voyageSegments.length === 0) {
-                segmentsList.innerHTML = '<em class="text-gray-500 text-sm">Aucun segment</em>';
+                segmentsList.innerHTML = '<em class="text-gray-500 text-xs">Aucun segment</em>';
             } else {
-                const totalJourneyDays = getTotalJourneyDays();
-                const totalSegmentDays = getTotalSegmentDays();
-                const remainingDays = getRemainingJourneyDays();
-                
-                const progressInfo = isVoyageActive ? `
-                    <div class="mb-3 p-2 bg-blue-900/30 border border-blue-700 rounded text-xs">
-                        <div class="font-semibold text-blue-300">Progression du voyage:</div>
-                        <div class="text-gray-300">${totalSegmentDays.toFixed(1)} / ${totalJourneyDays.toFixed(1)} jours</div>
-                        ${remainingDays > 0 ? `<div class="text-yellow-300">${remainingDays.toFixed(1)} jours restants</div>` : '<div class="text-green-300">Voyage complet!</div>'}
-                    </div>
-                ` : '';
-
                 const segmentsHtml = voyageSegments.map((segment, index) => `
-                    <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-2 ring-blue-500' : ''}" 
+                    <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-1 ring-blue-500' : ''}" 
                          onclick="selectSegment(${index})">
-                        <div class="font-semibold">Segment ${segment.id}</div>
-                        <div class="text-sm text-gray-400">${segment.duration} jours - ${segment.steps.length} étapes</div>
-                        <div class="text-xs text-green-400">${segment.status === 'completed' ? 'Terminé' : 'En cours'}</div>
+                        <div class="font-semibold text-xs">Segment ${segment.id}</div>
+                        <div class="text-xs text-gray-400">${segment.duration}j - ${segment.steps.length} étapes</div>
                     </div>
                 `).join('');
                 
-                segmentsList.innerHTML = progressInfo + segmentsHtml;
+                segmentsList.innerHTML = segmentsHtml;
             }
 
-            // Update right panel
+            // Update active panel
             if (!isVoyageActive) {
                 noVoyageMessage.classList.remove('hidden');
                 newSegmentForm.classList.add('hidden');
@@ -4290,21 +4295,13 @@
                 newSegmentForm.classList.remove('hidden');
                 segmentDisplay.classList.add('hidden');
                 updateSegmentPreview();
-            } else {
-                // Show selected segment
-                noVoyageMessage.classList.add('hidden');
-                newSegmentForm.classList.add('hidden');
-                segmentDisplay.classList.remove('hidden');
-                displaySelectedSegment();
-            }
-
-            // Update new segment form title and finish button visibility
-            if (isVoyageActive && currentSegmentIndex === -1) {
+                
+                // Update form title
                 const remainingDays = getRemainingJourneyDays();
                 const formTitle = document.querySelector('#new-segment-form h4');
                 if (formTitle) {
                     if (remainingDays > 0) {
-                        formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)} jours restants)`;
+                        formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
                         document.getElementById('finish-voyage-btn').style.display = 'inline-block';
                     } else {
                         formTitle.textContent = 'Voyage Terminé';
@@ -4312,6 +4309,12 @@
                         document.getElementById('confirm-segment-btn').style.display = 'none';
                     }
                 }
+            } else {
+                // Show selected segment
+                noVoyageMessage.classList.add('hidden');
+                newSegmentForm.classList.add('hidden');
+                segmentDisplay.classList.remove('hidden');
+                displaySelectedSegment();
             }
         }
 
