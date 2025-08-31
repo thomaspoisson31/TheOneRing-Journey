@@ -4313,6 +4313,44 @@
         // Make selectSegment available globally
         window.selectSegment = selectSegment;
 
+        // --- Event listeners pour les segments de voyage ---
+        document.getElementById('voyage-segments-btn').addEventListener('click', () => {
+            console.log("🚢 Bouton segments de voyage cliqué");
+            const modal = document.getElementById('voyage-segments-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                updateVoyageSegmentsDisplay();
+            }
+        });
+
+        document.getElementById('close-voyage-segments').addEventListener('click', () => {
+            console.log("❌ Fermeture modal segments de voyage");
+            const modal = document.getElementById('voyage-segments-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('start-voyage-btn').addEventListener('click', () => {
+            console.log("🚢 Démarrage du voyage");
+            handleStartVoyage();
+        });
+
+        document.getElementById('segment-duration').addEventListener('input', () => {
+            console.log("📏 Changement de durée de segment");
+            updateSegmentPreview();
+        });
+
+        document.getElementById('confirm-segment-btn').addEventListener('click', () => {
+            console.log("✅ Confirmation du segment");
+            handleConfirmSegment();
+        });
+
+        document.getElementById('finish-voyage-btn').addEventListener('click', () => {
+            console.log("🏁 Fin du voyage");
+            handleFinishVoyage();
+        });
+
     </script>
 </body>
 </html>
