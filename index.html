@@ -1272,6 +1272,55 @@
                 const newImg = img.cloneNode(true);
                 img.parentNode.replaceChild(newImg, img);
 
+                // Create debug info element
+                const debugInfo = document.createElement('div');
+                debugInfo.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-family: monospace;
+                    z-index: 1001;
+                    display: none;
+                    line-height: 1.4;
+                `;
+                newImg.parentNode.style.position = 'relative';
+                newImg.parentNode.appendChild(debugInfo);
+
+                // Add mouseenter event to show debug info
+                newImg.addEventListener('mouseenter', (e) => {
+                    const imageView = newImg.closest('.image-view');
+                    const modal = newImg.closest('#info-box');
+                    
+                    // Get container dimensions
+                    const imageViewRect = imageView.getBoundingClientRect();
+                    const modalRect = modal.getBoundingClientRect();
+                    
+                    // Get image dimensions
+                    const imgRect = newImg.getBoundingClientRect();
+                    
+                    debugInfo.innerHTML = `
+                        <strong>Modale:</strong><br>
+                        ${Math.round(modalRect.width)}px × ${Math.round(modalRect.height)}px<br>
+                        <strong>Zone image:</strong><br>
+                        ${Math.round(imageViewRect.width)}px × ${Math.round(imageViewRect.height)}px<br>
+                        <strong>Image affichée:</strong><br>
+                        ${Math.round(imgRect.width)}px × ${Math.round(imgRect.height)}px<br>
+                        <strong>Image naturelle:</strong><br>
+                        ${newImg.naturalWidth}px × ${newImg.naturalHeight}px
+                    `;
+                    debugInfo.style.display = 'block';
+                });
+
+                // Add mouseleave event to hide debug info
+                newImg.addEventListener('mouseleave', (e) => {
+                    debugInfo.style.display = 'none';
+                });
+
                 newImg.addEventListener('click', (e) => {
                     // Prevent event from propagating to parent elements if needed
                     e.stopPropagation();
