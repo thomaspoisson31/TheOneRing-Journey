@@ -797,19 +797,7 @@
                             </div>
                         </div>
 
-                        <div id="segment-display" class="hidden">
-                            <h4 class="font-semibold text-sm mb-2" id="segment-title"></h4>
-                            <div class="text-xs mb-2">
-                                <span class="font-semibold">Durée: </span>
-                                <span id="segment-duration-display"></span> jours
-                            </div>
-                            <div class="text-xs mb-3">
-                                <span class="font-semibold">Statut: </span>
-                                <span id="segment-status" class="px-1 py-0.5 rounded text-xs"></span>
-                            </div>
-                            <div class="text-xs font-semibold mb-1">Étapes:</div>
-                            <div id="segment-steps" class="text-xs text-gray-300 h-32 overflow-y-auto border border-gray-600 p-2 rounded bg-gray-800"></div>
-                        </div>
+                        
                     </div>
                 </div>
             </div>
@@ -4306,57 +4294,75 @@
                 segmentsList.innerHTML = '<em class="text-gray-500 text-xs">Aucun segment</em>';
             } else {
                 const segmentsHtml = voyageSegments.map((segment, index) => {
-                const segmentName = getSegmentName(segment);
-                return `
-                    <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-1 ring-blue-500' : ''}" 
-                         onclick="selectSegment(${index})">
-                        <div class="font-semibold text-xs">${segmentName}</div>
-                        <div class="text-xs text-gray-400">${segment.duration}j - ${segment.steps.length} étapes</div>
-                        <button class="text-blue-400 hover:text-blue-300 text-xs mt-1" onclick="event.stopPropagation(); editSegment(${index})">Modifier</button>
-                    </div>
-                `;
-            }).join('');
+                    const segmentName = getSegmentName(segment);
+                    const tooltipContent = getSegmentTooltip(segment);
+                    return `
+                        <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-1 ring-blue-500' : ''}" 
+                             onclick="selectSegment(${index})" title="${tooltipContent}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1">
+                                    <span class="font-semibold text-xs">${segmentName}</span>
+                                    <i class="fas fa-pencil-alt text-xs text-gray-400 hover:text-blue-400 cursor-pointer" 
+                                       onclick="event.stopPropagation(); editSegment(${index})" title="Modifier"></i>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">${segment.duration}j - ${segment.steps.length} étapes</div>
+                        </div>
+                    `;
+                }).join('');
                 
                 segmentsList.innerHTML = segmentsHtml;
             }
 
-            // Update active panel
+            // Update active panel - toujours permettre l'ajout de nouveaux segments si le voyage est actif
             if (!isVoyageActive) {
                 noVoyageMessage.classList.remove('hidden');
                 newSegmentForm.classList.add('hidden');
                 segmentDisplay.classList.add('hidden');
-            } else if (currentSegmentIndex === -1) {
-                // Show new segment form
+            } else {
                 noVoyageMessage.classList.add('hidden');
-                newSegmentForm.classList.remove('hidden');
-                segmentDisplay.classList.add('hidden');
-                updateSegmentPreview();
                 
-                // Update form title
+                // Toujours afficher le formulaire de nouveau segment quand le voyage est actif
                 const remainingDays = getRemainingJourneyDays();
-                const formTitle = document.querySelector('#new-segment-form h4');
-                if (formTitle) {
-                    if (remainingDays > 0) {
-                        formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
-                        document.getElementById('finish-voyage-btn').style.display = 'inline-block';
-                    } else {
+                if (remainingDays > 0 || voyageSegments.length === 0) {
+                    newSegmentForm.classList.remove('hidden');
+                    updateSegmentPreview();
+                    
+                    // Update form title
+                    const formTitle = document.querySelector('#new-segment-form h4');
+                    if (formTitle) {
+                        if (remainingDays > 0) {
+                            formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
+                            document.getElementById('finish-voyage-btn').style.display = 'inline-block';
+                            document.getElementById('confirm-segment-btn').style.display = 'inline-block';
+                        } else if (voyageSegments.length === 0) {
+                            formTitle.textContent = 'Premier Segment';
+                            document.getElementById('finish-voyage-btn').style.display = 'none';
+                            document.getElementById('confirm-segment-btn').style.display = 'inline-block';
+                        } else {
+                            formTitle.textContent = 'Voyage Terminé';
+                            document.getElementById('finish-voyage-btn').style.display = 'inline-block';
+                            document.getElementById('confirm-segment-btn').style.display = 'none';
+                        }
+                    }
+                } else {
+                    newSegmentForm.classList.remove('hidden');
+                    const formTitle = document.querySelector('#new-segment-form h4');
+                    if (formTitle) {
                         formTitle.textContent = 'Voyage Terminé';
                         document.getElementById('finish-voyage-btn').style.display = 'inline-block';
                         document.getElementById('confirm-segment-btn').style.display = 'none';
                     }
                 }
-            } else {
-                // Show selected segment
-                noVoyageMessage.classList.add('hidden');
-                newSegmentForm.classList.add('hidden');
-                segmentDisplay.classList.remove('hidden');
-                displaySelectedSegment();
+
+                // Cacher l'affichage détaillé du segment
+                segmentDisplay.classList.add('hidden');
             }
         }
 
         function selectSegment(index) {
-            currentSegmentIndex = index;
-            updateVoyageSegmentsDisplay();
+            // Ne plus changer currentSegmentIndex pour garder le formulaire actif
+            console.log(`📋 Segment ${index + 1} sélectionné (tooltip affiché)`);
         }
 
         function editSegment(index) {
@@ -4365,10 +4371,7 @@
 
             // Set the segment duration in the form
             document.getElementById('segment-duration').value = segment.duration;
-            
-            // Switch to edit mode
-            currentSegmentIndex = -1; // Show new segment form
-            updateVoyageSegmentsDisplay();
+            document.getElementById('segment-duration-value').textContent = segment.duration;
             
             // Update form title to indicate editing
             const formTitle = document.querySelector('#new-segment-form h4');
@@ -4380,6 +4383,9 @@
             const confirmBtn = document.getElementById('confirm-segment-btn');
             confirmBtn.textContent = 'Mettre à jour';
             confirmBtn.onclick = () => updateSegment(index);
+            
+            // Refresh the preview
+            updateSegmentPreview();
         }
 
         function updateSegment(segmentIndex) {
@@ -4411,36 +4417,31 @@
 
             console.log(`✏️ Segment ${voyageSegments[segmentIndex].id} mis à jour:`, voyageSegments[segmentIndex]);
             
-            // Reset form
+            // Reset form to creation mode
             const confirmBtn = document.getElementById('confirm-segment-btn');
             confirmBtn.textContent = 'Confirmer le segment';
             confirmBtn.onclick = () => handleConfirmSegment();
             
-            currentSegmentIndex = segmentIndex;
+            // Reset form title and duration for new segment
+            const formTitle = document.querySelector('#new-segment-form h4');
+            const remainingDays = getRemainingJourneyDays();
+            if (formTitle) {
+                if (remainingDays > 0) {
+                    formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
+                } else {
+                    formTitle.textContent = 'Voyage Terminé';
+                }
+            }
+            
+            // Reset duration slider
+            document.getElementById('segment-duration').value = 3;
+            document.getElementById('segment-duration-value').textContent = '3';
+            
             updateVoyageSegmentsDisplay();
             scheduleAutoSync();
         }
 
-        function displaySelectedSegment() {
-            const segment = voyageSegments[currentSegmentIndex];
-            if (!segment) return;
-
-            document.getElementById('segment-title').textContent = `Segment ${segment.id}`;
-            document.getElementById('segment-duration-display').textContent = segment.duration;
-
-            const statusSpan = document.getElementById('segment-status');
-            statusSpan.textContent = segment.status === 'completed' ? 'Terminé' : 'En cours';
-            statusSpan.className = `px-2 py-1 rounded text-xs ${segment.status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'}`;
-
-            const stepsHtml = segment.steps.length > 0 
-                ? segment.steps.map(step => `<div class="text-gray-300 mb-1">${step.description}</div>`).join('')
-                : '<em class="text-gray-500">Aucune étape dans ce segment</em>';
-
-            document.getElementById('segment-steps').innerHTML = stepsHtml;
-
-            // Hide event for now (will be implemented later)
-            document.getElementById('segment-event').classList.add('hidden');
-        }
+        
 
         function getTotalJourneyDays() {
             if (!currentVoyage || !currentVoyage.totalDistance) {
@@ -4471,6 +4472,19 @@
             }
             
             return `Voyage de ${segment.duration} jour${segment.duration > 1 ? 's' : ''} entre ${startName} et ${endName}`;
+        }
+
+        function getSegmentTooltip(segment) {
+            if (!segment.steps || segment.steps.length === 0) {
+                return `Aucune étape dans ce segment de ${segment.duration} jour${segment.duration > 1 ? 's' : ''}`;
+            }
+
+            const stepsText = segment.steps.map(step => {
+                const icon = step.type === 'region' ? '🗺️' : '📍';
+                return `${icon} ${step.name}`;
+            }).join(' ➤ ');
+
+            return `Étapes : ${stepsText}`;
         }
 
         function getRemainingJourneyDays() {
