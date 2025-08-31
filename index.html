@@ -1215,11 +1215,27 @@
 
             // Update active tab button
             tabButtons.forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
 
-            // Update active tab content
+            // Update active tab content - handle different ID patterns
             tabContents.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            let targetTabId;
+            if (tabName === 'rumeurs') {
+                targetTabId = 'rumeurs-tab';
+            } else if (tabName === 'tradition') {
+                targetTabId = 'tradition-tab';
+            } else {
+                targetTabId = `${tabName}-tab`;
+            }
+            
+            const targetTab = document.getElementById(targetTabId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
         }
 
         function handleImageError(imgElement) {
