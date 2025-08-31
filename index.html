@@ -785,12 +785,7 @@
                                 <input type="range" id="segment-duration" min="1" max="6" value="3" class="w-full accent-blue-500">
                                 <div class="flex justify-between text-xs text-gray-400"><span>1</span><span>6</span></div>
                             </div>
-                            <div class="mb-3">
-                                <div class="text-xs font-semibold mb-1">Aperçu des étapes:</div>
-                                <div id="segment-preview" class="bg-gray-800 p-2 rounded text-xs h-24 overflow-y-auto border border-gray-600">
-                                    <em class="text-gray-500">Ajustez la durée...</em>
-                                </div>
-                            </div>
+                            
                             <div class="flex gap-2">
                                 <button id="confirm-segment-btn" class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 rounded text-sm">Confirmer</button>
                                 <button id="finish-voyage-btn" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-sm">Terminer</button>
@@ -4326,7 +4321,6 @@
                 const remainingDays = getRemainingJourneyDays();
                 if (remainingDays > 0 || voyageSegments.length === 0) {
                     newSegmentForm.classList.remove('hidden');
-                    updateSegmentPreview();
                     
                     // Update form title
                     const formTitle = document.querySelector('#new-segment-form h4');
@@ -4384,8 +4378,7 @@
             confirmBtn.textContent = 'Mettre à jour';
             confirmBtn.onclick = () => updateSegment(index);
             
-            // Refresh the preview
-            updateSegmentPreview();
+            
         }
 
         function updateSegment(segmentIndex) {
@@ -4522,7 +4515,6 @@
             console.log("📏 Changement de durée de segment");
             const value = e.target.value;
             document.getElementById('segment-duration-value').textContent = value;
-            updateSegmentPreview();
         });
 
         document.getElementById('confirm-segment-btn').addEventListener('click', () => {
