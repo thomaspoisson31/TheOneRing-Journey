@@ -295,9 +295,19 @@
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .image-view img:hover {
+            opacity: 0.9;
         }
         .image-view .modal-image { /* New class for modal images */
             max-height: calc(100% - 4rem); /* Adjust max-height for expanded view */
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .image-view .modal-image:hover {
+            opacity: 0.9;
         }
         .image-view .image-caption {
             margin-top: 1rem;
