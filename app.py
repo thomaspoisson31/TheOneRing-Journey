@@ -790,7 +790,7 @@ if __name__ == '__main__':
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 heures
 
     # Configuration pour production et développement
-    port = int(os.environ.get('PORT', 8080))
+    port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('REPLIT_DEV_DOMAIN') is not None
 
     print(f"🌐 Démarrage sur le port {port} (debug: {debug})")
