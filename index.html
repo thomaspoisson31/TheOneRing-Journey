@@ -739,7 +739,7 @@
 
         <!-- Voyage Segments Modal -->
         <div id="voyage-segments-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center p-4">
-            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col absolute top-4 right-4">
+            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col absolute top-4 right-4" style="font-family: 'Merriweather', serif;">
                 <div class="flex justify-between items-center p-4 border-b border-gray-700">
                     <h3 class="text-lg font-bold">Segments de Voyage</h3>
                     <button id="close-voyage-segments" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
@@ -749,59 +749,101 @@
                     <!-- Control Panel -->
                     <div class="p-4 border-b border-gray-700">
                         <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-semibold text-sm">Contrôles</h4>
-                            <button id="start-voyage-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer</button>
-                        </div>
-                        <div id="voyage-progress" class="hidden text-xs bg-blue-900/30 border border-blue-700 rounded p-2">
-                            <div class="font-semibold text-blue-300">Progression:</div>
-                            <div id="progress-text" class="text-gray-300"></div>
-                        </div>
-                        <div id="voyage-inconsistency" class="hidden text-xs bg-red-900/30 border border-red-700 rounded p-2 mt-2">
-                            <div class="font-semibold text-red-300">⚠️ Incohérence détectée:</div>
-                            <div id="inconsistency-text" class="text-gray-300"></div>
+                            <button id="start-voyage-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer le Voyage</button>
                         </div>
                     </div>
 
-                    <!-- Segments List -->
-                    <div class="p-4 border-b border-gray-700">
-                        <h4 class="font-semibold text-sm mb-3">Segments créés</h4>
-                        <div id="segments-list" class="space-y-2 max-h-32 overflow-y-auto">
-                            <em class="text-gray-500 text-xs">Aucun segment</em>
-                        </div>
-                    </div>
-
-                    <!-- Active Panel -->
-                    <div class="flex-1 p-4 overflow-y-auto">
-                        <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-32">
-                            Tracez un chemin sur la carte et cliquez "Démarrer" pour créer un voyage.
+                    <!-- Message d'accueil ou contenu du segment -->
+                    <div class="flex-1 overflow-hidden flex flex-col">
+                        <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-full p-4">
+                            Tracez un chemin sur la carte et cliquez "Démarrer le Voyage" pour créer votre périple.
                         </div>
 
-                        <div id="new-segment-form" class="hidden">
-                            <h4 class="font-semibold text-sm mb-3">Nouveau Segment</h4>
-                            <div class="mb-3">
-                                <label for="segment-duration" class="block text-xs font-medium text-gray-300 mb-1">
-                                    Durée: <span id="segment-duration-value" class="font-semibold text-white">3</span> jour(s)
+                        <!-- Segment actuel -->
+                        <div id="current-segment-display" class="hidden flex-1 flex flex-col p-4">
+                            <!-- Titre avec navigation -->
+                            <div class="flex items-center justify-between mb-4">
+                                <button id="prev-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Segment précédent">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <h4 id="segment-title" class="text-lg font-semibold text-center flex-1" style="font-family: 'Merriweather', serif;">
+                                    1. De Bree jusqu'au Mont Venteux
+                                </h4>
+                                <button id="next-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Segment suivant">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+
+                            <!-- Slider de durée -->
+                            <div class="mb-4">
+                                <label for="current-segment-duration" class="block text-sm font-medium text-gray-300 mb-2">
+                                    Durée: <span id="current-segment-duration-value" class="font-semibold text-white">4</span> jour(s)
                                 </label>
-                                <input type="range" id="segment-duration" min="1" max="6" value="3" class="w-full accent-blue-500">
-                                <div class="flex justify-between text-xs text-gray-400"><span>1</span><span>6</span></div>
+                                <div class="relative">
+                                    <input type="range" id="current-segment-duration" min="1" max="6" value="4" class="w-full accent-blue-500 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="flex gap-2">
-                                <button id="confirm-segment-btn" class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 rounded text-sm">Confirmer</button>
-                                <button id="finish-voyage-btn" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-sm">Terminer</button>
+                            <!-- Contenu du segment organisé par jour -->
+                            <div id="segment-content" class="flex-1 overflow-y-auto mb-4">
+                                <div class="space-y-3">
+                                    <div class="day-section">
+                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 1 : Bree</h5>
+                                        <div class="ml-4 text-sm text-gray-300">
+                                            <p>📍 Départ de Bree</p>
+                                        </div>
+                                    </div>
+                                    <div class="day-section">
+                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 2 : Grande route de l'Est</h5>
+                                        <div class="ml-4 text-sm text-gray-300">
+                                            <p>🛤️ Voyage sur la Grande route de l'Est</p>
+                                        </div>
+                                    </div>
+                                    <div class="day-section">
+                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 3 : Grande route de l'Est</h5>
+                                        <div class="ml-4 text-sm text-gray-300">
+                                            <p>🛤️ Poursuite du voyage</p>
+                                        </div>
+                                    </div>
+                                    <div class="day-section">
+                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 4 : Mont Venteux</h5>
+                                        <div class="ml-4 text-sm text-gray-300">
+                                            <p>🏔️ Arrivée au Mont Venteux</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Segment preview -->
-                        <div id="segment-display" class="hidden">
-                            <h4 class="font-semibold text-sm mb-3">Aperçu du segment</h4>
-                            <div id="segment-preview" class="text-gray-300 text-xs space-y-1"></div>
+                    <!-- Indicateur de progression en bas -->
+                    <div id="voyage-progress-bar" class="hidden p-4 border-t border-gray-700">
+                        <div class="text-center mb-2">
+                            <span id="progress-indicator" class="text-sm text-gray-300">Progression : 4 jours / 8</span>
                         </div>
+                        <div class="relative w-full bg-gray-700 rounded-full h-2">
+                            <div id="progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 50%"></div>
+                            <div id="progress-marker" class="absolute top-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white transform -translate-y-2 transition-all duration-300" style="left: calc(50% - 12px);">
+                                <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-white font-bold">4</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1</span>
+                            <span id="total-days">8</span>
+                        </div>
+                    </div>
 
+                    <!-- Message de fin de voyage -->
+                    <div id="voyage-end-message" class="hidden p-4 border-t border-gray-700 text-center">
+                        <div class="text-green-400 font-semibold mb-2">🏁 Fin du Voyage</div>
+                        <div class="text-sm text-gray-300">Votre périple est terminé !</div>
                     </div>
                 </div>
             </div>
-        </div>
+        ></div>
     </div>
 
     <script>
@@ -4083,12 +4125,12 @@
             currentVoyage = null;
             voyageSegments = [];
             isVoyageActive = false;
-            currentSegmentIndex = -1;
+            currentSegmentIndex = 0;
             console.log("🧹 Segments de voyage réinitialisés");
         }
 
         function handleStartVoyage() {
-            if (journeyPath.length === 0 || !journeyDiscoveries.length === 0) {
+            if (journeyPath.length === 0 || journeyDiscoveries.length === 0) {
                 alert("Vous devez d'abord tracer un chemin sur la carte pour démarrer un voyage.");
                 return;
             }
@@ -4102,345 +4144,327 @@
                 createdAt: new Date().toISOString()
             };
 
-            voyageSegments = [];
+            // Créer le premier segment automatiquement
+            voyageSegments = [{
+                id: 1,
+                duration: 4,
+                steps: [],
+                status: 'active',
+                createdAt: new Date().toISOString()
+            }];
+            
             isVoyageActive = true;
-            currentSegmentIndex = -1;
+            currentSegmentIndex = 0;
 
             console.log("🚢 Voyage démarré:", currentVoyage);
             updateVoyageSegmentsDisplay();
             scheduleAutoSync();
         }
 
-        function handleConfirmSegment() {
-            const duration = parseInt(document.getElementById('segment-duration').value);
-            if (!duration || duration < 1 || duration > 6) {
-                alert("La durée du segment doit être entre 1 et 6 jours.");
+        function generateSegmentName(segmentIndex) {
+            if (!currentVoyage || voyageSegments.length === 0) {
+                return "1. Segment de voyage";
+            }
+
+            // Calculer les points de départ et d'arrivée du segment
+            let segmentStartDays = 0;
+            for (let i = 0; i < segmentIndex; i++) {
+                segmentStartDays += voyageSegments[i].duration;
+            }
+            
+            const segmentEndDays = segmentStartDays + voyageSegments[segmentIndex].duration;
+            
+            // Trouver les lieux les plus proches au début et à la fin du segment
+            const startLocation = findLocationAtDay(segmentStartDays);
+            const endLocation = findLocationAtDay(segmentEndDays);
+            
+            return `${segmentIndex + 1}. De ${startLocation} à ${endLocation}`;
+        }
+
+        function findLocationAtDay(dayTarget) {
+            if (!currentVoyage || !journeyPath.length) return "lieu inconnu";
+            
+            const totalDays = getTotalJourneyDays();
+            const targetRatio = Math.min(dayTarget / totalDays, 1);
+            const targetPathIndex = Math.floor(targetRatio * (journeyPath.length - 1));
+            const targetPoint = journeyPath[targetPathIndex];
+            
+            // Chercher le lieu le plus proche
+            let nearestLocation = null;
+            let minDistance = Infinity;
+            
+            locationsData.locations.forEach(location => {
+                if (!location.coordinates) return;
+                
+                const distance = Math.sqrt(
+                    Math.pow(location.coordinates.x - targetPoint.x, 2) +
+                    Math.pow(location.coordinates.y - targetPoint.y, 2)
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestLocation = location;
+                }
+            });
+            
+            return nearestLocation ? nearestLocation.name : "lieu inconnu";
+        }
+
+        function calculateSegmentDailyContent(segmentIndex) {
+            if (!currentVoyage || !voyageSegments[segmentIndex]) return [];
+
+            const segment = voyageSegments[segmentIndex];
+            const dailyContent = [];
+
+            // Calculer les jours couverts par ce segment
+            let segmentStartDays = 0;
+            for (let i = 0; i < segmentIndex; i++) {
+                segmentStartDays += voyageSegments[i].duration;
+            }
+
+            for (let day = 1; day <= segment.duration; day++) {
+                const currentDay = segmentStartDays + day;
+                const dayContent = {
+                    day: day,
+                    locations: [],
+                    regions: [],
+                    activities: []
+                };
+
+                // Calculer le point approximatif dans le voyage pour ce jour
+                const totalDays = getTotalJourneyDays();
+                const dayRatio = (currentDay - 1) / totalDays;
+                const pathIndex = Math.floor(dayRatio * (journeyPath.length - 1));
+
+                // Trouver les découvertes proches de ce point
+                journeyDiscoveries.forEach(discovery => {
+                    const discoveryDayRatio = discovery.discoveryIndex / (journeyPath.length - 1);
+                    const discoveryDay = Math.floor(discoveryDayRatio * totalDays) + 1;
+
+                    if (discoveryDay === currentDay) {
+                        if (discovery.type === 'location') {
+                            dayContent.locations.push(discovery);
+                        } else if (discovery.type === 'region') {
+                            dayContent.regions.push(discovery);
+                        }
+                    }
+                });
+
+                // Ajouter des activités génériques si aucune découverte spécifique
+                if (dayContent.locations.length === 0 && dayContent.regions.length === 0) {
+                    dayContent.activities.push("🚶 Voyage le long du chemin tracé");
+                }
+
+                dailyContent.push(dayContent);
+            }
+
+            return dailyContent;
+        }
+
+        function renderSegmentContent(segmentIndex) {
+            const segmentContentDiv = document.getElementById('segment-content');
+            const dailyContent = calculateSegmentDailyContent(segmentIndex);
+
+            if (dailyContent.length === 0) {
+                segmentContentDiv.innerHTML = '<div class="text-gray-500 text-center">Aucun contenu pour ce segment</div>';
                 return;
             }
 
-            const segmentSteps = calculateSegmentSteps(duration);
+            const contentHtml = dailyContent.map(dayData => {
+                let dayTitle = `Jour ${dayData.day}`;
+                let dayActivities = [];
 
-            const newSegment = {
-                id: voyageSegments.length + 1,
-                duration: duration,
-                steps: segmentSteps,
-                status: 'completed',
-                createdAt: new Date().toISOString()
-            };
+                // Ajouter les régions découvertes
+                dayData.regions.forEach(region => {
+                    dayActivities.push(`🗺️ Découverte de ${region.name}`);
+                });
 
-            voyageSegments.push(newSegment);
-            currentSegmentIndex = voyageSegments.length - 1;
+                // Ajouter les lieux découverts
+                dayData.locations.forEach(location => {
+                    let activityText = `📍 ${location.name}`;
+                    if (location.proximityType === 'traversed') {
+                        activityText += ' (traversé)';
+                    } else if (location.proximityType === 'nearby') {
+                        activityText += ' (passage à proximité)';
+                    }
+                    dayActivities.push(activityText);
+                });
 
-            console.log(`✅ Segment ${newSegment.id} confirmé:`, newSegment);
+                // Ajouter les activités génériques
+                dayData.activities.forEach(activity => {
+                    dayActivities.push(activity);
+                });
 
-            // Check if we need to continue with more segments
-            const totalJourneyDays = getTotalJourneyDays();
-            const totalSegmentDays = getTotalSegmentDays();
+                return `
+                    <div class="day-section">
+                        <h5 class="font-semibold text-blue-300 mb-2">${dayTitle}</h5>
+                        <div class="ml-4 text-sm text-gray-300 space-y-1">
+                            ${dayActivities.map(activity => `<p>${activity}</p>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
-            console.log(`📊 Durée totale du voyage: ${totalJourneyDays} jours, segments couverts: ${totalSegmentDays} jours`);
+            segmentContentDiv.innerHTML = contentHtml;
+        }
 
-            if (totalSegmentDays < totalJourneyDays) {
-                // Still need more segments, reset to new segment form
-                currentSegmentIndex = -1;
-                console.log(`🔄 Segments supplémentaires nécessaires (${totalJourneyDays - totalSegmentDays} jours restants)`);
+        function updateCurrentSegmentDisplay() {
+            const currentSegmentDiv = document.getElementById('current-segment-display');
+            const noVoyageMessage = document.getElementById('no-voyage-message');
+            const progressBar = document.getElementById('voyage-progress-bar');
+            const endMessage = document.getElementById('voyage-end-message');
+
+            if (!isVoyageActive || voyageSegments.length === 0) {
+                currentSegmentDiv.classList.add('hidden');
+                noVoyageMessage.classList.remove('hidden');
+                progressBar.classList.add('hidden');
+                endMessage.classList.add('hidden');
+                return;
             }
 
-            updateVoyageSegmentsDisplay();
+            noVoyageMessage.classList.add('hidden');
+            currentSegmentDiv.classList.remove('hidden');
+
+            // Mettre à jour le titre du segment
+            const segmentTitle = document.getElementById('segment-title');
+            segmentTitle.textContent = generateSegmentName(currentSegmentIndex);
+
+            // Mettre à jour les boutons de navigation
+            const prevBtn = document.getElementById('prev-segment-btn');
+            const nextBtn = document.getElementById('next-segment-btn');
+
+            // Bouton précédent : masqué si premier segment
+            if (currentSegmentIndex === 0) {
+                prevBtn.style.visibility = 'hidden';
+            } else {
+                prevBtn.style.visibility = 'visible';
+            }
+
+            // Bouton suivant : logique selon les spécifications
+            const totalJourneyDays = getTotalJourneyDays();
+            const totalSegmentDays = getTotalSegmentDays();
+            const isVoyageComplete = totalSegmentDays >= totalJourneyDays - 0.5;
+
+            if (currentSegmentIndex === voyageSegments.length - 1 && isVoyageComplete) {
+                nextBtn.style.visibility = 'hidden';
+                endMessage.classList.remove('hidden');
+            } else {
+                nextBtn.style.visibility = 'visible';
+                endMessage.classList.add('hidden');
+            }
+
+            // Mettre à jour le slider de durée
+            const durationSlider = document.getElementById('current-segment-duration');
+            const durationValue = document.getElementById('current-segment-duration-value');
+            const currentSegment = voyageSegments[currentSegmentIndex];
+            
+            durationSlider.value = currentSegment.duration;
+            durationValue.textContent = currentSegment.duration;
+
+            // Mettre à jour le contenu du segment
+            renderSegmentContent(currentSegmentIndex);
+
+            // Mettre à jour la barre de progression
+            updateProgressBar();
+            progressBar.classList.remove('hidden');
+        }
+
+        function updateProgressBar() {
+            const totalDays = getTotalJourneyDays();
+            const completedDays = getTotalSegmentDays();
+            const progressPercent = Math.min((completedDays / totalDays) * 100, 100);
+
+            const progressFill = document.getElementById('progress-fill');
+            const progressMarker = document.getElementById('progress-marker');
+            const progressIndicator = document.getElementById('progress-indicator');
+            const totalDaysSpan = document.getElementById('total-days');
+
+            progressFill.style.width = `${progressPercent}%`;
+            progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
+            progressMarker.querySelector('span').textContent = Math.round(completedDays);
+
+            progressIndicator.textContent = `Progression : ${Math.round(completedDays)} jours / ${Math.round(totalDays)}`;
+            totalDaysSpan.textContent = Math.round(totalDays);
+        }
+
+        function navigateToSegment(direction) {
+            if (direction === 'prev' && currentSegmentIndex > 0) {
+                currentSegmentIndex--;
+            } else if (direction === 'next') {
+                // Créer un nouveau segment s'il n'existe pas
+                if (currentSegmentIndex >= voyageSegments.length - 1) {
+                    const remainingDays = getRemainingJourneyDays();
+                    if (remainingDays > 0) {
+                        const newSegment = {
+                            id: voyageSegments.length + 1,
+                            duration: Math.min(Math.ceil(remainingDays), 6),
+                            steps: [],
+                            status: 'active',
+                            createdAt: new Date().toISOString()
+                        };
+                        voyageSegments.push(newSegment);
+                    }
+                }
+                
+                if (currentSegmentIndex < voyageSegments.length - 1) {
+                    currentSegmentIndex++;
+                }
+            }
+
+            updateCurrentSegmentDisplay();
             scheduleAutoSync();
         }
 
-        function handleFinishVoyage() {
-            if (confirm("Êtes-vous sûr de vouloir terminer ce voyage ?")) {
-                isVoyageActive = false;
-                currentVoyage = null;
-                currentSegmentIndex = -1;
-                console.log("🏁 Voyage terminé");
-                updateVoyageSegmentsDisplay();
+        function handleSegmentDurationChange() {
+            const newDuration = parseInt(document.getElementById('current-segment-duration').value);
+            const durationValue = document.getElementById('current-segment-duration-value');
+            
+            durationValue.textContent = newDuration;
+
+            if (voyageSegments[currentSegmentIndex]) {
+                voyageSegments[currentSegmentIndex].duration = newDuration;
+                
+                // Recalculer le contenu du segment
+                renderSegmentContent(currentSegmentIndex);
+                
+                // Recalculer les segments suivants si nécessaire
+                recalculateFollowingSegments();
+                
+                // Mettre à jour l'affichage
+                updateCurrentSegmentDisplay();
                 scheduleAutoSync();
             }
         }
 
-        function calculateSegmentSteps(segmentDuration) {
-            if (!currentVoyage || !currentVoyage.totalDistance) {
-                return [];
+        function recalculateFollowingSegments() {
+            // Recalculer tous les noms de segments et contenus suivants
+            for (let i = currentSegmentIndex + 1; i < voyageSegments.length; i++) {
+                // Le contenu sera recalculé lors de l'affichage du segment
             }
-
-            // Calculate the starting point for this segment (cumulative duration of previous segments)
-            let totalPreviousDuration = 0;
-            for (let i = 0; i < voyageSegments.length; i++) {
-                totalPreviousDuration += voyageSegments[i].duration;
-            }
-
-            const steps = [];
-
-            // Sort discoveries by discovery order
-            const sortedDiscoveries = [...currentVoyage.journeyDiscoveries].sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-
-            // Calculate the reach time for each discovery from the start of the journey
-            for (const discovery of sortedDiscoveries) {
-                let reachTime = 0;
-
-                // Calculate reach time based on discovery index in journey path
-                if (discovery.discoveryIndex > 0) {
-                    const reachDistance = calculatePathDistance(0, discovery.discoveryIndex);
-                    const reachMiles = pixelsToMiles(reachDistance);
-                    reachTime = milesToDays(reachMiles);
-                } else {
-                    reachTime = 0; // Starting point
-                }
-
-                // Check if this discovery falls within the current segment timeframe
-                if (reachTime >= totalPreviousDuration && reachTime < totalPreviousDuration + segmentDuration) {
-                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                    let stepDescription = `${icon} ${discovery.name}`;
-
-                    if (discovery.type === 'location' && discovery.proximityType) {
-                        if (discovery.proximityType === 'traversed') {
-                            stepDescription += ' (traversé)';
-                        } else if (discovery.proximityType === 'nearby') {
-                            stepDescription += ' (passage à proximité)';
-                        }
-                    }
-
-                    // Add timing information for regions
-                    if (discovery.type === 'region' && window.regionSegments) {
-                        const segment = window.regionSegments.get(discovery.name);
-                        if (segment) {
-                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
-                            const regionMiles = pixelsToMiles(regionDistance);
-                            const regionDays = milesToDays(regionMiles);
-                            stepDescription += ` (durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
-                        }
-                    }
-
-                    steps.push({
-                        name: discovery.name,
-                        type: discovery.type,
-                        description: stepDescription,
-                        reachTime: reachTime,
-                        proximityType: discovery.proximityType
-                    });
-                }
-            }
-
-            return steps;
-        }
-
-        function updateSegmentPreview() {
-            const duration = parseInt(document.getElementById('segment-duration').value);
-            const previewDiv = document.getElementById('segment-preview');
-
-            if (!duration || !isVoyageActive) {
-                previewDiv.innerHTML = '<em class="text-gray-500">Aucun aperçu disponible</em>';
-                return;
-            }
-
-            const steps = calculateSegmentSteps(duration);
-
-            if (steps.length === 0) {
-                previewDiv.innerHTML = '<em class="text-gray-500">Aucune étape dans ce segment</em>';
-                return;
-            }
-
-            const stepsHtml = steps.map(step => `<div class="text-gray-300">${step.description}</div>`).join('');
-            previewDiv.innerHTML = stepsHtml;
         }
 
         function updateVoyageSegmentsDisplay() {
-            const segmentsList = document.getElementById('segments-list');
-            const startBtn = document.getElementById('start-voyage-btn');
-            const noVoyageMessage = document.getElementById('no-voyage-message');
-            const newSegmentForm = document.getElementById('new-segment-form');
-            const segmentDisplay = document.getElementById('segment-display');
-            const voyageProgress = document.getElementById('voyage-progress');
-            const progressText = document.getElementById('progress-text');
-
-            // Update start button
+            // Cette fonction est maintenant simplifiée car on utilise updateCurrentSegmentDisplay
             if (isVoyageActive) {
-                startBtn.style.display = 'none';
-                voyageProgress.classList.remove('hidden');
-
-                const totalJourneyDays = getTotalJourneyDays();
-                const totalSegmentDays = getTotalSegmentDays();
-                const remainingDays = getRemainingJourneyDays();
-
-                progressText.innerHTML = `
-                    <div>${totalSegmentDays.toFixed(1)} / ${totalJourneyDays.toFixed(1)} jours</div>
-                    ${remainingDays > 0 ? `<div class="text-yellow-300">${remainingDays.toFixed(1)} jours restants</div>` : '<div class="text-green-300">Complet!</div>'}
-                `;
-
-                // Check for inconsistencies
-                const inconsistencyDiv = document.getElementById('voyage-inconsistency');
-                const inconsistencyText = document.getElementById('inconsistency-text');
-
-                if (totalSegmentDays > totalJourneyDays + 0.5) {
-                    inconsistencyDiv.classList.remove('hidden');
-                    inconsistencyText.textContent = `Les segments totalisent ${totalSegmentDays.toFixed(1)} jours, mais le voyage ne fait que ${totalJourneyDays.toFixed(1)} jours.`;
-                } else {
-                    inconsistencyDiv.classList.add('hidden');
-                }
+                document.getElementById('start-voyage-btn').style.display = 'none';
+                updateCurrentSegmentDisplay();
             } else {
-                startBtn.style.display = 'inline-block';
-                voyageProgress.classList.add('hidden');
-                startBtn.disabled = journeyPath.length === 0;
+                document.getElementById('start-voyage-btn').style.display = 'inline-block';
+                document.getElementById('start-voyage-btn').disabled = journeyPath.length === 0;
+                
                 if (journeyPath.length === 0) {
-                    startBtn.title = "Tracez d'abord un chemin sur la carte";
+                    document.getElementById('start-voyage-btn').title = "Tracez d'abord un chemin sur la carte";
                 } else {
-                    startBtn.title = "Démarrer un nouveau voyage";
-                }
-            }
-
-            // Update segments list
-            if (voyageSegments.length === 0) {
-                segmentsList.innerHTML = '<em class="text-gray-500 text-xs">Aucun segment</em>';
-            } else {
-                const segmentsHtml = voyageSegments.map((segment, index) => {
-                    const segmentName = getSegmentName(segment);
-                    const tooltipContent = getSegmentTooltip(segment);
-                    return `
-                        <div class="segment-item p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 ${index === currentSegmentIndex ? 'ring-1 ring-blue-500' : ''}" 
-                             onclick="selectSegment(${index})" title="${tooltipContent}">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-1">
-                                    <span class="font-semibold text-xs">${segmentName}</span>
-                                    <i class="fas fa-pencil-alt text-xs text-gray-400 hover:text-blue-400 cursor-pointer" 
-                                       onclick="event.stopPropagation(); editSegment(${index})" title="Modifier"></i>
-                                </div>
-                            </div>
-                            <div class="text-xs text-gray-400">${segment.duration}j - ${segment.steps.length} étapes</div>
-                        </div>
-                    `;
-                }).join('');
-
-                segmentsList.innerHTML = segmentsHtml;
-            }
-
-            // Update active panel - toujours permettre l'ajout de nouveaux segments si le voyage est actif
-            if (!isVoyageActive) {
-                noVoyageMessage.classList.remove('hidden');
-                newSegmentForm.classList.add('hidden');
-                segmentDisplay.classList.add('hidden');
-            } else {
-                noVoyageMessage.classList.add('hidden');
-
-                // Toujours afficher le formulaire de nouveau segment quand le voyage est actif
-                const remainingDays = getRemainingJourneyDays();
-                if (remainingDays > 0 || voyageSegments.length === 0) {
-                    newSegmentForm.classList.remove('hidden');
-
-                    // Update form title
-                    const formTitle = document.querySelector('#new-segment-form h4');
-                    if (formTitle) {
-                        if (remainingDays > 0) {
-                            formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
-                            document.getElementById('finish-voyage-btn').style.display = 'inline-block';
-                            document.getElementById('confirm-segment-btn').style.display = 'inline-block';
-                        } else if (voyageSegments.length === 0) {
-                            formTitle.textContent = 'Premier Segment';
-                            document.getElementById('finish-voyage-btn').style.display = 'none';
-                            document.getElementById('confirm-segment-btn').style.display = 'inline-block';
-                        } else {
-                            formTitle.textContent = 'Voyage Terminé';
-                            document.getElementById('finish-voyage-btn').style.display = 'inline-block';
-                            document.getElementById('confirm-segment-btn').style.display = 'none';
-                        }
-                    }
-                } else {
-                    newSegmentForm.classList.remove('hidden');
-                    const formTitle = document.querySelector('#new-segment-form h4');
-                    if (formTitle) {
-                        formTitle.textContent = 'Voyage Terminé';
-                        document.getElementById('finish-voyage-btn').style.display = 'inline-block';
-                        document.getElementById('confirm-segment-btn').style.display = 'none';
-                    }
+                    document.getElementById('start-voyage-btn').title = "Démarrer un nouveau voyage";
                 }
 
-                // Cacher l'affichage détaillé du segment
-                segmentDisplay.classList.add('hidden');
+                // Cacher tous les éléments du voyage
+                document.getElementById('current-segment-display').classList.add('hidden');
+                document.getElementById('voyage-progress-bar').classList.add('hidden');
+                document.getElementById('voyage-end-message').classList.add('hidden');
+                document.getElementById('no-voyage-message').classList.remove('hidden');
             }
         }
-
-        function selectSegment(index) {
-            // Ne plus changer currentSegmentIndex pour garder le formulaire actif
-            console.log(`📋 Segment ${index + 1} sélectionné (tooltip affiché)`);
-        }
-
-        function editSegment(index) {
-            const segment = voyageSegments[index];
-            if (!segment) return;
-
-            // Set the segment duration in the form
-            document.getElementById('segment-duration').value = segment.duration;
-            document.getElementById('segment-duration-value').textContent = segment.duration;
-
-            // Update form title to indicate editing
-            const formTitle = document.querySelector('#new-segment-form h4');
-            if (formTitle) {
-                formTitle.textContent = `Modifier Segment ${segment.id}`;
-            }
-
-            // Change confirm button to update
-            const confirmBtn = document.getElementById('confirm-segment-btn');
-            confirmBtn.textContent = 'Mettre à jour';
-            confirmBtn.onclick = () => updateSegment(index);
-
-
-        }
-
-        function updateSegment(segmentIndex) {
-            const duration = parseInt(document.getElementById('segment-duration').value);
-            if (!duration || duration < 1 || duration > 6) {
-                alert("La durée du segment doit être entre 1 et 6 jours.");
-                return;
-            }
-
-            // Check for inconsistencies
-            const totalJourneyDays = getTotalJourneyDays();
-            let totalOtherSegmentDays = 0;
-            for (let i = 0; i < voyageSegments.length; i++) {
-                if (i !== segmentIndex) {
-                    totalOtherSegmentDays += voyageSegments[i].duration;
-                }
-            }
-
-            if (totalOtherSegmentDays + duration > totalJourneyDays + 0.5) {
-                alert(`Incohérence détectée: Le total des segments (${totalOtherSegmentDays + duration} jours) dépasse la durée du voyage (${totalJourneyDays.toFixed(1)} jours).`);
-                return;
-            }
-
-            const segmentSteps = calculateSegmentSteps(duration);
-
-            // Update the segment
-            voyageSegments[segmentIndex].duration = duration;
-            voyageSegments[segmentIndex].steps = segmentSteps;
-
-            console.log(`✏️ Segment ${voyageSegments[segmentIndex].id} mis à jour:`, voyageSegments[segmentIndex]);
-
-            // Reset form to creation mode
-            const confirmBtn = document.getElementById('confirm-segment-btn');
-            confirmBtn.textContent = 'Confirmer le segment';
-            confirmBtn.onclick = () => handleConfirmSegment();
-
-            // Reset form title and duration for new segment
-            const formTitle = document.querySelector('#new-segment-form h4');
-            const remainingDays = getRemainingJourneyDays();
-            if (formTitle) {
-                if (remainingDays > 0) {
-                    formTitle.textContent = `Nouveau Segment (${remainingDays.toFixed(1)}j restants)`;
-                } else {
-                    formTitle.textContent = 'Voyage Terminé';
-                }
-            }
-
-            // Reset duration slider
-            document.getElementById('segment-duration').value = 3;
-            document.getElementById('segment-duration-value').textContent = '3';
-
-            updateVoyageSegmentsDisplay();
-            scheduleAutoSync();
-        }
-
-
 
         function getTotalJourneyDays() {
             if (!currentVoyage || !currentVoyage.totalDistance) {
@@ -4458,9 +4482,8 @@
             return Math.max(0, getTotalJourneyDays() - getTotalSegmentDays());
         }
 
-        // Make selectSegment and editSegment available globally
-        window.selectSegment = selectSegment;
-        window.editSegment = editSegment;
+        // Navigation globale pour les segments
+        window.navigateToSegment = navigateToSegment;
 
         // --- Event listeners pour les segments de voyage ---
         document.getElementById('voyage-segments-btn').addEventListener('click', () => {
@@ -4485,21 +4508,45 @@
             handleStartVoyage();
         });
 
-        document.getElementById('segment-duration').addEventListener('input', (e) => {
-            console.log("📏 Changement de durée de segment");
-            const value = e.target.value;
-            document.getElementById('segment-duration-value').textContent = value;
+        // Event listeners pour la nouvelle interface
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navigation entre segments
+            const prevBtn = document.getElementById('prev-segment-btn');
+            const nextBtn = document.getElementById('next-segment-btn');
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => navigateToSegment('prev'));
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => navigateToSegment('next'));
+            }
+
+            // Slider de durée du segment actuel
+            const durationSlider = document.getElementById('current-segment-duration');
+            if (durationSlider) {
+                durationSlider.addEventListener('input', handleSegmentDurationChange);
+            }
         });
 
-        document.getElementById('confirm-segment-btn').addEventListener('click', () => {
-            console.log("✅ Confirmation du segment");
-            handleConfirmSegment();
-        });
+        // Backup pour s'assurer que les event listeners sont attachés même si DOMContentLoaded a déjà été déclenché
+        setTimeout(() => {
+            const prevBtn = document.getElementById('prev-segment-btn');
+            const nextBtn = document.getElementById('next-segment-btn');
+            const durationSlider = document.getElementById('current-segment-duration');
+            
+            if (prevBtn && !prevBtn.onclick) {
+                prevBtn.addEventListener('click', () => navigateToSegment('prev'));
+            }
+            
+            if (nextBtn && !nextBtn.onclick) {
+                nextBtn.addEventListener('click', () => navigateToSegment('next'));
+            }
 
-        document.getElementById('finish-voyage-btn').addEventListener('click', () => {
-            console.log("🏁 Fin du voyage");
-            handleFinishVoyage();
-        });
+            if (durationSlider && !durationSlider.oninput) {
+                durationSlider.addEventListener('input', handleSegmentDurationChange);
+            }
+        }, 1000);
 
     </script>
 </body>
