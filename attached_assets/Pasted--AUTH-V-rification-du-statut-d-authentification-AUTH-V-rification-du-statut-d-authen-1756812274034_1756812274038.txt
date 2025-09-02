@@ -1,0 +1,1000 @@
+ 🔐 [AUTH] Vérification du statut d'authentification... 
+ 🔐 [AUTH] Vérification du statut d'authentification... 
+ 🗺️ Initializing map...
+ 📐 Map dimensions: 5103 x 3296
+ Preloading Loremaster map...
+ ✅ Map initialized successfully
+ 🔐 [AUTH] Réponse reçue: 200
+ ✅ Loremaster map preloaded.
+ 🔐 [AUTH] Données d'authentification reçues: Object
+ 🔐 [AUTH] Utilisateur non authentifié 
+ 🔐 [AUTH] Affichage du statut d'authentification 
+ 🔐 [AUTH] GoogleUser: 
+ 🔐 [AUTH] Affichage du panneau utilisateur non connecté 
+ ❌ Auto-sync désactivé
+ 🔐 [AUTH] === TEST DES ÉLÉMENTS DOM === 
+ 🔐 [AUTH] authModal element: true
+ 🔐 [AUTH] auth-btn element: true
+ 🔐 [AUTH] close-auth-modal element: true
+ 🔐 [AUTH] google-signin-btn element: true
+ 🔐 [AUTH] save-context-btn element: true
+ 🔐 [AUTH] Bouton auth visible: true
+ 🔐 [AUTH] Bouton auth cliquable: true
+ 🔐 [AUTH] Classes du bouton auth: w-10 h-10 bg-gray-700 hover:bg-blue-600 rounded transition-colors relative overflow-hidden
+ 🔐 [AUTH] === FIN TEST DES ÉLÉMENTS DOM === 
+ 🖱️ Viewport mousedown event fired, isDrawingMode: false
+ 🖱️ Main viewport mousedown, mode: Object
+ 👆 Starting pan mode
+ 🎨 Draw mode button clicked
+ 🎨 Drawing mode is now: true
+ ✅ Canvas pointer events enabled
+ 🖱️ Viewport mousedown event fired, isDrawingMode: true
+ 🎨 Starting drawing...
+ 🧹 Segments de voyage réinitialisés
+ 📍 Start point: Object
+ ✅ Drawing initialized
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 1.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 3.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 5.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 7.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 8.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 10.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 14.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 15.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 17.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 19.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 21.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 22.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 26.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 28.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 29.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 35.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 37.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 38.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 40.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 42.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 45.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 49.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 51.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 55.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 58.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 60.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 62.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 67.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 70.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 72.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 73.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 75.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 79.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 82.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 83.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 85.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 87.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 89.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 90.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 92.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 95.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 97.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 101.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 103.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 105.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 107.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 109.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 111.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 117.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 122.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 125.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 128.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 130.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 133.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 137.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 142.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 149.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 157.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 161.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 164.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 165.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 168.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 173.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 176.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 182.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 186.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 190.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 192.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 194.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 197.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 201.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 211.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 219.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 221.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 224.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 225.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 229.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 233.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 238.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 242.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 246.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 248.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 250.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 252.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 254.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 256.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 267.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 274.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 275.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 278.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 280.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 281.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 285.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 288.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 290.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 291.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 295.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 297.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 299.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 301.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(2)
+ ✏️ Drawing segment, total pixels: 304.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 308.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 312.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 316.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 318.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 321.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 323.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 326.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(3)
+ ✏️ Drawing segment, total pixels: 331.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 335.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 337.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 339.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 340.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 342.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 344.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 346.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 347.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 349.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 352.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 353.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 355.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 357.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 361.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 363.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 366.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 371.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 378.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 381.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 383.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 385.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 389.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 390.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 394.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 396.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 398.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 403.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 409.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 412.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 414.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 416.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 421.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 426.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 433.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 434.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 436.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 438.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 442.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 444.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 445.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 449.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 451.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 453.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 457.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(4)
+ ✏️ Drawing segment, total pixels: 464.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 469.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 473.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 476.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 478.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 482.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 486.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 491.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 493.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 494.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 496.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 500.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(5)
+ ✏️ Drawing segment, total pixels: 512.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 522.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 529.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 535.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 536.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 538.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 541.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 551.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 557.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 559.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 564.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 570.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 571.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 573.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 577.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 582.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 590.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 601.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 609.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 614.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 621.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(6)
+ ✏️ Drawing segment, total pixels: 627.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 634.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 638.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 642.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 644.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 648.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 653.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 660.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 662.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 664.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 666.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 668.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 671.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 675.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 683.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 688.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 691.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 695.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 697.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 700.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 704.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 707.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 711.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 720.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 729.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 737.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 741.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 744.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 746.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 750.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 755.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 763.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 769.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 772.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 774.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 777.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 779.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 780.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 782.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 784.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 786.7
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 790.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 792.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 794.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 797.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 800.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 807.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 808.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 810.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 813.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 814.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 822.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 827.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 831.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 833.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 836.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 838.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 840.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 843.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 845.2
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 849.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 861.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 868.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 871.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 875.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 877.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 879.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 881.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 891.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 898.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 900.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 902.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 904.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 911.1
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 921.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 930.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 937.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 941.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 943.0
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 946.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 948.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 950.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 952.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 954.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 957.8
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 961.3
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 968.5
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 977.4
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 979.9
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 981.6
+ ✏️ Mouse move during drawing
+ 🌟 Journey discoveries (chronological): Array(7)
+ ✏️ Drawing segment, total pixels: 983.4
+ 🛑 Drawing stopped on mouseup
+ 🔄 Programmation de la synchronisation après tracé
+ 🚢 Bouton segments de voyage cliqué
+ 🚢 Démarrage du voyage
+ 🚢 Voyage démarré: Object
+ 🗺️ Segments générés: Array(5)
+ 🎯 Index initial: 0
+ 📊 État voyage: Object
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+ 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
+ ➡️ Clic bouton segment suivant
+ 🧭 Navigation segment: Object
+ ➡️ Navigation suivante vers segment 1
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 2. De Collines des Tours à Landes d'Arthedain
+ 📝 Titre du segment mis à jour: 2. De Collines des Tours à Landes d'Arthedain
+ 🧭 Navigation segment: Object
+ ➡️ Navigation suivante vers segment 2
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 3. De Landes d'Arthedain à Hauts reculés
+ 📝 Titre du segment mis à jour: 3. De Landes d'Arthedain à Hauts reculés
+ 🧭 Navigation segment: Object
+ ➡️ Navigation suivante vers segment 3
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 4. De Hauts reculés à La Comté
+ 📝 Titre du segment mis à jour: 4. De Hauts reculés à La Comté
+ ⬅️ Clic bouton segment précédent
+ 🧭 Navigation segment: Object
+ ⬅️ Navigation précédente vers segment 2
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 3. De Landes d'Arthedain à Hauts reculés
+ 📝 Titre du segment mis à jour: 3. De Landes d'Arthedain à Hauts reculés
+ 🧭 Navigation segment: Object
+ ⬅️ Navigation précédente vers segment 1
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 2. De Collines des Tours à Landes d'Arthedain
+ 📝 Titre du segment mis à jour: 2. De Collines des Tours à Landes d'Arthedain
+ 🧭 Navigation segment: Object
+ ⬅️ Navigation précédente vers segment 0
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+ 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
+ 🔄 Mise à jour affichage segment: Object
+ 🏷️ Génération nom segment: Object
+ ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+ 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
+ ➡️ Clic bouton segment suivant
+ 🧭 Navigation segment: Object
+ ➡️ Navigation suivante vers segment 1
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 2. De Collines des Tours à Landes d'Arthedain
+(index):4498 📝 Titre du segment mis à jour: 2. De Collines des Tours à Landes d'Arthedain
+(index):4555 🧭 Navigation segment: Object
+(index):4567 ➡️ Navigation suivante vers segment 2
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 3. De Landes d'Arthedain à Hauts reculés
+(index):4498 📝 Titre du segment mis à jour: 3. De Landes d'Arthedain à Hauts reculés
+(index):4555 🧭 Navigation segment: Object
+(index):4567 ➡️ Navigation suivante vers segment 3
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 4. De Hauts reculés à La Comté
+(index):4498 📝 Titre du segment mis à jour: 4. De Hauts reculés à La Comté
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 4. De Hauts reculés à La Comté
+(index):4498 📝 Titre du segment mis à jour: 4. De Hauts reculés à La Comté
+(index):4671 ➡️ Clic bouton segment suivant
+(index):4555 🧭 Navigation segment: Object
+(index):4567 ➡️ Navigation suivante vers segment 4
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 5. De La Comté à La Comté
+(index):4498 📝 Titre du segment mis à jour: 5. De La Comté à La Comté
+(index):4555 🧭 Navigation segment: Object
+(index):4569 🚫 Navigation impossible: next currentIndex: 4 totalSegments: 5
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 5. De La Comté à La Comté
+(index):4498 📝 Titre du segment mis à jour: 5. De La Comté à La Comté
+(index):4555 🧭 Navigation segment: Object
+(index):4569 🚫 Navigation impossible: next currentIndex: 4 totalSegments: 5
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 5. De La Comté à La Comté
+(index):4498 📝 Titre du segment mis à jour: 5. De La Comté à La Comté
+(index):4666 ⬅️ Clic bouton segment précédent
+(index):4555 🧭 Navigation segment: Object
+(index):4564 ⬅️ Navigation précédente vers segment 3
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 4. De Hauts reculés à La Comté
+(index):4498 📝 Titre du segment mis à jour: 4. De Hauts reculés à La Comté
+(index):4555 🧭 Navigation segment: Object
+(index):4564 ⬅️ Navigation précédente vers segment 2
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 3. De Landes d'Arthedain à Hauts reculés
+(index):4498 📝 Titre du segment mis à jour: 3. De Landes d'Arthedain à Hauts reculés
+(index):4555 🧭 Navigation segment: Object
+(index):4564 ⬅️ Navigation précédente vers segment 1
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 2. De Collines des Tours à Landes d'Arthedain
+(index):4498 📝 Titre du segment mis à jour: 2. De Collines des Tours à Landes d'Arthedain
+(index):4666 ⬅️ Clic bouton segment précédent
+(index):4555 🧭 Navigation segment: Object
+(index):4564 ⬅️ Navigation précédente vers segment 0
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+(index):4498 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
+(index):4555 🧭 Navigation segment: Object
+(index):4569 🚫 Navigation impossible: prev currentIndex: 0 totalSegments: 5
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+(index):4498 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
+(index):4555 🧭 Navigation segment: Object
+(index):4569 🚫 Navigation impossible: prev currentIndex: 0 totalSegments: 5
+(index):4463 🔄 Mise à jour affichage segment: Object
+(index):4254 🏷️ Génération nom segment: Object
+(index):4268 ✅ Nom généré: 1. De Embouchure de la Lune à Collines des Tours
+(index):4498 📝 Titre du segment mis à jour: 1. De Embouchure de la Lune à Collines des Tours
