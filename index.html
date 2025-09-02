@@ -4567,6 +4567,7 @@
                 console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
             } else {
                 console.log("🚫 Navigation impossible:", direction, "currentIndex:", currentSegmentIndex, "totalSegments:", voyageSegments.length);
+                return; // Arrêter ici si la navigation n'est pas possible
             }
 
             updateCurrentSegmentDisplay();
@@ -4663,12 +4664,12 @@
 
         // Ajouter les event listeners pour les boutons de navigation
         document.getElementById('prev-segment-btn').addEventListener('click', () => {
-            console.log("⬅️ Clic bouton segment précédent");
+            console.log("⬅️ Clic bouton segment précédent - Index actuel:", currentSegmentIndex);
             navigateToSegment('prev');
         });
 
         document.getElementById('next-segment-btn').addEventListener('click', () => {
-            console.log("➡️ Clic bouton segment suivant");
+            console.log("➡️ Clic bouton segment suivant - Index actuel:", currentSegmentIndex);
             navigateToSegment('next');
         });
 
@@ -4679,17 +4680,7 @@
 
         // Event listeners pour la nouvelle interface
         document.addEventListener('DOMContentLoaded', () => {
-            // Navigation entre segments
-            const prevBtn = document.getElementById('prev-segment-btn');
-            const nextBtn = document.getElementById('next-segment-btn');
-            
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => navigateToSegment('prev'));
-            }
-            
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => navigateToSegment('next'));
-            }
+            // Navigation entre segments - supprimé car déjà défini plus haut
 
             // Slider de durée du segment actuel
             const durationSlider = document.getElementById('current-segment-duration');
@@ -4698,20 +4689,10 @@
             }
         });
 
-        // Backup pour s'assurer que les event listeners sont attachés même si DOMContentLoaded a déjà été déclenché
+        // Backup pour s'assurer que les event listeners sont attachés - slider seulement
         setTimeout(() => {
-            const prevBtn = document.getElementById('prev-segment-btn');
-            const nextBtn = document.getElementById('next-segment-btn');
             const durationSlider = document.getElementById('current-segment-duration');
             
-            if (prevBtn && !prevBtn.onclick) {
-                prevBtn.addEventListener('click', () => navigateToSegment('prev'));
-            }
-            
-            if (nextBtn && !nextBtn.onclick) {
-                nextBtn.addEventListener('click', () => navigateToSegment('next'));
-            }
-
             if (durationSlider && !durationSlider.oninput) {
                 durationSlider.addEventListener('input', handleSegmentDurationChange);
             }
