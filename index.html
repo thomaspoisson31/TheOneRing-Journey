@@ -4282,10 +4282,8 @@
             if (!activatedSegments.has(segmentIndex)) {
                 return [{
                     day: 1,
-                    locations: [],
-                    regions: [],
-                    activities: ["🚶 Voyage le long du chemin tracé"],
-                    regionStays: []
+                    chronologicalItems: [],
+                    activities: ["🚶 Voyage le long du chemin tracé"]
                 }];
             }
 
@@ -4309,81 +4307,93 @@
                 journeyPath.length - 1
             );
 
-            // Filtrer les découvertes pour ce segment
-            const segmentDiscoveries = journeyDiscoveries.filter(discovery => {
-                return discovery.discoveryIndex >= segmentStartIndex && 
-                       discovery.discoveryIndex <= segmentEndIndex;
-            });
-
             // Créer le contenu journalier
             for (let day = 1; day <= segment.duration; day++) {
                 const currentDay = segmentStartDays + day;
                 const dayContent = {
                     day: day,
-                    locations: [],
-                    regions: [],
-                    activities: [],
-                    regionStays: []
+                    chronologicalItems: [],
+                    activities: []
                 };
 
-                // Calculer le point dans le voyage pour ce jour
-                const dayRatio = (currentDay - 0.5) / totalDays; // Milieu du jour
-                const dayPathIndex = Math.floor(dayRatio * (journeyPath.length - 1));
+                // Calculer la plage d'indices de chemin pour ce jour
+                const dayStartRatio = (currentDay - 1) / totalDays;
+                const dayEndRatio = currentDay / totalDays;
+                const dayStartIndex = Math.floor(dayStartRatio * (journeyPath.length - 1));
+                const dayEndIndex = Math.floor(dayEndRatio * (journeyPath.length - 1));
 
-                // Analyser les régions pour ce jour
-                segmentDiscoveries.forEach(discovery => {
+                // Collecter toutes les découvertes pour ce jour avec leur index de découverte
+                const dayDiscoveries = [];
+
+                // Ajouter les découvertes de régions
+                journeyDiscoveries.forEach(discovery => {
                     if (discovery.type === 'region' && window.regionSegments) {
                         const regionSegment = window.regionSegments.get(discovery.name);
                         if (regionSegment) {
-                            // Vérifier si on est dans cette région ce jour-là
-                            if (dayPathIndex >= regionSegment.entryIndex && dayPathIndex <= regionSegment.exitIndex) {
-                                
-                                // Calculer combien de temps on passe dans cette région ce jour
+                            // Vérifier si cette région est traversée pendant ce jour
+                            const regionOverlapsDay = (
+                                regionSegment.entryIndex <= dayEndIndex && 
+                                regionSegment.exitIndex >= dayStartIndex
+                            );
+
+                            if (regionOverlapsDay) {
+                                // Calculer la durée de la région
                                 const regionDistance = calculatePathDistance(regionSegment.entryIndex, regionSegment.exitIndex);
                                 const regionDuration = milesToDays(pixelsToMiles(regionDistance));
                                 
                                 let dayNote = '';
-                                if (day === 1 && segmentStartIndex >= regionSegment.entryIndex) {
-                                    // Premier jour du segment dans cette région
-                                    const remainingDays = Math.max(0, regionDuration - (segmentStartDays * regionDuration / totalDays));
-                                    if (remainingDays < regionDuration) {
-                                        dayNote = ` / Note : ne sont comptés que les ${remainingDays.toFixed(1)} jours restants`;
-                                    } else {
-                                        dayNote = ` / Note : durée ${regionDuration.toFixed(1)} jour${regionDuration !== 1 ? 's' : ''}`;
-                                    }
-                                } else if (day === segment.duration && segmentEndIndex < regionSegment.exitIndex) {
-                                    // Dernier jour du segment, région continue
-                                    const remainingDays = Math.max(0, regionDuration - ((segmentStartDays + segment.duration) * regionDuration / totalDays));
-                                    dayNote = ` / Note : il reste encore ${remainingDays.toFixed(1)} jours dans cette région`;
+                                const isEntryDay = discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex;
+                                const isExitDay = regionSegment.exitIndex >= dayStartIndex && regionSegment.exitIndex <= dayEndIndex;
+                                
+                                if (isEntryDay) {
+                                    dayNote = ` / Note : entrée, durée ${regionDuration.toFixed(1)} jour${regionDuration !== 1 ? 's' : ''}`;
+                                } else if (isExitDay) {
+                                    dayNote = ` / Note : sortie de la région`;
                                 } else {
-                                    dayNote = ` / Note : durée ${regionDuration.toFixed(1)} jour${regionDuration !== 1 ? 's' : ''}`;
+                                    dayNote = ` / Note : traversée en cours`;
                                 }
 
-                                dayContent.regionStays.push({
-                                    name: discovery.name,
-                                    note: dayNote,
-                                    isEntry: dayPathIndex <= regionSegment.entryIndex + 5, // Proche de l'entrée
-                                    isExit: dayPathIndex >= regionSegment.exitIndex - 5    // Proche de la sortie
+                                dayDiscoveries.push({
+                                    ...discovery,
+                                    sortIndex: discovery.discoveryIndex,
+                                    content: `🗺️ ${discovery.name}${dayNote}`,
+                                    isEntry: isEntryDay,
+                                    isExit: isExitDay
                                 });
                             }
                         }
                     }
                 });
 
-                // Ajouter les lieux pour ce jour
-                segmentDiscoveries.forEach(discovery => {
+                // Ajouter les découvertes de lieux
+                journeyDiscoveries.forEach(discovery => {
                     if (discovery.type === 'location') {
-                        const discoveryDayRatio = discovery.discoveryIndex / (journeyPath.length - 1);
-                        const discoveryDay = Math.floor(discoveryDayRatio * totalDays) + 1;
-                        
-                        if (Math.abs(discoveryDay - currentDay) <= 0.5) { // Tolérance d'un demi-jour
-                            dayContent.locations.push(discovery);
+                        // Vérifier si ce lieu est découvert pendant ce jour
+                        if (discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex) {
+                            let activityText = `📍 ${discovery.name}`;
+                            if (discovery.proximityType === 'traversed') {
+                                activityText += ' (traversé)';
+                            } else if (discovery.proximityType === 'nearby') {
+                                activityText += ' (passage à proximité)';
+                            }
+
+                            dayDiscoveries.push({
+                                ...discovery,
+                                sortIndex: discovery.discoveryIndex,
+                                content: activityText
+                            });
                         }
                     }
                 });
 
+                // Trier toutes les découvertes par ordre chronologique (index de découverte)
+                dayDiscoveries.sort((a, b) => a.sortIndex - b.sortIndex);
+
+                // Ajouter au contenu du jour
+                dayContent.chronologicalItems = dayDiscoveries.map(item => item.content);
+
                 // Ajouter des activités génériques si nécessaire
-                if (dayContent.locations.length === 0 && dayContent.regionStays.length === 0) {
+                if (dayContent.chronologicalItems.length === 0) {
                     dayContent.activities.push("🚶 Voyage le long du chemin tracé");
                 }
 
@@ -4406,33 +4416,15 @@
                 let dayTitle = `Jour ${dayData.day}`;
                 let dayActivities = [];
 
-                // Ajouter les séjours dans les régions
-                dayData.regionStays.forEach(regionStay => {
-                    let activityText = `🗺️ ${regionStay.name}`;
-                    if (regionStay.isEntry) {
-                        activityText = `🗺️ Entrée dans ${regionStay.name}`;
-                    } else if (regionStay.isExit) {
-                        activityText = `🗺️ Sortie de ${regionStay.name}`;
-                    }
-                    activityText += regionStay.note;
-                    dayActivities.push(activityText);
-                });
-
-                // Ajouter les lieux découverts
-                dayData.locations.forEach(location => {
-                    let activityText = `📍 ${location.name}`;
-                    if (location.proximityType === 'traversed') {
-                        activityText += ' (traversé)';
-                    } else if (location.proximityType === 'nearby') {
-                        activityText += ' (passage à proximité)';
-                    }
-                    dayActivities.push(activityText);
-                });
+                // Ajouter les découvertes dans l'ordre chronologique
+                if (dayData.chronologicalItems && dayData.chronologicalItems.length > 0) {
+                    dayActivities = [...dayData.chronologicalItems];
+                }
 
                 // Ajouter les activités génériques
-                dayData.activities.forEach(activity => {
-                    dayActivities.push(activity);
-                });
+                if (dayData.activities && dayData.activities.length > 0) {
+                    dayActivities = dayActivities.concat(dayData.activities);
+                }
 
                 return `
                     <div class="day-section">
