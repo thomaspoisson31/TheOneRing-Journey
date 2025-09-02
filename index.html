@@ -4540,12 +4540,17 @@
         function updateSegmentProgressBar() {
             if (!voyageSegments[currentSegmentIndex]) return;
             
-            const currentSegment = voyageSegments[currentSegmentIndex];
-            const segmentDuration = currentSegment.duration;
+            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
+            let cumulativeDays = 0;
+            for (let i = 0; i <= currentSegmentIndex; i++) {
+                cumulativeDays += voyageSegments[i].duration;
+            }
             
-            // Pour la barre de progression du segment, on montre toujours 100% car c'est le segment en cours
-            const progressPercent = 100;
-            const currentDay = segmentDuration; // Jour actuel du segment (toujours à la fin pour l'affichage)
+            // Calculer le total de jours de tous les segments
+            const totalVoyageDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            
+            // Calculer le pourcentage de progression
+            const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
 
             const progressFill = document.getElementById('progress-fill');
             const progressMarker = document.getElementById('progress-marker');
@@ -4554,12 +4559,10 @@
 
             progressFill.style.width = `${progressPercent}%`;
             progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
-            progressMarker.querySelector('span').textContent = currentDay;
+            progressMarker.querySelector('span').textContent = cumulativeDays;
 
-            const segmentNumber = currentSegmentIndex + 1;
-            const totalSegments = voyageSegments.length;
-            progressIndicator.textContent = `Segment ${segmentNumber}/${totalSegments} : ${currentDay} jour${currentDay !== 1 ? 's' : ''}`;
-            totalDaysSpan.textContent = segmentDuration;
+            progressIndicator.textContent = `Progression : ${cumulativeDays} / ${totalVoyageDays} jours`;
+            totalDaysSpan.textContent = totalVoyageDays;
         }
 
         function navigateToSegment(direction) {
