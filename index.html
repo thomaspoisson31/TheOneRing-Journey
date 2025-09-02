@@ -921,6 +921,7 @@
         let voyageSegments = [];
         let currentSegmentIndex = -1;
         let isVoyageActive = false;
+        let activatedSegments = new Set(); // Track which segments have been activated
 
         // --- Region creation states ---
         let currentRegionPoints = [];
@@ -4126,6 +4127,7 @@
             voyageSegments = [];
             isVoyageActive = false;
             currentSegmentIndex = 0;
+            activatedSegments.clear();
             console.log("🧹 Segments de voyage réinitialisés");
         }
 
@@ -4147,6 +4149,9 @@
             // Générer automatiquement tous les segments basés sur les régions traversées
             voyageSegments = generateVoyageSegments();
             
+            // Réinitialiser l'état d'activation
+            activatedSegments.clear();
+            
             isVoyageActive = true;
             currentSegmentIndex = 0;
 
@@ -4156,7 +4161,8 @@
             console.log("📊 État voyage:", {
                 isVoyageActive: isVoyageActive,
                 totalSegments: voyageSegments.length,
-                currentIndex: currentSegmentIndex
+                currentIndex: currentSegmentIndex,
+                activatedSegments: Array.from(activatedSegments)
             });
             updateVoyageSegmentsDisplay();
             scheduleAutoSync();
@@ -4174,7 +4180,7 @@
                 // Pas de régions, créer un segment simple
                 return [{
                     id: 1,
-                    duration: Math.max(1, Math.ceil(getTotalJourneyDays())),
+                    duration: 1, // Par défaut 1 jour
                     startLocation: 'Point de départ',
                     endLocation: 'Point d\'arrivée',
                     status: 'active',
@@ -4187,38 +4193,9 @@
                 const currentRegion = regionDiscoveries[i];
                 const nextRegion = regionDiscoveries[i + 1];
                 
-                let segmentDuration;
-                if (nextRegion) {
-                    // Calculer la durée jusqu'à la prochaine région
-                    const regionSegment = window.regionSegments?.get(currentRegion.name);
-                    const nextRegionSegment = window.regionSegments?.get(nextRegion.name);
-                    
-                    if (regionSegment && nextRegionSegment) {
-                        const segmentDistance = calculatePathDistance(
-                            regionSegment.entryIndex, 
-                            nextRegionSegment.entryIndex
-                        );
-                        segmentDuration = Math.max(1, Math.ceil(milesToDays(pixelsToMiles(segmentDistance))));
-                    } else {
-                        segmentDuration = 4; // Durée par défaut
-                    }
-                } else {
-                    // Dernier segment - calculer jusqu'à la fin du voyage
-                    const regionSegment = window.regionSegments?.get(currentRegion.name);
-                    if (regionSegment) {
-                        const segmentDistance = calculatePathDistance(
-                            regionSegment.entryIndex, 
-                            journeyPath.length - 1
-                        );
-                        segmentDuration = Math.max(1, Math.ceil(milesToDays(pixelsToMiles(segmentDistance))));
-                    } else {
-                        segmentDuration = 4; // Durée par défaut
-                    }
-                }
-
                 segments.push({
                     id: i + 1,
-                    duration: segmentDuration,
+                    duration: 1, // Par défaut 1 jour
                     startLocation: currentRegion.name,
                     endLocation: nextRegion ? nextRegion.name : findEndLocation(),
                     status: 'active',
@@ -4300,6 +4277,17 @@
 
         function calculateSegmentDailyContent(segmentIndex) {
             if (!currentVoyage || !voyageSegments[segmentIndex]) return [];
+
+            // Ne calculer que si le segment est activé
+            if (!activatedSegments.has(segmentIndex)) {
+                return [{
+                    day: 1,
+                    locations: [],
+                    regions: [],
+                    activities: ["🚶 Voyage le long du chemin tracé"],
+                    regionStays: []
+                }];
+            }
 
             const segment = voyageSegments[segmentIndex];
             const dailyContent = [];
@@ -4464,7 +4452,8 @@
                 currentSegmentIndex: currentSegmentIndex,
                 totalSegments: voyageSegments.length,
                 isVoyageActive: isVoyageActive,
-                currentSegment: voyageSegments[currentSegmentIndex]
+                currentSegment: voyageSegments[currentSegmentIndex],
+                activatedSegments: Array.from(activatedSegments)
             });
 
             const currentSegmentDiv = document.getElementById('current-segment-display');
@@ -4488,14 +4477,20 @@
                 console.log("🔧 Index corrigé à:", currentSegmentIndex);
             }
 
+            // Activer automatiquement le premier segment
+            if (currentSegmentIndex === 0) {
+                activatedSegments.add(0);
+            }
+
             noVoyageMessage.classList.add('hidden');
             currentSegmentDiv.classList.remove('hidden');
 
-            // Mettre à jour le titre du segment
+            // Mettre à jour le titre du segment avec indicateur d'activation
             const segmentTitle = document.getElementById('segment-title');
             const segmentName = generateSegmentName(currentSegmentIndex);
-            segmentTitle.textContent = segmentName;
-            console.log("📝 Titre du segment mis à jour:", segmentName);
+            const isActivated = activatedSegments.has(currentSegmentIndex);
+            segmentTitle.innerHTML = isActivated ? segmentName : `${segmentName} <span class="text-gray-500">(non activé)</span>`;
+            console.log("📝 Titre du segment mis à jour:", segmentName, "Activé:", isActivated);
 
             // Mettre à jour les boutons de navigation
             const prevBtn = document.getElementById('prev-segment-btn');
@@ -4508,12 +4503,21 @@
                 prevBtn.style.visibility = 'visible';
             }
 
-            // Bouton suivant : masqué si dernier segment
+            // Bouton suivant : différencier entre navigation et activation
             if (currentSegmentIndex === voyageSegments.length - 1) {
                 nextBtn.style.visibility = 'hidden';
-                endMessage.classList.remove('hidden');
             } else {
                 nextBtn.style.visibility = 'visible';
+                const nextSegmentActivated = activatedSegments.has(currentSegmentIndex + 1);
+                nextBtn.title = nextSegmentActivated ? "Segment suivant" : "Activer le segment suivant";
+                nextBtn.innerHTML = nextSegmentActivated ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-play"></i>';
+            }
+
+            // Vérifier si c'est la fin du voyage (tous les segments activés)
+            const allSegmentsActivated = voyageSegments.every((_, index) => activatedSegments.has(index));
+            if (allSegmentsActivated && currentSegmentIndex === voyageSegments.length - 1) {
+                endMessage.classList.remove('hidden');
+            } else {
                 endMessage.classList.add('hidden');
             }
 
@@ -4528,15 +4532,20 @@
             // Mettre à jour le contenu du segment
             renderSegmentContent(currentSegmentIndex);
 
-            // Mettre à jour la barre de progression
-            updateProgressBar();
+            // Mettre à jour la barre de progression basée sur le segment
+            updateSegmentProgressBar();
             progressBar.classList.remove('hidden');
         }
 
-        function updateProgressBar() {
-            const totalDays = getTotalJourneyDays();
-            const completedDays = getTotalSegmentDays();
-            const progressPercent = Math.min((completedDays / totalDays) * 100, 100);
+        function updateSegmentProgressBar() {
+            if (!voyageSegments[currentSegmentIndex]) return;
+            
+            const currentSegment = voyageSegments[currentSegmentIndex];
+            const segmentDuration = currentSegment.duration;
+            
+            // Pour la barre de progression du segment, on montre toujours 100% car c'est le segment en cours
+            const progressPercent = 100;
+            const currentDay = segmentDuration; // Jour actuel du segment (toujours à la fin pour l'affichage)
 
             const progressFill = document.getElementById('progress-fill');
             const progressMarker = document.getElementById('progress-marker');
@@ -4545,10 +4554,12 @@
 
             progressFill.style.width = `${progressPercent}%`;
             progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
-            progressMarker.querySelector('span').textContent = Math.round(completedDays);
+            progressMarker.querySelector('span').textContent = currentDay;
 
-            progressIndicator.textContent = `Progression : ${Math.round(completedDays)} jours / ${Math.round(totalDays)}`;
-            totalDaysSpan.textContent = Math.round(totalDays);
+            const segmentNumber = currentSegmentIndex + 1;
+            const totalSegments = voyageSegments.length;
+            progressIndicator.textContent = `Segment ${segmentNumber}/${totalSegments} : ${currentDay} jour${currentDay !== 1 ? 's' : ''}`;
+            totalDaysSpan.textContent = segmentDuration;
         }
 
         function navigateToSegment(direction) {
@@ -4556,6 +4567,7 @@
                 direction: direction,
                 currentIndex: currentSegmentIndex,
                 totalSegments: voyageSegments.length,
+                activatedSegments: Array.from(activatedSegments),
                 segmentNames: voyageSegments.map((s, i) => `${i}: ${s.startLocation} -> ${s.endLocation}`)
             });
 
@@ -4563,7 +4575,15 @@
                 currentSegmentIndex--;
                 console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
             } else if (direction === 'next' && currentSegmentIndex < voyageSegments.length - 1) {
-                currentSegmentIndex++;
+                const nextIndex = currentSegmentIndex + 1;
+                
+                // Si le segment suivant n'est pas activé, l'activer
+                if (!activatedSegments.has(nextIndex)) {
+                    activatedSegments.add(nextIndex);
+                    console.log("🎬 Activation du segment", nextIndex);
+                }
+                
+                currentSegmentIndex = nextIndex;
                 console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
             } else {
                 console.log("🚫 Navigation impossible:", direction, "currentIndex:", currentSegmentIndex, "totalSegments:", voyageSegments.length);
@@ -4589,7 +4609,7 @@
                 // Recalculer les segments suivants si nécessaire
                 recalculateFollowingSegments();
                 
-                // Mettre à jour l'affichage
+                // Mettre à jour l'affichage complet (y compris le message de fin)
                 updateCurrentSegmentDisplay();
                 scheduleAutoSync();
             }
