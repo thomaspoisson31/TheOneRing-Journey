@@ -4503,19 +4503,27 @@
                 prevBtn.style.visibility = 'visible';
             }
 
-            // Bouton suivant : différencier entre navigation et activation
-            if (currentSegmentIndex === voyageSegments.length - 1) {
+            // Bouton suivant : vérifier s'il peut y avoir un segment suivant
+            const canHaveNextSegment = checkIfMoreSegmentsNeeded() || currentSegmentIndex < voyageSegments.length - 1;
+            
+            if (!canHaveNextSegment) {
                 nextBtn.style.visibility = 'hidden';
             } else {
                 nextBtn.style.visibility = 'visible';
-                const nextSegmentActivated = activatedSegments.has(currentSegmentIndex + 1);
-                nextBtn.title = nextSegmentActivated ? "Segment suivant" : "Activer le segment suivant";
-                nextBtn.innerHTML = nextSegmentActivated ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-play"></i>';
+                const nextSegmentExists = currentSegmentIndex + 1 < voyageSegments.length;
+                if (nextSegmentExists) {
+                    const nextSegmentActivated = activatedSegments.has(currentSegmentIndex + 1);
+                    nextBtn.title = nextSegmentActivated ? "Segment suivant" : "Activer le segment suivant";
+                    nextBtn.innerHTML = nextSegmentActivated ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-play"></i>';
+                } else {
+                    // Le segment suivant n'existe pas encore mais peut être créé
+                    nextBtn.title = "Créer et activer le segment suivant";
+                    nextBtn.innerHTML = '<i class="fas fa-plus"></i>';
+                }
             }
 
-            // Vérifier si c'est la fin du voyage (tous les segments activés)
-            const allSegmentsActivated = voyageSegments.every((_, index) => activatedSegments.has(index));
-            if (allSegmentsActivated && currentSegmentIndex === voyageSegments.length - 1) {
+            // Vérifier si c'est la fin du voyage (plus de segments possibles et on est au dernier segment)
+            if (!canHaveNextSegment && currentSegmentIndex === voyageSegments.length - 1) {
                 endMessage.classList.remove('hidden');
             } else {
                 endMessage.classList.add('hidden');
@@ -4577,8 +4585,20 @@
             if (direction === 'prev' && currentSegmentIndex > 0) {
                 currentSegmentIndex--;
                 console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
-            } else if (direction === 'next' && currentSegmentIndex < voyageSegments.length - 1) {
+            } else if (direction === 'next') {
                 const nextIndex = currentSegmentIndex + 1;
+                
+                // Si le segment suivant n'existe pas, le créer dynamiquement
+                if (nextIndex >= voyageSegments.length) {
+                    const needsMoreSegments = checkIfMoreSegmentsNeeded();
+                    if (needsMoreSegments) {
+                        createNextSegment();
+                        console.log("🆕 Nouveau segment créé:", voyageSegments.length - 1);
+                    } else {
+                        console.log("🏁 Voyage terminé, pas de segment suivant nécessaire");
+                        return; // Pas de segment suivant possible
+                    }
+                }
                 
                 // Si le segment suivant n'est pas activé, l'activer
                 if (!activatedSegments.has(nextIndex)) {
@@ -4606,11 +4626,11 @@
             if (voyageSegments[currentSegmentIndex]) {
                 voyageSegments[currentSegmentIndex].duration = newDuration;
                 
-                // Recalculer le contenu du segment
-                renderSegmentContent(currentSegmentIndex);
+                // Supprimer tous les segments suivants
+                removeFollowingSegments();
                 
-                // Recalculer les segments suivants si nécessaire
-                recalculateFollowingSegments();
+                // Recalculer le contenu du segment actuel
+                renderSegmentContent(currentSegmentIndex);
                 
                 // Mettre à jour l'affichage complet (y compris le message de fin)
                 updateCurrentSegmentDisplay();
@@ -4618,11 +4638,23 @@
             }
         }
 
-        function recalculateFollowingSegments() {
-            // Recalculer tous les noms de segments et contenus suivants
-            for (let i = currentSegmentIndex + 1; i < voyageSegments.length; i++) {
-                // Le contenu sera recalculé lors de l'affichage du segment
-            }
+        function removeFollowingSegments() {
+            // Supprimer tous les segments après le segment actuel
+            voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
+            
+            // Supprimer les activations des segments supprimés
+            const segmentsToRemove = [];
+            activatedSegments.forEach(index => {
+                if (index > currentSegmentIndex) {
+                    segmentsToRemove.push(index);
+                }
+            });
+            segmentsToRemove.forEach(index => {
+                activatedSegments.delete(index);
+            });
+            
+            console.log("🗑️ Segments suivants supprimés. Nouveaux segments:", voyageSegments.length);
+            console.log("🗑️ Segments activés restants:", Array.from(activatedSegments));
         }
 
         function updateVoyageSegmentsDisplay() {
@@ -4669,6 +4701,66 @@
             const totalJourneyDays = getTotalJourneyDays();
             const segmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
             return Math.max(0, totalJourneyDays - segmentDays);
+        }
+
+        function checkIfMoreSegmentsNeeded() {
+            const totalJourneyDays = getTotalJourneyDays();
+            const currentSegmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            
+            // Il faut plus de segments si on n'a pas encore couvert toute la durée du voyage
+            return currentSegmentDays < totalJourneyDays;
+        }
+
+        function createNextSegment() {
+            if (!currentVoyage || !journeyDiscoveries) return;
+
+            const nextSegmentIndex = voyageSegments.length;
+            
+            // Calculer les jours déjà couverts
+            const coveredDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            const totalJourneyDays = getTotalJourneyDays();
+            
+            // Calculer la position dans le voyage pour ce nouveau segment
+            const segmentStartRatio = coveredDays / totalJourneyDays;
+            const segmentStartPathIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
+            
+            // Trouver la prochaine découverte significative après le point actuel
+            const remainingDiscoveries = journeyDiscoveries.filter(discovery => 
+                discovery.discoveryIndex > segmentStartPathIndex
+            ).sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+            
+            let startLocation, endLocation;
+            
+            // Déterminer le point de départ (fin du segment précédent)
+            if (voyageSegments.length > 0) {
+                const prevSegment = voyageSegments[voyageSegments.length - 1];
+                startLocation = prevSegment.endLocation;
+            } else {
+                startLocation = 'Point de départ';
+            }
+            
+            // Déterminer le point d'arrivée du nouveau segment
+            if (remainingDiscoveries.length > 0) {
+                // Utiliser la prochaine découverte comme destination
+                const nextDiscovery = remainingDiscoveries[0];
+                endLocation = nextDiscovery.name;
+            } else {
+                // Pas de découverte restante, utiliser la fin du voyage
+                endLocation = findEndLocation();
+            }
+            
+            // Créer le nouveau segment
+            const newSegment = {
+                id: nextSegmentIndex + 1,
+                duration: 1, // Par défaut 1 jour
+                startLocation: startLocation,
+                endLocation: endLocation,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            voyageSegments.push(newSegment);
+            console.log("🆕 Nouveau segment créé:", newSegment);
         }
 
         // Navigation globale pour les segments
