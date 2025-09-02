@@ -4152,6 +4152,12 @@
 
             console.log("🚢 Voyage démarré:", currentVoyage);
             console.log("🗺️ Segments générés:", voyageSegments);
+            console.log("🎯 Index initial:", currentSegmentIndex);
+            console.log("📊 État voyage:", {
+                isVoyageActive: isVoyageActive,
+                totalSegments: voyageSegments.length,
+                currentIndex: currentSegmentIndex
+            });
             updateVoyageSegmentsDisplay();
             scheduleAutoSync();
         }
@@ -4245,12 +4251,22 @@
         }
 
         function generateSegmentName(segmentIndex) {
+            console.log("🏷️ Génération nom segment:", {
+                segmentIndex: segmentIndex,
+                hasVoyage: !!currentVoyage,
+                segmentsLength: voyageSegments.length,
+                segmentExists: !!voyageSegments[segmentIndex]
+            });
+
             if (!currentVoyage || voyageSegments.length === 0 || !voyageSegments[segmentIndex]) {
+                console.log("⚠️ Segment par défaut utilisé");
                 return "1. Segment de voyage";
             }
 
             const segment = voyageSegments[segmentIndex];
-            return `${segmentIndex + 1}. De ${segment.startLocation} à ${segment.endLocation}`;
+            const name = `${segmentIndex + 1}. De ${segment.startLocation} à ${segment.endLocation}`;
+            console.log("✅ Nom généré:", name);
+            return name;
         }
 
         function findLocationAtDay(dayTarget) {
@@ -4444,12 +4460,20 @@
         }
 
         function updateCurrentSegmentDisplay() {
+            console.log("🔄 Mise à jour affichage segment:", {
+                currentSegmentIndex: currentSegmentIndex,
+                totalSegments: voyageSegments.length,
+                isVoyageActive: isVoyageActive,
+                currentSegment: voyageSegments[currentSegmentIndex]
+            });
+
             const currentSegmentDiv = document.getElementById('current-segment-display');
             const noVoyageMessage = document.getElementById('no-voyage-message');
             const progressBar = document.getElementById('voyage-progress-bar');
             const endMessage = document.getElementById('voyage-end-message');
 
             if (!isVoyageActive || voyageSegments.length === 0) {
+                console.log("❌ Pas de voyage actif ou pas de segments");
                 currentSegmentDiv.classList.add('hidden');
                 noVoyageMessage.classList.remove('hidden');
                 progressBar.classList.add('hidden');
@@ -4457,12 +4481,21 @@
                 return;
             }
 
+            // Vérifier que l'index est valide
+            if (currentSegmentIndex < 0 || currentSegmentIndex >= voyageSegments.length) {
+                console.error("❌ Index de segment invalide:", currentSegmentIndex, "segments disponibles:", voyageSegments.length);
+                currentSegmentIndex = Math.max(0, Math.min(currentSegmentIndex, voyageSegments.length - 1));
+                console.log("🔧 Index corrigé à:", currentSegmentIndex);
+            }
+
             noVoyageMessage.classList.add('hidden');
             currentSegmentDiv.classList.remove('hidden');
 
             // Mettre à jour le titre du segment
             const segmentTitle = document.getElementById('segment-title');
-            segmentTitle.textContent = generateSegmentName(currentSegmentIndex);
+            const segmentName = generateSegmentName(currentSegmentIndex);
+            segmentTitle.textContent = segmentName;
+            console.log("📝 Titre du segment mis à jour:", segmentName);
 
             // Mettre à jour les boutons de navigation
             const prevBtn = document.getElementById('prev-segment-btn');
@@ -4519,10 +4552,21 @@
         }
 
         function navigateToSegment(direction) {
+            console.log("🧭 Navigation segment:", {
+                direction: direction,
+                currentIndex: currentSegmentIndex,
+                totalSegments: voyageSegments.length,
+                segmentNames: voyageSegments.map((s, i) => `${i}: ${s.startLocation} -> ${s.endLocation}`)
+            });
+
             if (direction === 'prev' && currentSegmentIndex > 0) {
                 currentSegmentIndex--;
+                console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
             } else if (direction === 'next' && currentSegmentIndex < voyageSegments.length - 1) {
                 currentSegmentIndex++;
+                console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
+            } else {
+                console.log("🚫 Navigation impossible:", direction, "currentIndex:", currentSegmentIndex, "totalSegments:", voyageSegments.length);
             }
 
             updateCurrentSegmentDisplay();
@@ -4615,6 +4659,17 @@
             if (modal) {
                 modal.classList.add('hidden');
             }
+        });
+
+        // Ajouter les event listeners pour les boutons de navigation
+        document.getElementById('prev-segment-btn').addEventListener('click', () => {
+            console.log("⬅️ Clic bouton segment précédent");
+            navigateToSegment('prev');
+        });
+
+        document.getElementById('next-segment-btn').addEventListener('click', () => {
+            console.log("➡️ Clic bouton segment suivant");
+            navigateToSegment('next');
         });
 
         document.getElementById('start-voyage-btn').addEventListener('click', () => {
