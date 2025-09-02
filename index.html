@@ -4546,8 +4546,8 @@
                 cumulativeDays += voyageSegments[i].duration;
             }
             
-            // Calculer le total de jours de tous les segments
-            const totalVoyageDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
+            const totalVoyageDays = getTotalJourneyDays();
             
             // Calculer le pourcentage de progression
             const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
@@ -4649,19 +4649,26 @@
         }
 
         function getTotalJourneyDays() {
-            if (!currentVoyage || !currentVoyage.totalDistance) {
+            // Utiliser la distance totale du tracé actuel ou sauvegardé
+            let distanceToUse = totalPathPixels;
+            if (currentVoyage && currentVoyage.totalDistance) {
+                distanceToUse = currentVoyage.totalDistance;
+            }
+            
+            if (distanceToUse === 0) {
                 return 0;
             }
-            const totalMiles = pixelsToMiles(currentVoyage.totalDistance);
+            
+            const totalMiles = pixelsToMiles(distanceToUse);
             return milesToDays(totalMiles);
         }
 
-        function getTotalSegmentDays() {
-            return voyageSegments.reduce((total, segment) => total + segment.duration, 0);
-        }
+        
 
         function getRemainingJourneyDays() {
-            return Math.max(0, getTotalJourneyDays() - getTotalSegmentDays());
+            const totalJourneyDays = getTotalJourneyDays();
+            const segmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            return Math.max(0, totalJourneyDays - segmentDays);
         }
 
         // Navigation globale pour les segments
