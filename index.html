@@ -755,17 +755,10 @@
                 </div>
 
                 <div class="flex-grow overflow-hidden flex flex-col">
-                    <!-- Control Panel -->
-                    <div class="p-4 border-b border-gray-700">
-                        <div class="flex justify-between items-center mb-3">
-                            <button id="start-voyage-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer le Voyage</button>
-                        </div>
-                    </div>
-
                     <!-- Message d'accueil ou contenu du segment -->
                     <div class="flex-1 overflow-hidden flex flex-col">
                         <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-full p-4">
-                            Tracez un chemin sur la carte et cliquez "Démarrer le Voyage" pour créer votre périple.
+                            Tracez un chemin sur la carte pour créer votre périple.
                         </div>
 
                         <!-- Segment actuel -->
@@ -4654,18 +4647,8 @@
         function updateVoyageSegmentsDisplay() {
             // Cette fonction est maintenant simplifiée car on utilise updateCurrentSegmentDisplay
             if (isVoyageActive) {
-                document.getElementById('start-voyage-btn').style.display = 'none';
                 updateCurrentSegmentDisplay();
             } else {
-                document.getElementById('start-voyage-btn').style.display = 'inline-block';
-                document.getElementById('start-voyage-btn').disabled = journeyPath.length === 0;
-                
-                if (journeyPath.length === 0) {
-                    document.getElementById('start-voyage-btn').title = "Tracez d'abord un chemin sur la carte";
-                } else {
-                    document.getElementById('start-voyage-btn').title = "Démarrer un nouveau voyage";
-                }
-
                 // Cacher tous les éléments du voyage
                 document.getElementById('current-segment-display').classList.add('hidden');
                 document.getElementById('voyage-progress-bar').classList.add('hidden');
@@ -4841,7 +4824,13 @@
             const modal = document.getElementById('voyage-segments-modal');
             if (modal) {
                 modal.classList.remove('hidden');
-                updateVoyageSegmentsDisplay();
+                
+                // Auto-initialize voyage if path exists but voyage is not active
+                if (journeyPath.length > 0 && journeyDiscoveries.length > 0 && !isVoyageActive) {
+                    handleStartVoyage();
+                } else {
+                    updateVoyageSegmentsDisplay();
+                }
             }
         });
 
@@ -4862,11 +4851,6 @@
         document.getElementById('next-segment-btn').addEventListener('click', () => {
             console.log("➡️ Clic bouton segment suivant - Index actuel:", currentSegmentIndex);
             navigateToSegment('next');
-        });
-
-        document.getElementById('start-voyage-btn').addEventListener('click', () => {
-            console.log("🚢 Démarrage du voyage");
-            handleStartVoyage();
         });
 
         // Event listeners pour la nouvelle interface
