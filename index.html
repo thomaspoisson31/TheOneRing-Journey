@@ -943,6 +943,13 @@
             console.log(`🔐 [AUTH] ${message}`, data || '');
         }
 
+        // --- HTML Escape Function ---
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // --- Check Google Authentication Status ---
         function checkGoogleAuth() {
             logAuth("Vérification du statut d'authentification...");
@@ -4339,20 +4346,12 @@
                             );
 
                             if (regionOverlapsDay) {
-                                // Calculer la durée de la région
-                                const regionDistance = calculatePathDistance(regionSegment.entryIndex, regionSegment.exitIndex);
-                                const regionDuration = milesToDays(pixelsToMiles(regionDistance));
-                                
-                                let dayNote = '';
-                                const isEntryDay = discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex;
-                                const isExitDay = regionSegment.exitIndex >= dayStartIndex && regionSegment.exitIndex <= dayEndIndex;
-                                
                                 dayDiscoveries.push({
                                     ...discovery,
                                     sortIndex: discovery.discoveryIndex,
-                                    content: `🗺️ ${discovery.name}`,
-                                    isEntry: isEntryDay,
-                                    isExit: isExitDay
+                                    content: `🗺️ ${escapeHtml(discovery.name)}`,
+                                    isEntry: discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex,
+                                    isExit: regionSegment.exitIndex >= dayStartIndex && regionSegment.exitIndex <= dayEndIndex
                                 });
                             }
                         }
@@ -4367,7 +4366,7 @@
                             dayDiscoveries.push({
                                 ...discovery,
                                 sortIndex: discovery.discoveryIndex,
-                                content: `📍 ${discovery.name}`
+                                content: `📍 ${escapeHtml(discovery.name)}`
                             });
                         }
                     }
@@ -4427,6 +4426,7 @@
                 `;
             }).join('');
 
+            // Use innerHTML to properly render HTML content
             segmentContentDiv.innerHTML = contentHtml;
             setupSegmentDiscoveryHighlight();
         }
@@ -4744,25 +4744,38 @@
         window.navigateToSegment = navigateToSegment;
 
         function processActivityForHighlight(activity) {
-            // Extraire les noms de lieux et régions de l'activité
-            let processedActivity = activity;
+            // Nettoyer d'abord le texte de tout HTML résiduel
+            const cleanActivity = activity.replace(/<[^>]*>/g, '');
+            let processedActivity = cleanActivity;
             
-            // Chercher les noms de lieux
+            // Chercher les noms de lieux (en évitant les doublons)
             locationsData.locations.forEach(location => {
                 const locationName = location.name;
-                const regex = new RegExp(`\\b${locationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-                processedActivity = processedActivity.replace(regex, (match) => {
-                    return `<span class="segment-discovery-item" data-discovery-name="${locationName}" data-discovery-type="location">${match}</span>`;
-                });
+                // Échapper les caractères spéciaux pour la regex
+                const escapedName = locationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+                
+                // Vérifier si le nom n'est pas déjà dans un span
+                if (!processedActivity.includes(`data-discovery-name="${locationName}"`)) {
+                    processedActivity = processedActivity.replace(regex, (match) => {
+                        return `<span class="segment-discovery-item" data-discovery-name="${escapeHtml(locationName)}" data-discovery-type="location">${escapeHtml(match)}</span>`;
+                    });
+                }
             });
             
-            // Chercher les noms de régions
+            // Chercher les noms de régions (en évitant les doublons)
             regionsData.regions.forEach(region => {
                 const regionName = region.name;
-                const regex = new RegExp(`\\b${regionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-                processedActivity = processedActivity.replace(regex, (match) => {
-                    return `<span class="segment-discovery-item" data-discovery-name="${regionName}" data-discovery-type="region">${match}</span>`;
-                });
+                // Échapper les caractères spéciaux pour la regex
+                const escapedName = regionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+                
+                // Vérifier si le nom n'est pas déjà dans un span
+                if (!processedActivity.includes(`data-discovery-name="${regionName}"`)) {
+                    processedActivity = processedActivity.replace(regex, (match) => {
+                        return `<span class="segment-discovery-item" data-discovery-name="${escapeHtml(regionName)}" data-discovery-type="region">${escapeHtml(match)}</span>`;
+                    });
+                }
             });
             
             return processedActivity;
