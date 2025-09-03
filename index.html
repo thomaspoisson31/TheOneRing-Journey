@@ -755,10 +755,17 @@
                 </div>
 
                 <div class="flex-grow overflow-hidden flex flex-col">
+                    <!-- Control Panel -->
+                    <div class="p-4 border-b border-gray-700">
+                        <div class="flex justify-between items-center mb-3">
+                            <button id="start-voyage-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer le Voyage</button>
+                        </div>
+                    </div>
+
                     <!-- Message d'accueil ou contenu du segment -->
                     <div class="flex-1 overflow-hidden flex flex-col">
                         <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-full p-4">
-                            Tracez un chemin sur la carte pour créer votre périple.
+                            Tracez un chemin sur la carte et cliquez "Démarrer le Voyage" pour créer votre périple.
                         </div>
 
                         <!-- Segment actuel -->
@@ -3114,11 +3121,6 @@
             const roundedDays = Math.ceil(days * 2) / 2;
             distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`;
             updateJourneyInfo();
-            
-            // Démarrer automatiquement le voyage s'il n'est pas déjà actif
-            if (!isVoyageActive) {
-                handleStartVoyage();
-            }
         }
 
         function updateJourneyInfo() {
@@ -3130,12 +3132,10 @@
             // Reset tracking
             traversedRegions.clear();
             nearbyLocations.clear();
-            journeyDiscoveries = []; // Reset discoveries to rebuild chronologically
 
-            // Track region segments for duration calculation (supports multiple segments per region)
-            let regionSegments = new Map(); // region name -> array of {entryIndex, exitIndex, segmentId}
+            // Track region segments for duration calculation
+            let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
             let currentRegions = new Set(); // regions currently being traversed
-            let regionSegmentCounter = 0; // Counter for unique segment IDs
 
             // Track location proximity types
             let locationProximityTypes = new Map(); // location name -> 'traversed' or 'nearby'
@@ -3146,85 +3146,41 @@
 
                 // Check which regions this point is in
                 let pointRegions = new Set();
-                let isInAnyRegion = false;
-                
                 regionsData.regions.forEach(region => {
                     if (region.points && region.points.length >= 3) {
                         if (isPointInPolygon(currentPoint, region.points)) {
                             pointRegions.add(region.name);
-                            isInAnyRegion = true;
 
-                            // Check if we're entering this region (not currently in it)
-                            if (!currentRegions.has(region.name)) {
+                            if (!traversedRegions.has(region.name)) {
                                 traversedRegions.add(region.name);
-                                // Add new region discovery entry
-                                journeyDiscoveries.push({
-                                    name: region.name,
-                                    type: 'region',
-                                    discoveryIndex: i,
-                                    segmentId: regionSegmentCounter++
-                                });
-                                
-                                // Initialize or add new segment for this region
-                                if (!regionSegments.has(region.name)) {
-                                    regionSegments.set(region.name, []);
+                                // Add to chronological discoveries if not already present
+                                if (!journeyDiscoveries.some(d => d.name === region.name && d.type === 'region')) {
+                                    journeyDiscoveries.push({
+                                        name: region.name,
+                                        type: 'region',
+                                        discoveryIndex: i
+                                    });
                                 }
-                                regionSegments.get(region.name).push({
-                                    entryIndex: i, 
-                                    exitIndex: i,
-                                    segmentId: regionSegmentCounter - 1
-                                });
+                                // Mark entry point for this region
+                                regionSegments.set(region.name, {entryIndex: i, exitIndex: i});
                             } else {
-                                // Update exit point for the current segment of this region
-                                const segments = regionSegments.get(region.name);
-                                if (segments && segments.length > 0) {
-                                    segments[segments.length - 1].exitIndex = i;
+                                // Update exit point for this region
+                                let segment = regionSegments.get(region.name);
+                                if (segment) {
+                                    segment.exitIndex = i;
                                 }
                             }
                         }
                     }
                 });
 
-                // Si le point n'est dans aucune région définie, considérer comme "Terres Sauvages"
-                if (!isInAnyRegion) {
-                    pointRegions.add('Terres Sauvages');
-                    
-                    // Check if we're entering Terres Sauvages (not currently in it)
-                    if (!currentRegions.has('Terres Sauvages')) {
-                        traversedRegions.add('Terres Sauvages');
-                        // Add new Terres Sauvages discovery entry
-                        journeyDiscoveries.push({
-                            name: 'Terres Sauvages',
-                            type: 'region',
-                            discoveryIndex: i,
-                            segmentId: regionSegmentCounter++
-                        });
-                        
-                        // Initialize or add new segment for Terres Sauvages
-                        if (!regionSegments.has('Terres Sauvages')) {
-                            regionSegments.set('Terres Sauvages', []);
-                        }
-                        regionSegments.get('Terres Sauvages').push({
-                            entryIndex: i, 
-                            exitIndex: i,
-                            segmentId: regionSegmentCounter - 1
-                        });
-                    } else {
-                        // Update exit point for the current segment of Terres Sauvages
-                        const segments = regionSegments.get('Terres Sauvages');
-                        if (segments && segments.length > 0) {
-                            segments[segments.length - 1].exitIndex = i;
-                        }
-                    }
-                }
-
                 // Check for regions we're exiting
                 currentRegions.forEach(regionName => {
                     if (!pointRegions.has(regionName)) {
-                        // We've exited this region, finalize its current segment
-                        const segments = regionSegments.get(regionName);
-                        if (segments && segments.length > 0) {
-                            segments[segments.length - 1].exitIndex = i - 1; // Previous point was the last point in region
+                        // We've exited this region, finalize its segment
+                        let segment = regionSegments.get(regionName);
+                        if (segment) {
+                            segment.exitIndex = i - 1; // Previous point was the last point in region
                         }
                     }
                 });
@@ -3252,15 +3208,27 @@
                                 proximityType = 'traversed'; // 0-10 pixels
                             }
 
-                            locationProximityTypes.set(location.name, proximityType);
+                            // If location already exists with 'nearby', upgrade to 'traversed' if applicable
+                            const existingType = locationProximityTypes.get(location.name);
+                            if (!existingType || (existingType === 'nearby' && proximityType === 'traversed')) {
+                                locationProximityTypes.set(location.name, proximityType);
+                            }
 
-                            // Add to chronological discoveries
-                            journeyDiscoveries.push({
-                                name: location.name,
-                                type: 'location',
-                                discoveryIndex: i,
-                                proximityType: proximityType
-                            });
+                            // Add to chronological discoveries if not already present
+                            if (!journeyDiscoveries.some(d => d.name === location.name && d.type === 'location')) {
+                                journeyDiscoveries.push({
+                                    name: location.name,
+                                    type: 'location',
+                                    discoveryIndex: i,
+                                    proximityType: locationProximityTypes.get(location.name)
+                                });
+                            } else {
+                                // Update existing discovery with new proximity type if better
+                                const existingDiscovery = journeyDiscoveries.find(d => d.name === location.name && d.type === 'location');
+                                if (existingDiscovery) {
+                                    existingDiscovery.proximityType = locationProximityTypes.get(location.name);
+                                }
+                            }
                         } else {
                             // Location already discovered, but check if we need to upgrade proximity type
                             let proximityType = 'nearby';
@@ -3362,14 +3330,8 @@
                         // Find the end point of the previous discovery
                         const prevDiscovery = chronologicalDiscoveries[index - 1];
                         if (prevDiscovery.type === 'region' && window.regionSegments) {
-                            const segments = window.regionSegments.get(prevDiscovery.name);
-                            if (segments && segments.length > 0) {
-                                // Find the segment with matching segmentId
-                                const matchingSegment = segments.find(s => s.segmentId === prevDiscovery.segmentId);
-                                startIndex = matchingSegment ? matchingSegment.exitIndex : prevDiscovery.discoveryIndex;
-                            } else {
-                                startIndex = prevDiscovery.discoveryIndex;
-                            }
+                            const segment = window.regionSegments.get(prevDiscovery.name);
+                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
                         } else {
                             startIndex = prevDiscovery.discoveryIndex;
                         }
@@ -3381,7 +3343,7 @@
 
                     // Check if this is a starting location (close to journey start)
                     let travelInfo;
-                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex <= 5) {
+                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
                         // Find the actual location to check distance from start point
                         const location = locationsData.locations.find(loc => loc.name === discovery.name);
                         if (location && location.coordinates) {
@@ -3411,8 +3373,6 @@
                             }
                             travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
                         }
-                    } else if (discovery.type === 'region' && startPoint && discovery.discoveryIndex <= 5) {
-                        travelInfo = "(point de départ)";
                     } else {
                         // Add proximity information for locations
                         let proximityText = '';
@@ -3428,23 +3388,19 @@
 
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
 
-                    // For regions, also calculate duration inside the specific region segment
+                    // For regions, also calculate duration inside the region
                     if (discovery.type === 'region' && window.regionSegments) {
-                        const segments = window.regionSegments.get(discovery.name);
-                        if (segments && segments.length > 0) {
-                            // Find the segment with matching segmentId
-                            const matchingSegment = segments.find(s => s.segmentId === discovery.segmentId);
-                            if (matchingSegment) {
-                                const regionDistance = calculatePathDistance(matchingSegment.entryIndex, matchingSegment.exitIndex);
-                                const regionMiles = pixelsToMiles(regionDistance);
-                                const regionDays = milesToDays(regionMiles);
+                        const segment = window.regionSegments.get(discovery.name);
+                        if (segment) {
+                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
+                            const regionMiles = pixelsToMiles(regionDistance);
+                            const regionDays = milesToDays(regionMiles);
 
-                                // Replace travelInfo for regions to include duration
-                                if (travelInfo === "(point de départ)") {
-                                    displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
-                                } else {
-                                    displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
-                                }
+                            // Replace travelInfo for regions to include duration
+                            if (travelInfo === "(point de départ)") {
+                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            } else {
+                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             }
                         }
                     }
@@ -3474,7 +3430,7 @@
                 // Setup enhanced tooltips
                 setupDiscoveryTooltips();
 
-                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name} (segment: ${d.segmentId || 'N/A'})`));
+                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
             } else {
                 traversedRegionsInfo.classList.add('hidden');
                 nearbyLocationsInfo.classList.add('hidden');
@@ -4185,8 +4141,9 @@
         }
 
         function handleStartVoyage() {
-            if (journeyPath.length === 0) {
-                return; // Pas de chemin tracé, ne pas démarrer
+            if (journeyPath.length === 0 || journeyDiscoveries.length === 0) {
+                alert("Vous devez d'abord tracer un chemin sur la carte pour démarrer un voyage.");
+                return;
             }
 
             // Initialize voyage
@@ -4229,31 +4186,15 @@
                 .sort((a, b) => a.discoveryIndex - b.discoveryIndex);
 
             if (regionDiscoveries.length === 0) {
-                // Pas de régions, créer un segment "Terres Sauvages"
+                // Pas de régions, créer un segment simple
                 return [{
                     id: 1,
                     duration: 1, // Par défaut 1 jour
-                    startLocation: 'Terres Sauvages',
-                    endLocation: findEndLocation() || 'Terres Sauvages',
+                    startLocation: 'Point de départ',
+                    endLocation: 'Point d\'arrivée',
                     status: 'active',
                     createdAt: new Date().toISOString()
                 }];
-            }
-
-            // Vérifier si le voyage commence dans une région ou en terres sauvages
-            const firstRegion = regionDiscoveries[0];
-            const journeyStartsInRegion = firstRegion && firstRegion.discoveryIndex <= 5; // Si découvert dans les 5 premiers points
-
-            if (!journeyStartsInRegion) {
-                // Ajouter un segment "Terres Sauvages" au début
-                segments.push({
-                    id: 1,
-                    duration: 1,
-                    startLocation: 'Terres Sauvages',
-                    endLocation: firstRegion ? firstRegion.name : findEndLocation(),
-                    status: 'active',
-                    createdAt: new Date().toISOString()
-                });
             }
 
             // Créer des segments basés sur les transitions entre régions
@@ -4262,7 +4203,7 @@
                 const nextRegion = regionDiscoveries[i + 1];
                 
                 segments.push({
-                    id: segments.length + 1,
+                    id: i + 1,
                     duration: 1, // Par défaut 1 jour
                     startLocation: currentRegion.name,
                     endLocation: nextRegion ? nextRegion.name : findEndLocation(),
@@ -4393,32 +4334,33 @@
                 // Collecter toutes les découvertes pour ce jour avec leur index de découverte
                 const dayDiscoveries = [];
 
-                // Ajouter les découvertes de régions (maintenant avec support multi-segments)
+                // Ajouter les découvertes de régions
                 journeyDiscoveries.forEach(discovery => {
                     if (discovery.type === 'region' && window.regionSegments) {
-                        const regionSegments = window.regionSegments.get(discovery.name);
-                        if (regionSegments && Array.isArray(regionSegments)) {
-                            // Trouver le segment correspondant à cette découverte spécifique
-                            const matchingSegment = regionSegments.find(s => s.segmentId === discovery.segmentId);
-                            if (matchingSegment) {
-                                // Vérifier si cette région est traversée pendant ce jour
-                                const regionOverlapsDay = (
-                                    matchingSegment.entryIndex <= dayEndIndex && 
-                                    matchingSegment.exitIndex >= dayStartIndex
-                                );
+                        const regionSegment = window.regionSegments.get(discovery.name);
+                        if (regionSegment) {
+                            // Vérifier si cette région est traversée pendant ce jour
+                            const regionOverlapsDay = (
+                                regionSegment.entryIndex <= dayEndIndex && 
+                                regionSegment.exitIndex >= dayStartIndex
+                            );
 
-                                if (regionOverlapsDay) {
-                                    const isEntryDay = discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex;
-                                    const isExitDay = matchingSegment.exitIndex >= dayStartIndex && matchingSegment.exitIndex <= dayEndIndex;
-                                    
-                                    dayDiscoveries.push({
-                                        ...discovery,
-                                        sortIndex: discovery.discoveryIndex,
-                                        content: `🗺️ ${discovery.name}`,
-                                        isEntry: isEntryDay,
-                                        isExit: isExitDay
-                                    });
-                                }
+                            if (regionOverlapsDay) {
+                                // Calculer la durée de la région
+                                const regionDistance = calculatePathDistance(regionSegment.entryIndex, regionSegment.exitIndex);
+                                const regionDuration = milesToDays(pixelsToMiles(regionDistance));
+                                
+                                let dayNote = '';
+                                const isEntryDay = discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex;
+                                const isExitDay = regionSegment.exitIndex >= dayStartIndex && regionSegment.exitIndex <= dayEndIndex;
+                                
+                                dayDiscoveries.push({
+                                    ...discovery,
+                                    sortIndex: discovery.discoveryIndex,
+                                    content: `🗺️ ${discovery.name}`,
+                                    isEntry: isEntryDay,
+                                    isExit: isExitDay
+                                });
                             }
                         }
                     }
@@ -4712,8 +4654,18 @@
         function updateVoyageSegmentsDisplay() {
             // Cette fonction est maintenant simplifiée car on utilise updateCurrentSegmentDisplay
             if (isVoyageActive) {
+                document.getElementById('start-voyage-btn').style.display = 'none';
                 updateCurrentSegmentDisplay();
             } else {
+                document.getElementById('start-voyage-btn').style.display = 'inline-block';
+                document.getElementById('start-voyage-btn').disabled = journeyPath.length === 0;
+                
+                if (journeyPath.length === 0) {
+                    document.getElementById('start-voyage-btn').title = "Tracez d'abord un chemin sur la carte";
+                } else {
+                    document.getElementById('start-voyage-btn').title = "Démarrer un nouveau voyage";
+                }
+
                 // Cacher tous les éléments du voyage
                 document.getElementById('current-segment-display').classList.add('hidden');
                 document.getElementById('voyage-progress-bar').classList.add('hidden');
@@ -4912,7 +4864,10 @@
             navigateToSegment('next');
         });
 
-        
+        document.getElementById('start-voyage-btn').addEventListener('click', () => {
+            console.log("🚢 Démarrage du voyage");
+            handleStartVoyage();
+        });
 
         // Event listeners pour la nouvelle interface
         document.addEventListener('DOMContentLoaded', () => {
