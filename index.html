@@ -755,17 +755,10 @@
                 </div>
 
                 <div class="flex-grow overflow-hidden flex flex-col">
-                    <!-- Control Panel -->
-                    <div class="p-4 border-b border-gray-700">
-                        <div class="flex justify-between items-center mb-3">
-                            <button id="start-voyage-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">Démarrer le Voyage</button>
-                        </div>
-                    </div>
-
                     <!-- Message d'accueil ou contenu du segment -->
                     <div class="flex-1 overflow-hidden flex flex-col">
                         <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-full p-4">
-                            Tracez un chemin sur la carte et cliquez "Démarrer le Voyage" pour créer votre périple.
+                            Tracez un chemin sur la carte pour créer votre périple.
                         </div>
 
                         <!-- Segment actuel -->
@@ -3121,6 +3114,11 @@
             const roundedDays = Math.ceil(days * 2) / 2;
             distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`;
             updateJourneyInfo();
+            
+            // Démarrer automatiquement le voyage s'il n'est pas déjà actif
+            if (!isVoyageActive) {
+                handleStartVoyage();
+            }
         }
 
         function updateJourneyInfo() {
@@ -3146,10 +3144,13 @@
 
                 // Check which regions this point is in
                 let pointRegions = new Set();
+                let isInAnyRegion = false;
+                
                 regionsData.regions.forEach(region => {
                     if (region.points && region.points.length >= 3) {
                         if (isPointInPolygon(currentPoint, region.points)) {
                             pointRegions.add(region.name);
+                            isInAnyRegion = true;
 
                             if (!traversedRegions.has(region.name)) {
                                 traversedRegions.add(region.name);
@@ -3173,6 +3174,31 @@
                         }
                     }
                 });
+
+                // Si le point n'est dans aucune région définie, considérer comme "Terres Sauvages"
+                if (!isInAnyRegion) {
+                    pointRegions.add('Terres Sauvages');
+                    
+                    if (!traversedRegions.has('Terres Sauvages')) {
+                        traversedRegions.add('Terres Sauvages');
+                        // Add to chronological discoveries if not already present
+                        if (!journeyDiscoveries.some(d => d.name === 'Terres Sauvages' && d.type === 'region')) {
+                            journeyDiscoveries.push({
+                                name: 'Terres Sauvages',
+                                type: 'region',
+                                discoveryIndex: i
+                            });
+                        }
+                        // Mark entry point for this region
+                        regionSegments.set('Terres Sauvages', {entryIndex: i, exitIndex: i});
+                    } else {
+                        // Update exit point for this region
+                        let segment = regionSegments.get('Terres Sauvages');
+                        if (segment) {
+                            segment.exitIndex = i;
+                        }
+                    }
+                }
 
                 // Check for regions we're exiting
                 currentRegions.forEach(regionName => {
@@ -4141,9 +4167,8 @@
         }
 
         function handleStartVoyage() {
-            if (journeyPath.length === 0 || journeyDiscoveries.length === 0) {
-                alert("Vous devez d'abord tracer un chemin sur la carte pour démarrer un voyage.");
-                return;
+            if (journeyPath.length === 0) {
+                return; // Pas de chemin tracé, ne pas démarrer
             }
 
             // Initialize voyage
@@ -4186,15 +4211,31 @@
                 .sort((a, b) => a.discoveryIndex - b.discoveryIndex);
 
             if (regionDiscoveries.length === 0) {
-                // Pas de régions, créer un segment simple
+                // Pas de régions, créer un segment "Terres Sauvages"
                 return [{
                     id: 1,
                     duration: 1, // Par défaut 1 jour
-                    startLocation: 'Point de départ',
-                    endLocation: 'Point d\'arrivée',
+                    startLocation: 'Terres Sauvages',
+                    endLocation: findEndLocation() || 'Terres Sauvages',
                     status: 'active',
                     createdAt: new Date().toISOString()
                 }];
+            }
+
+            // Vérifier si le voyage commence dans une région ou en terres sauvages
+            const firstRegion = regionDiscoveries[0];
+            const journeyStartsInRegion = firstRegion && firstRegion.discoveryIndex <= 5; // Si découvert dans les 5 premiers points
+
+            if (!journeyStartsInRegion) {
+                // Ajouter un segment "Terres Sauvages" au début
+                segments.push({
+                    id: 1,
+                    duration: 1,
+                    startLocation: 'Terres Sauvages',
+                    endLocation: firstRegion ? firstRegion.name : findEndLocation(),
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                });
             }
 
             // Créer des segments basés sur les transitions entre régions
@@ -4203,7 +4244,7 @@
                 const nextRegion = regionDiscoveries[i + 1];
                 
                 segments.push({
-                    id: i + 1,
+                    id: segments.length + 1,
                     duration: 1, // Par défaut 1 jour
                     startLocation: currentRegion.name,
                     endLocation: nextRegion ? nextRegion.name : findEndLocation(),
@@ -4654,18 +4695,8 @@
         function updateVoyageSegmentsDisplay() {
             // Cette fonction est maintenant simplifiée car on utilise updateCurrentSegmentDisplay
             if (isVoyageActive) {
-                document.getElementById('start-voyage-btn').style.display = 'none';
                 updateCurrentSegmentDisplay();
             } else {
-                document.getElementById('start-voyage-btn').style.display = 'inline-block';
-                document.getElementById('start-voyage-btn').disabled = journeyPath.length === 0;
-                
-                if (journeyPath.length === 0) {
-                    document.getElementById('start-voyage-btn').title = "Tracez d'abord un chemin sur la carte";
-                } else {
-                    document.getElementById('start-voyage-btn').title = "Démarrer un nouveau voyage";
-                }
-
                 // Cacher tous les éléments du voyage
                 document.getElementById('current-segment-display').classList.add('hidden');
                 document.getElementById('voyage-progress-bar').classList.add('hidden');
@@ -4864,10 +4895,7 @@
             navigateToSegment('next');
         });
 
-        document.getElementById('start-voyage-btn').addEventListener('click', () => {
-            console.log("🚢 Démarrage du voyage");
-            handleStartVoyage();
-        });
+        
 
         // Event listeners pour la nouvelle interface
         document.addEventListener('DOMContentLoaded', () => {
