@@ -128,76 +128,75 @@ class VoyageManager {
         const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
         const totalPathPoints = AppState.journey.path.length;
 
-        // Build the chronological sequence of discoveries with their natural durations
-        const chronologicalSequence = [];
+        // Build the absolute timeline of the complete journey
+        const absoluteTimeline = [];
+        let currentAbsoluteDay = 1;
         
         discoveries.forEach(discovery => {
-            if (discovery.type === 'region') {
-                // Calculate natural region duration
+            if (discovery.type === 'location') {
+                // Location appears at current absolute day
+                absoluteTimeline.push({
+                    discovery: discovery,
+                    absoluteDay: currentAbsoluteDay,
+                    type: 'location'
+                });
+            } else if (discovery.type === 'region') {
+                // Calculate region's natural duration
                 const segmentLength = discovery.endIndex - discovery.startIndex + 1;
                 const segmentRatio = segmentLength / totalPathPoints;
                 const segmentMiles = totalMiles * segmentRatio;
-                const naturalDuration = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
+                const regionDuration = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
                 
-                chronologicalSequence.push({
+                // Region spans multiple days
+                const regionStartDay = currentAbsoluteDay;
+                const regionEndDay = currentAbsoluteDay + regionDuration - 1;
+                
+                absoluteTimeline.push({
                     discovery: discovery,
-                    naturalDuration: naturalDuration,
+                    absoluteStartDay: regionStartDay,
+                    absoluteEndDay: regionEndDay,
                     type: 'region'
                 });
-            } else {
-                // Location discoveries happen at specific moments
-                chronologicalSequence.push({
-                    discovery: discovery,
-                    naturalDuration: 0, // Locations don't consume time
-                    type: 'location'
-                });
+                
+                // Advance absolute day counter
+                currentAbsoluteDay += regionDuration;
             }
         });
 
-        // Calculate total natural duration
-        const totalNaturalDays = chronologicalSequence.reduce((sum, item) => sum + item.naturalDuration, 0);
-        const scaleFactor = totalDays / Math.max(1, totalNaturalDays);
+        // For this segment, only show discoveries that occur within the first totalDays
+        const segmentDays = Array(totalDays).fill().map((_, i) => ({ 
+            day: i + 1, 
+            absoluteDay: i + 1, 
+            discoveries: [] 
+        }));
 
-        // Distribute discoveries across the chosen number of days
-        const dayContents = Array(totalDays).fill().map((_, i) => ({ day: i + 1, discoveries: [] }));
-        let currentNaturalDay = 0;
-
-        chronologicalSequence.forEach(item => {
-            if (item.type === 'region') {
-                // Distribute region across its scaled duration
-                const scaledDuration = Math.max(1, Math.round(item.naturalDuration * scaleFactor));
-                const startDay = Math.floor(currentNaturalDay * scaleFactor);
-                const endDay = Math.min(totalDays - 1, startDay + scaledDuration - 1);
-                
-                // Add region to each day it spans
-                for (let dayIndex = startDay; dayIndex <= endDay; dayIndex++) {
-                    if (dayIndex >= 0 && dayIndex < totalDays) {
-                        // Check if region already added to avoid duplicates
-                        const exists = dayContents[dayIndex].discoveries.some(d => 
-                            d.name === item.discovery.name && d.type === item.discovery.type
+        // Filter and assign discoveries to segment days
+        absoluteTimeline.forEach(timelineItem => {
+            if (timelineItem.type === 'location') {
+                // Location appears on a specific day
+                if (timelineItem.absoluteDay <= totalDays) {
+                    const segmentDayIndex = timelineItem.absoluteDay - 1;
+                    segmentDays[segmentDayIndex].discoveries.push(timelineItem.discovery);
+                }
+            } else if (timelineItem.type === 'region') {
+                // Region spans multiple days - add to each day it covers within segment
+                for (let day = timelineItem.absoluteStartDay; day <= timelineItem.absoluteEndDay; day++) {
+                    if (day <= totalDays) {
+                        const segmentDayIndex = day - 1;
+                        // Avoid duplicates
+                        const exists = segmentDays[segmentDayIndex].discoveries.some(d => 
+                            d.name === timelineItem.discovery.name && d.type === timelineItem.discovery.type
                         );
                         if (!exists) {
-                            dayContents[dayIndex].discoveries.push(item.discovery);
+                            segmentDays[segmentDayIndex].discoveries.push(timelineItem.discovery);
                         }
-                    }
-                }
-                currentNaturalDay += item.naturalDuration;
-            } else {
-                // Location discovery - add to the current scaled day
-                const targetDayIndex = Math.min(Math.floor(currentNaturalDay * scaleFactor), totalDays - 1);
-                if (targetDayIndex >= 0) {
-                    const exists = dayContents[targetDayIndex].discoveries.some(d => 
-                        d.name === item.discovery.name && d.type === item.discovery.type
-                    );
-                    if (!exists) {
-                        dayContents[targetDayIndex].discoveries.push(item.discovery);
                     }
                 }
             }
         });
 
         // Generate HTML
-        const daysHtml = dayContents.map(dayData => {
+        const daysHtml = segmentDays.map(dayData => {
             const discoveriesHtml = dayData.discoveries.map(discovery => {
                 const icon = discovery.type === 'region' ? '🗺️' : '📍';
                 const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
