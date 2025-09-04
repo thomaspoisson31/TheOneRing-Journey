@@ -211,7 +211,7 @@
         <div id="journey-log-modal" class="hidden absolute inset-0 z-40 bg-black bg-opacity-70 flex items-center justify-center p-4">
             <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Chronique de Voyage</h3>
+                    <h3 class="text-xl font-bold" id="voyage-modal-title">Chronique de Voyage</h3>
                     <button id="close-journey-log" class="text-gray-400 hover:text-white"><i class="fas fa-times fa-lg"></i></button>
                 </div>
                 <div id="journey-log-content" class="prose prose-invert overflow-y-auto text-gray-300"></div>
@@ -411,7 +411,7 @@
                     </div>
                 </div>
             </div>
-        ></div>
+        </div>
     </div>
 
     <!-- Scripts JavaScript -->
@@ -427,7 +427,7 @@
     <script src="js/managers/ui-manager.js"></script>
     <script src="js/managers/gemini-manager.js"></script>
     <script src="js/app.js"></script>
-    
+
     <script>
         // Backward compatibility - expose globals for legacy code
         window.colorMap = CONFIG.COLORS.locations;
@@ -439,7 +439,7 @@
 
         // All JavaScript code has been moved to external files
 
-        
+
 
         // --- Location Markers & Info Box ---
         function renderLocations() {
@@ -1456,10 +1456,8 @@
                             }
                             ctx.stroke();
 
-                            // Mettre à jour l'affichage des distances
+                            // Mettre à jour les affichages
                             updateDistanceDisplay();
-
-                            // Réinitialiser les régions traversées et lieux proches
                             updateJourneyInfo();
                         }
 
@@ -3515,10 +3513,10 @@
 
             // Générer automatiquement tous les segments basés sur les régions traversées
             voyageSegments = generateVoyageSegments();
-            
+
             // Réinitialiser l'état d'activation
             activatedSegments.clear();
-            
+
             isVoyageActive = true;
             currentSegmentIndex = 0;
 
@@ -3537,7 +3535,7 @@
 
         function generateVoyageSegments() {
             const segments = [];
-            
+
             // Extraire les régions dans l'ordre chronologique
             const regionDiscoveries = journeyDiscoveries
                 .filter(d => d.type === 'region')
@@ -3559,7 +3557,7 @@
             for (let i = 0; i < regionDiscoveries.length; i++) {
                 const currentRegion = regionDiscoveries[i];
                 const nextRegion = regionDiscoveries[i + 1];
-                
+
                 segments.push({
                     id: i + 1,
                     duration: 1, // Par défaut 1 jour
@@ -3578,19 +3576,19 @@
             const lastDiscoveries = journeyDiscoveries
                 .sort((a, b) => b.discoveryIndex - a.discoveryIndex)
                 .slice(0, 3);
-            
+
             for (const discovery of lastDiscoveries) {
                 if (discovery.type === 'region') {
                     return discovery.name;
                 }
             }
-            
+
             for (const discovery of lastDiscoveries) {
                 if (discovery.type === 'location') {
                     return discovery.name;
                 }
             }
-            
+
             return 'Point d\'arrivée';
         }
 
@@ -3615,30 +3613,30 @@
 
         function findLocationAtDay(dayTarget) {
             if (!currentVoyage || !journeyPath.length) return "lieu inconnu";
-            
+
             const totalDays = getTotalJourneyDays();
             const targetRatio = Math.min(dayTarget / totalDays, 1);
             const targetPathIndex = Math.floor(targetRatio * (journeyPath.length - 1));
             const targetPoint = journeyPath[targetPathIndex];
-            
+
             // Chercher le lieu le plus proche
             let nearestLocation = null;
             let minDistance = Infinity;
-            
+
             locationsData.locations.forEach(location => {
                 if (!location.coordinates) return;
-                
+
                 const distance = Math.sqrt(
                     Math.pow(location.coordinates.x - targetPoint.x, 2) +
                     Math.pow(location.coordinates.y - targetPoint.y, 2)
                 );
-                
+
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearestLocation = location;
                 }
             });
-            
+
             return nearestLocation ? nearestLocation.name : "lieu inconnu";
         }
 
@@ -3667,9 +3665,9 @@
             const totalDays = getTotalJourneyDays();
             const segmentStartRatio = segmentStartDays / totalDays;
             const segmentEndRatio = (segmentStartDays + segment.duration) / totalDays;
-            
-            const segmentStartIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
-            const segmentEndIndex = Math.min(
+
+            const segmentStartPathIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
+            const segmentEndPathIndex = Math.min(
                 Math.floor(segmentEndRatio * (journeyPath.length - 1)), 
                 journeyPath.length - 1
             );
@@ -3834,7 +3832,7 @@
             const segmentName = generateSegmentName(currentSegmentIndex);
             const isActivated = activatedSegments.has(currentSegmentIndex);
             segmentTitle.innerHTML = isActivated ? segmentName : `${segmentName} <span class="text-gray-500">(non activé)</span>`;
-            
+
             console.log("📝 Titre du segment mis à jour:", segmentName, "Activé:", isActivated);
 
             // Mettre à jour les boutons de navigation
@@ -3850,7 +3848,7 @@
 
             // Bouton suivant : vérifier s'il peut y avoir un segment suivant
             const canHaveNextSegment = checkIfMoreSegmentsNeeded() || currentSegmentIndex < voyageSegments.length - 1;
-            
+
             if (!canHaveNextSegment) {
                 nextBtn.style.visibility = 'hidden';
             } else {
@@ -3878,7 +3876,7 @@
             const durationSlider = document.getElementById('current-segment-duration');
             const durationValue = document.getElementById('current-segment-duration-value');
             const currentSegment = voyageSegments[currentSegmentIndex];
-            
+
             durationSlider.value = currentSegment.duration;
             durationValue.textContent = currentSegment.duration;
 
@@ -3892,16 +3890,16 @@
 
         function updateSegmentProgressBar() {
             if (!voyageSegments[currentSegmentIndex]) return;
-            
+
             // Calculer les jours cumulés jusqu'au segment actuel (inclus)
             let cumulativeDays = 0;
             for (let i = 0; i <= currentSegmentIndex; i++) {
                 cumulativeDays += voyageSegments[i].duration;
             }
-            
+
             // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
             const totalVoyageDays = getTotalJourneyDays();
-            
+
             // Calculer le pourcentage de progression
             const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
 
@@ -3932,7 +3930,7 @@
                 console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
             } else if (direction === 'next') {
                 const nextIndex = currentSegmentIndex + 1;
-                
+
                 // Si le segment suivant n'existe pas, le créer dynamiquement
                 if (nextIndex >= voyageSegments.length) {
                     const needsMoreSegments = checkIfMoreSegmentsNeeded();
@@ -3944,13 +3942,13 @@
                         return; // Pas de segment suivant possible
                     }
                 }
-                
+
                 // Si le segment suivant n'est pas activé, l'activer
                 if (!activatedSegments.has(nextIndex)) {
                     activatedSegments.add(nextIndex);
                     console.log("🎬 Activation du segment", nextIndex);
                 }
-                
+
                 currentSegmentIndex = nextIndex;
                 console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
             } else {
@@ -3965,18 +3963,18 @@
         function handleSegmentDurationChange() {
             const newDuration = parseInt(document.getElementById('current-segment-duration').value);
             const durationValue = document.getElementById('current-segment-duration-value');
-            
+
             durationValue.textContent = newDuration;
 
             if (voyageSegments[currentSegmentIndex]) {
                 voyageSegments[currentSegmentIndex].duration = newDuration;
-                
+
                 // Supprimer tous les segments suivants
                 removeFollowingSegments();
-                
+
                 // Recalculer le contenu du segment actuel
                 renderSegmentContent(currentSegmentIndex);
-                
+
                 // Mettre à jour l'affichage complet (y compris le message de fin)
                 updateCurrentSegmentDisplay();
                 scheduleAutoSync();
@@ -3986,7 +3984,7 @@
         function removeFollowingSegments() {
             // Supprimer tous les segments après le segment actuel
             voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
-            
+
             // Supprimer les activations des segments supprimés
             const segmentsToRemove = [];
             activatedSegments.forEach(index => {
@@ -3997,7 +3995,7 @@
             segmentsToRemove.forEach(index => {
                 activatedSegments.delete(index);
             });
-            
+
             console.log("🗑️ Segments suivants supprimés. Nouveaux segments:", voyageSegments.length);
             console.log("🗑️ Segments activés restants:", Array.from(activatedSegments));
         }
@@ -4021,16 +4019,16 @@
             if (currentVoyage && currentVoyage.totalDistance) {
                 distanceToUse = currentVoyage.totalDistance;
             }
-            
+
             if (distanceToUse === 0) {
                 return 0;
             }
-            
+
             const totalMiles = pixelsToMiles(distanceToUse);
             return milesToDays(totalMiles);
         }
 
-        
+
 
         function getRemainingJourneyDays() {
             const totalJourneyDays = getTotalJourneyDays();
@@ -4041,7 +4039,7 @@
         function checkIfMoreSegmentsNeeded() {
             const totalJourneyDays = getTotalJourneyDays();
             const currentSegmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
-            
+
             // Il faut plus de segments si on n'a pas encore couvert toute la durée du voyage
             return currentSegmentDays < totalJourneyDays;
         }
@@ -4050,22 +4048,22 @@
             if (!currentVoyage || !journeyDiscoveries) return;
 
             const nextSegmentIndex = voyageSegments.length;
-            
+
             // Calculer les jours déjà couverts
             const coveredDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
             const totalJourneyDays = getTotalJourneyDays();
-            
+
             // Calculer la position dans le voyage pour ce nouveau segment
             const segmentStartRatio = coveredDays / totalJourneyDays;
             const segmentStartPathIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
-            
+
             // Trouver la prochaine découverte significative après le point actuel
             const remainingDiscoveries = journeyDiscoveries.filter(discovery => 
                 discovery.discoveryIndex > segmentStartPathIndex
             ).sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-            
+
             let startLocation, endLocation;
-            
+
             // Déterminer le point de départ (fin du segment précédent)
             if (voyageSegments.length > 0) {
                 const prevSegment = voyageSegments[voyageSegments.length - 1];
@@ -4073,7 +4071,7 @@
             } else {
                 startLocation = 'Point de départ';
             }
-            
+
             // Déterminer le point d'arrivée du nouveau segment
             if (remainingDiscoveries.length > 0) {
                 // Utiliser la prochaine découverte comme destination
@@ -4083,7 +4081,7 @@
                 // Pas de découverte restante, utiliser la fin du voyage
                 endLocation = findEndLocation();
             }
-            
+
             // Créer le nouveau segment
             const newSegment = {
                 id: nextSegmentIndex + 1,
@@ -4093,7 +4091,7 @@
                 status: 'active',
                 createdAt: new Date().toISOString()
             };
-            
+
             voyageSegments.push(newSegment);
             console.log("🆕 Nouveau segment créé:", newSegment);
         }
@@ -4105,14 +4103,14 @@
             // Nettoyer d'abord le texte de tout HTML résiduel
             const cleanActivity = activity.replace(/<[^>]*>/g, '');
             let processedActivity = cleanActivity;
-            
+
             // Chercher les noms de lieux (en évitant les doublons)
             locationsData.locations.forEach(location => {
                 const locationName = location.name;
                 // Échapper les caractères spéciaux pour la regex
                 const escapedName = locationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-                
+
                 // Vérifier si le nom n'est pas déjà dans un span
                 if (!processedActivity.includes(`data-discovery-name="${locationName}"`)) {
                     processedActivity = processedActivity.replace(regex, (match) => {
@@ -4120,14 +4118,14 @@
                     });
                 }
             });
-            
+
             // Chercher les noms de régions (en évitant les doublons)
             regionsData.regions.forEach(region => {
                 const regionName = region.name;
                 // Échapper les caractères spéciaux pour la regex
                 const escapedName = regionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-                
+
                 // Vérifier si le nom n'est pas déjà dans un span
                 if (!processedActivity.includes(`data-discovery-name="${regionName}"`)) {
                     processedActivity = processedActivity.replace(regex, (match) => {
@@ -4135,13 +4133,13 @@
                     });
                 }
             });
-            
+
             return processedActivity;
         }
 
         function setupSegmentDiscoveryHighlight() {
             const discoveryItems = document.querySelectorAll('#segment-content .segment-discovery-item');
-            
+
             discoveryItems.forEach(item => {
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
@@ -4195,7 +4193,7 @@
             const modal = document.getElementById('voyage-segments-modal');
             if (modal) {
                 modal.classList.remove('hidden');
-                
+
                 // Auto-initialize voyage if path exists but voyage is not active
                 if (journeyPath.length > 0 && journeyDiscoveries.length > 0 && !isVoyageActive) {
                     handleStartVoyage();
@@ -4224,7 +4222,7 @@
             navigateToSegment('next');
         });
 
-        // Event listeners pour la nouvelle interface
+        // Ajouter les event listeners pour les boutons de navigation
         document.addEventListener('DOMContentLoaded', () => {
             // Navigation entre segments - supprimé car déjà défini plus haut
 
@@ -4238,7 +4236,7 @@
         // Backup pour s'assurer que les event listeners sont attachés - slider seulement
         setTimeout(() => {
             const durationSlider = document.getElementById('current-segment-duration');
-            
+
             if (durationSlider && !durationSlider.oninput) {
                 durationSlider.addEventListener('input', handleSegmentDurationChange);
             }

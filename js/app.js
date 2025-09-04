@@ -98,6 +98,18 @@ class MiddleEarthApp {
         this.authManager = new AuthManager(this.domElements);
         this.filterManager = new FilterManager(this.domElements);
         this.uiManager = new UIManager(this.domElements);
+        this.geminiManager = new GeminiManager(this.domElements);
+        
+        // Expose managers globally for backward compatibility
+        window.mapManager = this.mapManager;
+        window.locationManager = this.locationManager;
+        window.regionManager = this.regionManager;
+        window.journeyManager = this.journeyManager;
+        window.voyageManager = this.voyageManager;
+        window.authManager = this.authManager;
+        window.filterManager = this.filterManager;
+        window.uiManager = this.uiManager;
+        window.geminiManager = this.geminiManager;
     }
 
     async init() {
@@ -109,12 +121,19 @@ class MiddleEarthApp {
             this.regionManager.loadFromStorage();
             this.authManager.init();
             this.filterManager.init();
+            this.voyageManager.init();
+            this.geminiManager.init();
             
             // Setup map
             await this.mapManager.init();
             
+            // Render initial state
+            this.locationManager.render();
+            this.regionManager.render();
+            
             // Setup event listeners
             this.setupEventListeners();
+            this.uiManager.setupEventListeners();
             
             console.log("✅ Application initialized successfully");
         } catch (error) {
