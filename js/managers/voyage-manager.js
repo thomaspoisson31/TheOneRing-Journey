@@ -2,6 +2,8 @@
 class VoyageManager {
     constructor(domElements) {
         this.dom = domElements;
+        this.currentSegmentIndex = 0;
+        this.segments = [];
     }
 
     init() {
@@ -25,6 +27,22 @@ class VoyageManager {
             });
         }
 
+        // Navigation buttons
+        const prevBtn = this.dom.getElementById('prev-segment-btn');
+        const nextBtn = this.dom.getElementById('next-segment-btn');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.navigateToSegment(this.currentSegmentIndex - 1);
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.navigateToSegment(this.currentSegmentIndex + 1);
+            });
+        }
+
         // Duration slider event listener
         const durationSlider = this.dom.getElementById('current-segment-duration');
         const durationValue = this.dom.getElementById('current-segment-duration-value');
@@ -37,6 +55,10 @@ class VoyageManager {
                     this.showDurationSelectionMessage();
                 } else {
                     durationValue.textContent = newDuration;
+                    // Store the duration for this segment
+                    if (this.segments[this.currentSegmentIndex]) {
+                        this.segments[this.currentSegmentIndex].duration = newDuration;
+                    }
                     // Regenerate content with new duration
                     this.generateDayByDayContent(newDuration);
                 }
@@ -85,14 +107,21 @@ class VoyageManager {
             segmentTitle.textContent = '1. Voyage en Terre du Milieu';
         }
 
-        // Set duration slider max value and reset to no selection
+        // Initialize segments if not done
+        this.initializeSegments(journeyDays);
+
+        // Set duration slider to exactly 1-6 days
         const durationSlider = this.dom.getElementById('current-segment-duration');
         const durationValue = this.dom.getElementById('current-segment-duration-value');
         if (durationSlider && durationValue) {
-            durationSlider.max = Math.max(6, journeyDays);
+            durationSlider.min = '1';
+            durationSlider.max = '6';
             durationSlider.value = '';
             durationValue.textContent = '—';
         }
+
+        // Update navigation buttons state
+        this.updateNavigationButtons();
 
         // Show initial message without content
         this.showDurationSelectionMessage();
@@ -232,5 +261,97 @@ class VoyageManager {
         }).join('');
 
         segmentContent.innerHTML = `<div class="space-y-3">${daysHtml}</div>`;
+        
+        // Update progression after generating content
+        this.updateProgression(totalDays);
+    }
+
+    initializeSegments(totalJourneyDays) {
+        // Create default segments structure
+        this.segments = [{
+            index: 0,
+            duration: null,
+            totalJourneyDays: totalJourneyDays
+        }];
+        this.currentSegmentIndex = 0;
+    }
+
+    navigateToSegment(targetIndex) {
+        if (targetIndex < 0) return;
+
+        // For now, we only support the first segment
+        // In the future, this could be expanded to support multiple segments
+        if (targetIndex > 0) {
+            // Create a new segment if needed
+            if (!this.segments[targetIndex]) {
+                this.segments[targetIndex] = {
+                    index: targetIndex,
+                    duration: null,
+                    totalJourneyDays: this.segments[0].totalJourneyDays
+                };
+            }
+            this.currentSegmentIndex = targetIndex;
+            this.renderCurrentSegment();
+        } else if (targetIndex === 0) {
+            this.currentSegmentIndex = 0;
+            this.renderCurrentSegment();
+        }
+    }
+
+    updateNavigationButtons() {
+        const prevBtn = this.dom.getElementById('prev-segment-btn');
+        const nextBtn = this.dom.getElementById('next-segment-btn');
+        
+        if (prevBtn) {
+            prevBtn.style.opacity = this.currentSegmentIndex > 0 ? '1' : '0.3';
+            prevBtn.style.cursor = this.currentSegmentIndex > 0 ? 'pointer' : 'not-allowed';
+        }
+        
+        if (nextBtn) {
+            // For now, always enable next button for demonstration
+            // In a full implementation, this would check if there are remaining days
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+        }
+    }
+
+    updateProgression(currentSegmentDays) {
+        // Calculate cumulative days up to current segment
+        let cumulativeDays = 0;
+        for (let i = 0; i <= this.currentSegmentIndex; i++) {
+            if (i < this.currentSegmentIndex) {
+                // Previous segments with their defined durations
+                cumulativeDays += this.segments[i]?.duration || 0;
+            } else {
+                // Current segment
+                cumulativeDays += currentSegmentDays || 0;
+            }
+        }
+
+        const totalJourneyDays = this.segments[0]?.totalJourneyDays || 1;
+        
+        // Update segment title to include progression
+        const segmentTitle = this.dom.getElementById('segment-title');
+        const discoveries = AppState.journey.discoveries;
+        const firstLocation = discoveries.find(d => d.type === 'location');
+        const lastLocation = discoveries.slice().reverse().find(d => d.type === 'location');
+        
+        let baseTitleText;
+        if (firstLocation && lastLocation && firstLocation !== lastLocation) {
+            baseTitleText = `De ${firstLocation.name} jusqu'à ${lastLocation.name}`;
+        } else if (firstLocation) {
+            baseTitleText = `Voyage depuis ${firstLocation.name}`;
+        } else {
+            baseTitleText = 'Voyage en Terre du Milieu';
+        }
+        
+        if (segmentTitle) {
+            segmentTitle.innerHTML = `
+                <div class="text-center">
+                    <div class="text-lg font-semibold">${this.currentSegmentIndex + 1}. ${baseTitleText}</div>
+                    <div class="text-sm text-gray-400 mt-1">Progression : ${cumulativeDays} / ${totalJourneyDays} jours</div>
+                </div>
+            `;
+        }
     }
 }
