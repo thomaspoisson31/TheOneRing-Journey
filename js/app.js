@@ -1,4 +1,3 @@
-
 // --- Configuration et constantes ---
 const CONFIG = {
     MAP: {
@@ -25,7 +24,7 @@ const AppState = {
     mapDimensions: { width: 0, height: 0 },
     transform: { scale: 1, panX: 0, panY: 0 },
     isPlayerView: true,
-    
+
     // Interaction states
     modes: {
         isPanning: false,
@@ -34,12 +33,12 @@ const AppState = {
         isAddingLocationMode: false,
         isAddingRegionMode: false
     },
-    
+
     // Data
     locationsData: null,
     regionsData: { regions: [] },
     activeFilters: { known: false, visited: false, colors: [] },
-    
+
     // Journey
     journey: {
         path: [],
@@ -50,7 +49,7 @@ const AppState = {
         traversedRegions: new Set(),
         nearbyLocations: new Set()
     },
-    
+
     // Voyage segments
     voyage: {
         current: null,
@@ -59,7 +58,7 @@ const AppState = {
         isActive: false,
         activatedSegments: new Set()
     },
-    
+
     // UI state
     activeLocationId: null,
     newLocationCoords: null,
@@ -70,13 +69,13 @@ const AppState = {
         startPanX: 0,
         startPanY: 0
     },
-    
+
     // Region creation
     regionCreation: {
         currentPoints: [],
         tempPath: null
     },
-    
+
     // Authentication
     auth: {
         googleUser: null,
@@ -99,7 +98,7 @@ class MiddleEarthApp {
         this.filterManager = new FilterManager(this.domElements);
         this.uiManager = new UIManager(this.domElements);
         this.geminiManager = new GeminiManager(this.domElements);
-        
+
         // Expose managers globally for backward compatibility
         window.mapManager = this.mapManager;
         window.locationManager = this.locationManager;
@@ -114,7 +113,7 @@ class MiddleEarthApp {
 
     async init() {
         console.log("🚀 Starting application...");
-        
+
         try {
             // Check auth error from URL first
             if (window.checkAuthError) {
@@ -128,18 +127,18 @@ class MiddleEarthApp {
             this.filterManager.init();
             this.voyageManager.init();
             this.geminiManager.init();
-            
+
             // Setup map
             await this.mapManager.init();
-            
+
             // Render initial state
             this.locationManager.render();
             this.regionManager.render();
-            
+
             // Setup event listeners
             this.setupEventListeners();
             this.uiManager.setupEventListeners();
-            
+
             console.log("✅ Application initialized successfully");
         } catch (error) {
             console.error("❌ Error during app startup:", error);
@@ -153,23 +152,58 @@ class MiddleEarthApp {
         this.domElements.addLocationBtn?.addEventListener('click', () => this.toggleAddLocationMode());
         this.domElements.addRegionBtn?.addEventListener('click', () => this.toggleAddRegionMode());
         this.domElements.eraseBtn?.addEventListener('click', () => this.journeyManager.clearJourney());
-        
+
         // Map switch button
         this.domElements.mapSwitchBtn?.addEventListener('click', () => this.mapManager.switchMapView());
-        
+
         // Import/Export buttons
-        this.domElements.exportBtn?.addEventListener('click', () => this.locationManager.exportToFile());
-        this.domElements.importBtn?.addEventListener('click', () => this.domElements.importFileInput?.click());
-        this.domElements.importFileInput?.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                this.locationManager.importFromFile(file);
-            }
-        });
-        
+        if (this.domElements.importBtn && this.domElements.importFileInput) {
+            this.domElements.importBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("🔄 Import button clicked");
+                this.domElements.importFileInput.click();
+            });
+
+            this.domElements.importFileInput.addEventListener('change', async (event) => {
+                console.log("📁 File input changed");
+                const file = event.target.files[0];
+                if (file) {
+                    console.log("📥 Importing file:", file.name);
+                    try {
+                        await this.locationManager.importFromFile(file);
+                        alert("✅ Fichier importé avec succès!");
+                    } catch (error) {
+                        console.error("❌ Import error:", error);
+                        alert("❌ Erreur lors de l'import du fichier");
+                    }
+                    // Clear the input so the same file can be selected again
+                    event.target.value = '';
+                } else {
+                    console.log("❌ No file selected");
+                }
+            });
+        } else {
+            console.error("❌ Import elements not found:", {
+                importBtn: !!this.domElements.importBtn,
+                importFileInput: !!this.domElements.importFileInput
+            });
+        }
+
+        if (this.domElements.exportBtn) {
+            this.domElements.exportBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("📤 Export button clicked");
+                this.locationManager.exportToFile();
+            });
+        } else {
+            console.error("❌ Export button not found");
+        }
+
         // Map interactions
         this.setupMapEventListeners();
-        
+
         // UI interactions
         this.uiManager.setupEventListeners();
     }
@@ -284,15 +318,15 @@ class MiddleEarthApp {
         const zoomIntensity = 0.1;
         const wheel = event.deltaY < 0 ? 1 : -1;
         const zoom = Math.exp(wheel * zoomIntensity);
-        
+
         const rect = this.domElements.viewport.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
-        
+
         AppState.transform.panX = mouseX - (mouseX - AppState.transform.panX) * zoom;
         AppState.transform.panY = mouseY - (mouseY - AppState.transform.panY) * zoom;
         AppState.transform.scale = Math.max(0.1, Math.min(AppState.transform.scale * zoom, 5));
-        
+
         this.mapManager.applyTransform();
     }
 
@@ -326,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.checkAuthError) {
         window.checkAuthError();
     }
-    
+
     const app = new MiddleEarthApp();
     window.app = app; // Expose app globally for debugging
     app.init().catch(console.error);

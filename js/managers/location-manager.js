@@ -271,23 +271,55 @@ class LocationManager {
     }
 
     async importFromFile(file) {
-        if (!file) return;
+        if (!file) {
+            console.error("❌ No file provided for import");
+            return;
+        }
+        
+        console.log("📥 Starting file import:", file.name, file.size, "bytes");
         
         try {
             const text = await file.text();
+            console.log("📄 File content length:", text.length);
+            
             const importedData = JSON.parse(text);
+            console.log("🔍 Parsed data structure:", {
+                hasLocations: !!importedData.locations,
+                locationsCount: importedData.locations?.length || 0,
+                isArray: Array.isArray(importedData.locations)
+            });
             
             if (importedData && Array.isArray(importedData.locations)) {
-                AppState.locationsData = importedData;
-                this.render();
-                this.saveToLocal();
-                console.log("✅ Locations imported successfully");
+                // Validate locations structure
+                const validLocations = importedData.locations.filter(loc => 
+                    loc.id && loc.name && loc.coordinates && 
+                    typeof loc.coordinates.x === 'number' && 
+                    typeof loc.coordinates.y === 'number'
+                );
+                
+                console.log(`📊 Valid locations: ${validLocations.length}/${importedData.locations.length}`);
+                
+                if (validLocations.length > 0) {
+                    AppState.locationsData = {
+                        ...importedData,
+                        locations: validLocations
+                    };
+                    this.render();
+                    this.saveToLocal();
+                    console.log("✅ Locations imported successfully");
+                } else {
+                    throw new Error("Aucun lieu valide trouvé dans le fichier");
+                }
             } else {
-                alert("Fichier JSON invalide.");
+                throw new Error("Structure JSON invalide - propriété 'locations' manquante ou invalide");
             }
         } catch (err) {
-            alert("Erreur lors de la lecture du fichier.");
-            console.error(err);
+            console.error("❌ Import error details:", err);
+            if (err instanceof SyntaxError) {
+                throw new Error("Fichier JSON invalide - erreur de syntaxe");
+            } else {
+                throw new Error(`Erreur lors de l'import: ${err.message}`);
+            }
         }
     }
 }
