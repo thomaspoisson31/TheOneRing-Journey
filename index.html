@@ -434,6 +434,19 @@
         window.colorMap = CONFIG.COLORS.locations;
         window.regionColorMap = CONFIG.COLORS.regions;
 
+        // Expose missing functions for backward compatibility
+        window.checkAuthError = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('auth') === 'error') {
+                console.log("❌ Erreur d'authentification détectée dans l'URL");
+                alert("Erreur lors de l'authentification. Veuillez réessayer.");
+            }
+        };
+
+        window.loadInitialLocations = function() {
+            return window.locationManager?.loadInitialData() || Promise.resolve();
+        };
+
         // Legacy code compatibility - will be removed in future versions
 
         // Application will be initialized by app.js

@@ -281,6 +281,7 @@ class LocationManager {
                 AppState.locationsData = importedData;
                 this.render();
                 this.saveToLocal();
+                console.log("✅ Locations imported successfully");
             } else {
                 alert("Fichier JSON invalide.");
             }
@@ -288,5 +289,6 @@ class LocationManager {
             alert("Erreur lors de la lecture du fichier.");
             console.error(err);
         }
+    }
     }
 }

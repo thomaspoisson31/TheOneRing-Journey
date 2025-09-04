@@ -10,34 +10,7 @@ class UIManager {
             this.dom.infoBoxClose.addEventListener('click', () => this.hideInfoBox());
         }
 
-        // Import/Export
-        if (this.dom.exportBtn) {
-            this.dom.exportBtn.addEventListener('click', () => {
-                window.locationManager?.exportToFile();
-            });
-        }
-
-        if (this.dom.importBtn) {
-            this.dom.importBtn.addEventListener('click', () => {
-                this.dom.importFileInput?.click();
-            });
-        }
-
-        if (this.dom.importFileInput) {
-            this.dom.importFileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    window.locationManager?.importFromFile(file);
-                }
-            });
-        }
-
-        // Map switch
-        if (this.dom.mapSwitchBtn) {
-            this.dom.mapSwitchBtn.addEventListener('click', () => {
-                window.mapManager?.switchMapView();
-            });
-        }
+        // Note: Import/Export and Map switch event listeners are now handled in app.js
 
         // Modal forms
         this.setupModalForms();

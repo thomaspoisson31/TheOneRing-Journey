@@ -149,10 +149,23 @@ class MiddleEarthApp {
 
     setupEventListeners() {
         // Mode buttons
-        this.domElements.drawModeBtn.addEventListener('click', () => this.toggleDrawMode());
-        this.domElements.addLocationBtn.addEventListener('click', () => this.toggleAddLocationMode());
-        this.domElements.addRegionBtn.addEventListener('click', () => this.toggleAddRegionMode());
-        this.domElements.eraseBtn.addEventListener('click', () => this.journeyManager.clearJourney());
+        this.domElements.drawModeBtn?.addEventListener('click', () => this.toggleDrawMode());
+        this.domElements.addLocationBtn?.addEventListener('click', () => this.toggleAddLocationMode());
+        this.domElements.addRegionBtn?.addEventListener('click', () => this.toggleAddRegionMode());
+        this.domElements.eraseBtn?.addEventListener('click', () => this.journeyManager.clearJourney());
+        
+        // Map switch button
+        this.domElements.mapSwitchBtn?.addEventListener('click', () => this.mapManager.switchMapView());
+        
+        // Import/Export buttons
+        this.domElements.exportBtn?.addEventListener('click', () => this.locationManager.exportToFile());
+        this.domElements.importBtn?.addEventListener('click', () => this.domElements.importFileInput?.click());
+        this.domElements.importFileInput?.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                this.locationManager.importFromFile(file);
+            }
+        });
         
         // Map interactions
         this.setupMapEventListeners();
