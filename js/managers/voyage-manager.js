@@ -111,7 +111,7 @@ class VoyageManager {
 
         const discoveries = AppState.journey.discoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
         
-        // Distribute discoveries across days
+        // Initialize days content
         const daysContent = [];
         for (let day = 1; day <= totalDays; day++) {
             daysContent.push({
@@ -120,11 +120,58 @@ class VoyageManager {
             });
         }
 
-        // Distribute discoveries evenly across days
-        discoveries.forEach((discovery, index) => {
-            const dayIndex = Math.floor((index / discoveries.length) * totalDays);
-            const targetDay = Math.min(dayIndex, totalDays - 1);
-            daysContent[targetDay].discoveries.push(discovery);
+        // Calculate the original total journey days based on region durations
+        const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
+        const originalTotalDays = Math.max(1, Math.ceil(totalMiles / CONFIG.JOURNEY.MILES_PER_DAY));
+        
+        // Create a timeline of discoveries with their original day positions
+        const timeline = [];
+        let currentDay = 1;
+        
+        discoveries.forEach(discovery => {
+            if (discovery.type === 'region') {
+                // For regions, calculate their original duration
+                const totalPathPoints = AppState.journey.path.length;
+                const segmentLength = discovery.endIndex - discovery.startIndex + 1;
+                const segmentRatio = segmentLength / totalPathPoints;
+                const segmentMiles = totalMiles * segmentRatio;
+                const originalRegionDays = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
+                
+                // Add the region for each day it spans
+                for (let i = 0; i < originalRegionDays; i++) {
+                    timeline.push({
+                        day: currentDay + i,
+                        discovery: discovery,
+                        isRegionDay: i + 1,
+                        totalRegionDays: originalRegionDays
+                    });
+                }
+                currentDay += originalRegionDays;
+            } else {
+                // For locations, add them at the current day
+                timeline.push({
+                    day: currentDay,
+                    discovery: discovery,
+                    isRegionDay: false
+                });
+            }
+        });
+
+        // Now redistribute the timeline across the new segment duration
+        timeline.forEach(item => {
+            // Map original day to new segment day
+            const normalizedPosition = (item.day - 1) / (originalTotalDays - 1 || 1);
+            const newDay = Math.floor(normalizedPosition * (totalDays - 1)) + 1;
+            const targetDayIndex = Math.min(newDay - 1, totalDays - 1);
+            
+            // Check if this discovery is already in this day to avoid duplicates
+            const existingDiscovery = daysContent[targetDayIndex].discoveries.find(d => 
+                d.name === item.discovery.name && d.type === item.discovery.type
+            );
+            
+            if (!existingDiscovery) {
+                daysContent[targetDayIndex].discoveries.push(item.discovery);
+            }
         });
 
         // Generate HTML
