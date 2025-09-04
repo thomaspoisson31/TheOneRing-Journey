@@ -261,7 +261,13 @@ class LocationManager {
     }
 
     exportToFile() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(AppState.locationsData, null, 2));
+        // Combine locations and regions data
+        const exportData = {
+            locations: AppState.locationsData.locations || [],
+            regions: AppState.regionsData.regions || []
+        };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
         const downloadAnchorNode = this.dom.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
         downloadAnchorNode.setAttribute("download", "Landmarks.json");
@@ -301,7 +307,6 @@ class LocationManager {
                 
                 if (validLocations.length > 0) {
                     AppState.locationsData = {
-                        ...importedData,
                         locations: validLocations
                     };
                     this.render();
@@ -309,6 +314,29 @@ class LocationManager {
                     console.log("✅ Locations imported successfully");
                 } else {
                     throw new Error("Aucun lieu valide trouvé dans le fichier");
+                }
+                
+                // Import regions if they exist
+                if (Array.isArray(importedData.regions)) {
+                    const validRegions = importedData.regions.filter(reg => 
+                        reg.id && reg.name && Array.isArray(reg.points) && 
+                        reg.points.length >= 3 &&
+                        reg.points.every(point => 
+                            typeof point.x === 'number' && 
+                            typeof point.y === 'number'
+                        )
+                    );
+                    
+                    console.log(`📊 Valid regions: ${validRegions.length}/${importedData.regions.length}`);
+                    
+                    if (validRegions.length > 0) {
+                        AppState.regionsData = {
+                            regions: validRegions
+                        };
+                        window.regionManager?.render();
+                        window.regionManager?.saveToLocal();
+                        console.log("✅ Regions imported successfully");
+                    }
                 }
             } else {
                 throw new Error("Structure JSON invalide - propriété 'locations' manquante ou invalide");
