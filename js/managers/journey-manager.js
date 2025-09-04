@@ -98,33 +98,58 @@ class JourneyManager {
         AppState.journey.nearbyLocations.clear();
         AppState.journey.discoveries = [];
 
-        // Track already discovered items to avoid duplicates
-        const discoveredRegions = new Set();
+        // Track region traversals with segments
+        const regionTraversals = new Map(); // regionName -> [segments]
         const discoveredLocations = new Set();
 
+        // First pass: identify all region traversals
         for (let i = 0; i < AppState.journey.path.length; i++) {
             const currentPoint = AppState.journey.path[i];
 
-            // Check regions
             AppState.regionsData.regions.forEach(region => {
                 if (region.points && region.points.length >= 3) {
                     if (this.isPointInPolygon(currentPoint, region.points)) {
                         AppState.journey.traversedRegions.add(region.name);
-
-                        // Only add to discoveries if not already discovered
-                        if (!discoveredRegions.has(region.name)) {
-                            discoveredRegions.add(region.name);
-                            AppState.journey.discoveries.push({
-                                name: region.name,
-                                type: 'region',
-                                discoveryIndex: i
+                        
+                        if (!regionTraversals.has(region.name)) {
+                            regionTraversals.set(region.name, []);
+                        }
+                        
+                        const segments = regionTraversals.get(region.name);
+                        const lastSegment = segments[segments.length - 1];
+                        
+                        if (!lastSegment || lastSegment.endIndex < i - 1) {
+                            // Start a new segment
+                            segments.push({
+                                startIndex: i,
+                                endIndex: i
                             });
+                        } else {
+                            // Extend current segment
+                            lastSegment.endIndex = i;
                         }
                     }
                 }
             });
+        }
 
-            // Check locations
+        // Second pass: add region discoveries with duration
+        regionTraversals.forEach((segments, regionName) => {
+            segments.forEach(segment => {
+                AppState.journey.discoveries.push({
+                    name: regionName,
+                    type: 'region',
+                    discoveryIndex: segment.startIndex,
+                    startIndex: segment.startIndex,
+                    endIndex: segment.endIndex
+                });
+            });
+        });
+
+        // Third pass: add location discoveries
+        for (let i = 0; i < AppState.journey.path.length; i++) {
+            const currentPoint = AppState.journey.path[i];
+
             AppState.locationsData.locations.forEach(location => {
                 if (!location.coordinates) return;
 
@@ -173,29 +198,27 @@ class JourneyManager {
             
             // Calculate total journey distance and duration
             const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
-            const totalDays = Math.ceil(totalMiles / CONFIG.JOURNEY.MILES_PER_DAY);
+            const totalPathPoints = AppState.journey.path.length;
 
-            const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
+            const discoveryElements = chronologicalDiscoveries.map((discovery) => {
                 const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                const stepNumber = index + 1;
                 
-                // Calculate relative position in journey and estimated day
-                const relativePosition = discovery.discoveryIndex / Math.max(1, AppState.journey.path.length - 1);
-                const estimatedDay = Math.max(1, Math.ceil(relativePosition * totalDays));
-                
-                let displayText = `${icon} ${stepNumber}`;
+                let displayText = '';
 
                 if (discovery.proximityType) {
                     const proximityText = discovery.proximityType === 'traversed' ? 'traversé' : 'passage à proximité';
                     displayText = `${icon} ${discovery.name} (${proximityText})`;
                 } else if (discovery.type === 'region') {
-                    displayText = `${icon} ${discovery.name} (traversé)`;
+                    // Calculate duration for this region traversal
+                    const segmentLength = discovery.endIndex - discovery.startIndex + 1;
+                    const segmentRatio = segmentLength / totalPathPoints;
+                    const segmentMiles = totalMiles * segmentRatio;
+                    const segmentDays = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
+                    
+                    displayText = `${icon} ${discovery.name} (${segmentDays} jour${segmentDays > 1 ? 's' : ''})`;
                 } else {
                     displayText = `${icon} ${discovery.name}`;
                 }
-
-                // Add estimated day information
-                displayText += ` <span class="text-xs text-gray-400">- Jour ${estimatedDay}</span>`;
 
                 return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
             });
