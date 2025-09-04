@@ -261,19 +261,36 @@ class LocationManager {
     }
 
     exportToFile() {
+        console.log("🚀 Starting export...");
+        
         // Combine locations and regions data
         const exportData = {
             locations: AppState.locationsData.locations || [],
             regions: AppState.regionsData.regions || []
         };
         
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-        const downloadAnchorNode = this.dom.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "Landmarks.json");
+        console.log("📦 Export data prepared:", {
+            locationsCount: exportData.locations.length,
+            regionsCount: exportData.regions.length
+        });
+        
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.href = url;
+        downloadAnchorNode.download = 'Landmarks.json';
+        downloadAnchorNode.style.display = 'none';
+        
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        document.body.removeChild(downloadAnchorNode);
+        
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        
+        console.log("✅ Export completed successfully");
     }
 
     async importFromFile(file) {
@@ -317,26 +334,76 @@ class LocationManager {
                 }
                 
                 // Import regions if they exist
+                let regionsToImport = [];
+                
+                // Check if there's a dedicated regions array
                 if (Array.isArray(importedData.regions)) {
-                    const validRegions = importedData.regions.filter(reg => 
-                        reg.id && reg.name && Array.isArray(reg.points) && 
-                        reg.points.length >= 3 &&
-                        reg.points.every(point => 
-                            typeof point.x === 'number' && 
-                            typeof point.y === 'number'
-                        )
-                    );
+                    console.log("🔍 Found dedicated regions array");
+                    regionsToImport = importedData.regions;
+                } else {
+                    // Look for regions mixed in with locations or other structures
+                    console.log("🔍 Searching for regions in other data structures");
                     
-                    console.log(`📊 Valid regions: ${validRegions.length}/${importedData.regions.length}`);
+                    // Check if locations array contains region-like objects
+                    const allData = [...(importedData.locations || [])];
+                    
+                    // Add any other top-level arrays or objects that might contain regions
+                    Object.keys(importedData).forEach(key => {
+                        if (key !== 'locations' && Array.isArray(importedData[key])) {
+                            allData.push(...importedData[key]);
+                        } else if (key !== 'locations' && typeof importedData[key] === 'object' && importedData[key] !== null) {
+                            // Check if it's a region-like object
+                            if (importedData[key].points || importedData[key].coordinates) {
+                                allData.push(importedData[key]);
+                            }
+                        }
+                    });
+                    
+                    // Filter for region-like objects
+                    regionsToImport = allData.filter(item => 
+                        item && (Array.isArray(item.points) || item.type === 'region')
+                    );
+                }
+                
+                if (regionsToImport.length > 0) {
+                    console.log(`🔍 Found ${regionsToImport.length} potential regions`);
+                    
+                    const validRegions = regionsToImport.filter(reg => {
+                        // More flexible validation for regions
+                        if (!reg || !reg.name) return false;
+                        
+                        // Check for points array
+                        if (Array.isArray(reg.points)) {
+                            return reg.points.length >= 3 && 
+                                   reg.points.every(point => 
+                                       typeof point.x === 'number' && 
+                                       typeof point.y === 'number'
+                                   );
+                        }
+                        
+                        return false;
+                    }).map(reg => ({
+                        id: reg.id || Date.now() + Math.random(),
+                        name: reg.name,
+                        description: reg.description || reg.Description || "Description importée",
+                        color: reg.color || 'green',
+                        points: reg.points,
+                        Rumeur: reg.Rumeur || reg.rumeur || "Rumeur importée",
+                        Tradition_Ancienne: reg.Tradition_Ancienne || reg.tradition_ancienne || "Tradition importée"
+                    }));
+                    
+                    console.log(`📊 Valid regions after filtering: ${validRegions.length}/${regionsToImport.length}`);
                     
                     if (validRegions.length > 0) {
                         AppState.regionsData = {
-                            regions: validRegions
+                            regions: [...(AppState.regionsData.regions || []), ...validRegions]
                         };
                         window.regionManager?.render();
                         window.regionManager?.saveToLocal();
                         console.log("✅ Regions imported successfully");
                     }
+                } else {
+                    console.log("ℹ️ No regions found in import data");
                 }
             } else {
                 throw new Error("Structure JSON invalide - propriété 'locations' manquante ou invalide");
