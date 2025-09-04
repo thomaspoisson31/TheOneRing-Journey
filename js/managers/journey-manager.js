@@ -194,6 +194,9 @@ class JourneyManager {
                     displayText = `${icon} ${discovery.name}`;
                 }
 
+                // Add estimated day information
+                displayText += ` <span class="text-xs text-gray-400">- Jour ${estimatedDay}</span>`;
+
                 return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
             });
 
