@@ -108,11 +108,15 @@ class DOMElements {
 
     // Modal helpers
     showModal(modalElement) {
-        modalElement?.classList.remove('hidden');
+        if (modalElement) {
+            modalElement.style.display = 'flex';
+        }
     }
 
     hideModal(modalElement) {
-        modalElement?.classList.add('hidden');
+        if (modalElement) {
+            modalElement.style.display = 'none';
+        }
     }
 
     // Form helpers
@@ -134,11 +138,15 @@ class DOMElements {
     }
 
     addClass(element, className) {
-        element?.classList.add(className);
+        if (element) {
+            element.classList.add(className);
+        }
     }
 
     removeClass(element, className) {
-        element?.classList.remove(className);
+        if (element) {
+            element.classList.remove(className);
+        }
     }
 
     hasClass(element, className) {
