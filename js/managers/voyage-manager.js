@@ -111,72 +111,78 @@ class VoyageManager {
 
         const discoveries = AppState.journey.discoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
         
-        // Initialize days content
-        const daysContent = [];
+        // Calculate total journey stats
+        const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
+        const totalPathPoints = AppState.journey.path.length;
+
+        // Create timeline with actual durations from the "Découvertes du voyage"
+        const timeline = [];
+        let timelineDay = 1;
+        
+        discoveries.forEach(discovery => {
+            if (discovery.type === 'region') {
+                // Calculate region duration from segment ratio
+                const segmentLength = discovery.endIndex - discovery.startIndex + 1;
+                const segmentRatio = segmentLength / totalPathPoints;
+                const segmentMiles = totalMiles * segmentRatio;
+                const regionDuration = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
+                
+                // Add each day of the region
+                for (let day = 0; day < regionDuration; day++) {
+                    timeline.push({
+                        originalDay: timelineDay + day,
+                        discovery: discovery,
+                        isRegionDay: day + 1,
+                        totalRegionDays: regionDuration
+                    });
+                }
+                timelineDay += regionDuration;
+            } else {
+                // Location discovery
+                timeline.push({
+                    originalDay: timelineDay,
+                    discovery: discovery,
+                    isLocation: true
+                });
+                // Locations don't consume time by themselves
+            }
+        });
+
+        const originalTotalDays = timelineDay - 1;
+
+        // Initialize segment days
+        const segmentDays = [];
         for (let day = 1; day <= totalDays; day++) {
-            daysContent.push({
+            segmentDays.push({
                 day: day,
                 discoveries: []
             });
         }
 
-        // Calculate the original total journey days based on region durations
-        const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
-        const originalTotalDays = Math.max(1, Math.ceil(totalMiles / CONFIG.JOURNEY.MILES_PER_DAY));
-        
-        // Create a timeline of discoveries with their original day positions
-        const timeline = [];
-        let currentDay = 1;
-        
-        discoveries.forEach(discovery => {
-            if (discovery.type === 'region') {
-                // For regions, calculate their original duration
-                const totalPathPoints = AppState.journey.path.length;
-                const segmentLength = discovery.endIndex - discovery.startIndex + 1;
-                const segmentRatio = segmentLength / totalPathPoints;
-                const segmentMiles = totalMiles * segmentRatio;
-                const originalRegionDays = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
-                
-                // Add the region for each day it spans
-                for (let i = 0; i < originalRegionDays; i++) {
-                    timeline.push({
-                        day: currentDay + i,
-                        discovery: discovery,
-                        isRegionDay: i + 1,
-                        totalRegionDays: originalRegionDays
-                    });
-                }
-                currentDay += originalRegionDays;
-            } else {
-                // For locations, add them at the current day
-                timeline.push({
-                    day: currentDay,
-                    discovery: discovery,
-                    isRegionDay: false
-                });
-            }
-        });
-
-        // Now redistribute the timeline across the new segment duration
-        timeline.forEach(item => {
-            // Map original day to new segment day
-            const normalizedPosition = (item.day - 1) / (originalTotalDays - 1 || 1);
-            const newDay = Math.floor(normalizedPosition * (totalDays - 1)) + 1;
-            const targetDayIndex = Math.min(newDay - 1, totalDays - 1);
+        // Distribute timeline elements across segment days
+        timeline.forEach(timelineItem => {
+            // Map original timeline day to segment day
+            const ratio = (timelineItem.originalDay - 1) / Math.max(1, originalTotalDays - 1);
+            const segmentDayIndex = Math.min(
+                Math.floor(ratio * (totalDays - 1)),
+                totalDays - 1
+            );
             
-            // Check if this discovery is already in this day to avoid duplicates
-            const existingDiscovery = daysContent[targetDayIndex].discoveries.find(d => 
-                d.name === item.discovery.name && d.type === item.discovery.type
+            // Avoid duplicate discoveries on same day
+            const existingDiscovery = segmentDays[segmentDayIndex].discoveries.find(d => 
+                d.discovery.name === timelineItem.discovery.name && 
+                d.discovery.type === timelineItem.discovery.type
             );
             
             if (!existingDiscovery) {
-                daysContent[targetDayIndex].discoveries.push(item.discovery);
+                segmentDays[segmentDayIndex].discoveries.push(timelineItem);
             }
         });
 
         // Generate HTML
-        const daysHtml = daysContent.map(dayData => {
-            const discoveriesHtml = dayData.discoveries.map(discovery => {
+        const daysHtml = segmentDays.map(dayData => {
+            const discoveriesHtml = dayData.discoveries.map(item => {
+                const discovery = item.discovery;
                 const icon = discovery.type === 'region' ? '🗺️' : '📍';
                 const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
                 let actionText = '';
