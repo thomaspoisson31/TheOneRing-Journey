@@ -116,6 +116,11 @@ class MiddleEarthApp {
         console.log("🚀 Starting application...");
         
         try {
+            // Check auth error from URL first
+            if (window.checkAuthError) {
+                window.checkAuthError();
+            }
+
             // Initialize components
             await this.locationManager.loadInitialData();
             this.regionManager.loadFromStorage();
@@ -157,7 +162,12 @@ class MiddleEarthApp {
     }
 
     setupMapEventListeners() {
-        // Viewport interactions
+        // Viewport interactions - check if viewport exists
+        if (!this.domElements.viewport) {
+            console.error('❌ Cannot setup map event listeners: viewport not found');
+            return;
+        }
+
         this.domElements.viewport.addEventListener('mousedown', (e) => this.handleViewportMouseDown(e));
         this.domElements.viewport.addEventListener('mousemove', (e) => this.handleViewportMouseMove(e));
         this.domElements.viewport.addEventListener('mouseup', () => this.handleViewportMouseUp());
@@ -281,7 +291,7 @@ class MiddleEarthApp {
     }
 
     handleStartupError(error) {
-        const loaderOverlay = this.domElements.loaderOverlay;
+        const loaderOverlay = this.domElements.loaderOverlay || document.getElementById('loader-overlay');
         if (loaderOverlay) {
             loaderOverlay.innerHTML = `
                 <div class="text-2xl text-red-500 text-center p-4">
@@ -290,12 +300,21 @@ class MiddleEarthApp {
                     <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
                 </div>
             `;
+        } else {
+            console.error('❌ Cannot display startup error: loader overlay not found');
+            alert('Erreur lors du démarrage de l\'application. Veuillez recharger la page.');
         }
     }
 }
 
 // --- Initialisation ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Make checkAuthError available globally
+    if (window.checkAuthError) {
+        window.checkAuthError();
+    }
+    
     const app = new MiddleEarthApp();
+    window.app = app; // Expose app globally for debugging
     app.init().catch(console.error);
 });

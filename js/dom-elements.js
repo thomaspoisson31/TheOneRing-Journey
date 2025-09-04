@@ -1,4 +1,3 @@
-
 class DOMElements {
     constructor() {
         this.initializeElements();
@@ -11,9 +10,17 @@ class DOMElements {
         this.mapImage = document.getElementById('map-image');
         this.loremasterMapImage = document.getElementById('loremaster-map-image');
         this.drawingCanvas = document.getElementById('drawing-canvas');
-        this.locationsLayer = document.getElementById('locations-layer');
         this.regionsLayer = document.getElementById('regions-layer');
+        this.locationsLayer = document.getElementById('locations-layer');
         this.loaderOverlay = document.getElementById('loader-overlay');
+
+        // Validate critical elements
+        if (!this.viewport) {
+            console.error('❌ Critical: viewport element not found');
+        }
+        if (!this.loaderOverlay) {
+            console.error('❌ Critical: loader-overlay element not found');
+        }
 
         // Toolbar buttons
         this.drawModeBtn = document.getElementById('draw-mode');
@@ -112,7 +119,7 @@ class DOMElements {
     getFormData(formSelector) {
         const form = document.querySelector(formSelector);
         if (!form) return {};
-        
+
         const formData = new FormData(form);
         const data = {};
         for (let [key, value] of formData.entries()) {
