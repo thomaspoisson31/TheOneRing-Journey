@@ -440,8 +440,6 @@
 
         // All JavaScript code has been moved to external files
 
-
-
         // --- Location Markers & Info Box ---
         function renderLocations() {
             locationsLayer.innerHTML = '';
@@ -2246,9 +2244,7 @@
             updateFilters();
         }
         viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
-        // Gestionnaire mousedown principal du viewport
-        function handleViewportMouseDown(event) {
-            console.log("🖱️ Main viewport mousedown, mode:", {drawing: isDrawingMode, adding: isAddingLocationMode, region: isAddingRegionMode});
+        // Legacy viewport handler - now handled by app.jscationMode, region: isAddingRegionMode});
 
             if (event.target.closest('.location-marker, #info-box')) return;
             hideInfoBox();
