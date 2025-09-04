@@ -117,6 +117,10 @@ class UIManager {
     showLocationInfo(location) {
         if (!this.dom.infoBox) return;
 
+        // Store the active location ID for deletion
+        AppState.activeLocationId = location.id;
+        AppState.activeRegionId = null; // Clear region ID
+
         // Update info box content for location
         this.updateInfoBoxForLocation(location);
         this.dom.infoBox.style.display = 'block';
@@ -125,6 +129,10 @@ class UIManager {
 
     showRegionInfo(region) {
         if (!this.dom.infoBox) return;
+
+        // Store the active region ID for deletion
+        AppState.activeRegionId = region.id;
+        AppState.activeLocationId = null; // Clear location ID
 
         // Update info box content for region
         this.updateInfoBoxForRegion(region);
@@ -193,6 +201,7 @@ class UIManager {
             this.dom.infoBox.style.display = 'none';
         }
         AppState.activeLocationId = null;
+        AppState.activeRegionId = null;
     }
 
     positionInfoBox() {
