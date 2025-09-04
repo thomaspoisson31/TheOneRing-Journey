@@ -1,13 +1,53 @@
-
 class UIManager {
     constructor(domElements) {
         this.dom = domElements;
     }
 
     setupEventListeners() {
-        // Info box
+        // Info box close button
         if (this.dom.infoBoxClose) {
-            this.dom.infoBoxClose.addEventListener('click', () => this.hideInfoBox());
+            this.dom.infoBoxClose.addEventListener('click', () => {
+                this.hideInfoBox();
+            });
+        }
+
+        // Info box delete button
+        if (this.dom.infoBoxDelete) {
+            this.dom.infoBoxDelete.addEventListener('click', () => {
+                this.handleDeleteAction();
+            });
+        }
+
+        // Location modal buttons
+        const saveLocation = this.dom.getElementById('save-location');
+        if (saveLocation) {
+            saveLocation.addEventListener('click', () => {
+                window.locationManager?.saveLocation();
+            });
+        }
+
+        const cancelAddLocation = this.dom.getElementById('cancel-add-location');
+        if (cancelAddLocation) {
+            cancelAddLocation.addEventListener('click', () => {
+                this.dom.hideModal(this.dom.addLocationModal);
+                window.locationManager?.clearAddLocationForm();
+            });
+        }
+
+        // Region modal buttons
+        const saveRegion = this.dom.getElementById('save-region');
+        if (saveRegion) {
+            saveRegion.addEventListener('click', () => {
+                window.regionManager?.saveRegion();
+            });
+        }
+
+        const cancelAddRegion = this.dom.getElementById('cancel-add-region');
+        if (cancelAddRegion) {
+            cancelAddRegion.addEventListener('click', () => {
+                this.dom.hideModal(this.dom.addRegionModal);
+                window.regionManager?.cancelCreation();
+            });
         }
 
         // Note: Import/Export and Map switch event listeners are now handled in app.js
@@ -168,5 +208,16 @@ class UIManager {
         this.dom.infoBox.style.left = `${left}px`;
         this.dom.infoBox.style.top = `${top}px`;
         this.dom.infoBox.style.maxWidth = '280px';
+    }
+
+    handleDeleteAction() {
+        if (AppState.activeLocationId) {
+            window.locationManager?.deleteLocation(AppState.activeLocationId);
+            AppState.activeLocationId = null;
+        } else if (AppState.activeRegionId) {
+            window.regionManager?.deleteRegion(AppState.activeRegionId);
+            AppState.activeRegionId = null;
+        }
+        this.hideInfoBox();
     }
 }
