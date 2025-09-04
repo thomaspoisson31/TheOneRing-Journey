@@ -170,14 +170,28 @@ class JourneyManager {
 
         if (AppState.journey.discoveries.length > 0) {
             const chronologicalDiscoveries = AppState.journey.discoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+            
+            // Calculate total journey distance and duration
+            const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
+            const totalDays = Math.ceil(totalMiles / CONFIG.JOURNEY.MILES_PER_DAY);
 
-            const discoveryElements = chronologicalDiscoveries.map(discovery => {
+            const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
                 const icon = discovery.type === 'region' ? '🗺️' : '📍';
-                let displayText = `${icon} ${discovery.name}`;
+                const stepNumber = index + 1;
+                
+                // Calculate relative position in journey and estimated day
+                const relativePosition = discovery.discoveryIndex / Math.max(1, AppState.journey.path.length - 1);
+                const estimatedDay = Math.max(1, Math.ceil(relativePosition * totalDays));
+                
+                let displayText = `${icon} ${stepNumber}`;
 
                 if (discovery.proximityType) {
                     const proximityText = discovery.proximityType === 'traversed' ? 'traversé' : 'passage à proximité';
-                    displayText += ` (${proximityText})`;
+                    displayText = `${icon} ${discovery.name} (${proximityText})`;
+                } else if (discovery.type === 'region') {
+                    displayText = `${icon} ${discovery.name} (traversé)`;
+                } else {
+                    displayText = `${icon} ${discovery.name}`;
                 }
 
                 return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
