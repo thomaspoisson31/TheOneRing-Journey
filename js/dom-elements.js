@@ -42,38 +42,6 @@ class DOMElements {
         this.infoBoxDelete = document.getElementById('info-box-delete');
         this.infoBoxExpand = document.getElementById('info-box-expand');
 
-        class DOMElements {
-    constructor() {
-        // Main containers
-        this.viewport = document.getElementById('viewport');
-        this.mapContainer = document.getElementById('map-container');
-        this.mapImage = document.getElementById('map-image');
-        this.loremasterMapImage = document.getElementById('loremaster-map-image');
-        this.drawingCanvas = document.getElementById('drawing-canvas');
-        this.ctx = this.drawingCanvas ? this.drawingCanvas.getContext('2d') : null;
-        this.regionsLayer = document.getElementById('regions-layer');
-        this.locationsLayer = document.getElementById('locations-layer');
-        this.loaderOverlay = document.getElementById('loader-overlay');
-
-        // Toolbar buttons
-        this.drawModeBtn = document.getElementById('draw-mode');
-        this.addLocationBtn = document.getElementById('add-location-mode');
-        this.addRegionBtn = document.getElementById('add-region-mode');
-        this.eraseBtn = document.getElementById('erase');
-        this.mapSwitchBtn = document.getElementById('map-switch');
-        this.filterToggleBtn = document.getElementById('filter-toggle');
-        this.exportBtn = document.getElementById('export-locations');
-        this.importBtn = document.getElementById('import-locations');
-        this.importFileInput = document.getElementById('import-file-input');
-
-        // Info box elements
-        this.infoBox = document.getElementById('info-box');
-        this.infoBoxTitle = document.getElementById('info-box-title');
-        this.infoBoxClose = document.getElementById('info-box-close');
-        this.infoBoxEdit = document.getElementById('info-box-edit');
-        this.infoBoxDelete = document.getElementById('info-box-delete');
-        this.infoBoxExpand = document.getElementById('info-box-expand');
-
         // Distance display
         this.distanceContainer = document.getElementById('distance-container');
         this.distanceDisplay = document.getElementById('distance-display');
@@ -97,35 +65,6 @@ class DOMElements {
         this.filterShowRegions = document.getElementById('filter-show-regions');
         this.filterColorPicker = document.getElementById('filter-color-picker');
         this.resetFiltersBtn = document.getElementById('reset-filters');
-    }
-
-    // Utility methods
-    getElementById(id) {
-        return document.getElementById(id);
-    }
-
-    createElement(tag, className = '') {
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        return element;
-    }
-
-    addClass(element, className) {
-        if (element) element.classList.add(className);
-    }
-
-    removeClass(element, className) {
-        if (element) element.classList.remove(className);
-    }
-
-    showModal(modal) {
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    hideModal(modal) {
-        if (modal) modal.classList.add('hidden');
-    }
-}s');
 
         // Canvas context
         this.ctx = this.drawingCanvas?.getContext('2d');
@@ -170,13 +109,13 @@ class DOMElements {
     // Modal helpers
     showModal(modalElement) {
         if (modalElement) {
-            modalElement.style.display = 'flex';
+            modalElement.classList.remove('hidden');
         }
     }
 
     hideModal(modalElement) {
         if (modalElement) {
-            modalElement.style.display = 'none';
+            modalElement.classList.add('hidden');
         }
     }
 
