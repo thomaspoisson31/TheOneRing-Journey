@@ -85,6 +85,11 @@ class JourneyManager {
         // Update journey discoveries and display
         this.updateDiscoveriesChronologically();
         this.displayJourneyInfo();
+        
+        // Update voyage segments if the modal is open
+        if (window.voyageManager) {
+            window.voyageManager.updateDisplay();
+        }
     }
 
     updateDiscoveriesChronologically() {
