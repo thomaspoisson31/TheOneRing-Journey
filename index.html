@@ -462,31 +462,7 @@
         // --- Legacy code compatibility ---
         // Le code JavaScript hérité a été déplacé ou supprimé.
 
-        // --- Event listeners pour les segments de voyage ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialiser le voyage si le chemin existe mais que le voyage n'est pas actif
-            if (journeyPath && journeyPath.length > 0 && !isVoyageActive && journeyDiscoveries && journeyDiscoveries.length > 0) {
-                handleStartVoyage(); // Tentative d'initialisation automatique
-            } else {
-                updateVoyageSegmentsDisplay(); // Afficher l'état actuel
-            }
-
-            // Navigation entre segments - Déjà définis dans voyage-manager.js
-
-            // Slider de durée du segment actuel
-            const durationSlider = document.getElementById('current-segment-duration');
-            if (durationSlider) {
-                durationSlider.addEventListener('input', handleSegmentDurationChange);
-            }
-        });
-
-        // Backup pour s'assurer que les event listeners sont attachés - slider seulement
-        setTimeout(() => {
-            const durationSlider = document.getElementById('current-segment-duration');
-            if (durationSlider && !durationSlider.listenerCount('input')) {
-                durationSlider.addEventListener('input', handleSegmentDurationChange);
-            }
-        }, 1000);
+        // Event listeners for voyage segments are handled by VoyageManager
 
     </script>
 </body>

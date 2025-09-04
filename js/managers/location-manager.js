@@ -290,5 +290,4 @@ class LocationManager {
             console.error(err);
         }
     }
-    }
 }
