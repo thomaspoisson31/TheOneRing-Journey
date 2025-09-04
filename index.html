@@ -414,240 +414,32 @@
         ></div>
     </div>
 
+    <!-- Scripts JavaScript -->
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/dom-elements.js"></script>
+    <script src="js/managers/map-manager.js"></script>
+    <script src="js/managers/location-manager.js"></script>
+    <script src="js/managers/region-manager.js"></script>
+    <script src="js/managers/journey-manager.js"></script>
+    <script src="js/managers/voyage-manager.js"></script>
+    <script src="js/managers/auth-manager.js"></script>
+    <script src="js/managers/filter-manager.js"></script>
+    <script src="js/managers/ui-manager.js"></script>
+    <script src="js/managers/gemini-manager.js"></script>
+    <script src="js/app.js"></script>
+    
     <script>
-        // --- DATA ---
-        const colorMap = { red: 'rgba(239, 68, 68, 0.8)', blue: 'rgba(59, 130, 246, 0.8)', green: 'rgba(34, 197, 94, 0.8)', violet: 'rgba(139, 92, 246, 0.8)', orange: 'rgba(252, 169, 3, 0.8)', black: 'rgba(17, 24, 39, 0.8)' };
-        const regionColorMap = { red: 'rgba(239, 68, 68, 0.15)', blue: 'rgba(59, 130, 246, 0.15)', green: 'rgba(34, 197, 94, 0.15)', violet: 'rgba(139, 92, 246, 0.15)', orange: 'rgba(252, 169, 3, 0.15)', black: 'rgba(17, 24, 39, 0.15)' };
-        const getDefaultLocations = () => ({ "locations": [] }); // Fallback to empty if fetch fails
-        const getDefaultRegions = () => ({ "regions": [] });
-        let locationsData;
-        let regionsData = getDefaultRegions();
+        // Backward compatibility - expose globals for legacy code
+        window.colorMap = CONFIG.COLORS.locations;
+        window.regionColorMap = CONFIG.COLORS.regions;
 
-        // --- DOM Elements ---
-        const viewport = document.getElementById('viewport');
-        const mapContainer = document.getElementById('map-container');
-        const mapImage = document.getElementById('map-image');
-        const loremasterMapImage = document.getElementById('loremaster-map-image');
-        const drawingCanvas = document.getElementById('drawing-canvas');
-        const locationsLayer = document.getElementById('locations-layer');
-        const regionsLayer = document.getElementById('regions-layer');
-        const infoBox = document.getElementById('info-box');
-        const infoBoxClose = document.getElementById('info-box-close');
-        const ctx = drawingCanvas.getContext('2d');
-        const distanceContainer = document.getElementById('distance-container');
-        const addLocationModal = document.getElementById('add-location-modal');
-        const addRegionModal = document.getElementById('add-region-modal');
-        const loaderOverlay = document.getElementById('loader-overlay');
-        const journeyLogModal = document.getElementById('journey-log-modal');
-        const filterPanel = document.getElementById('filter-panel');
-        const mapSwitchBtn = document.getElementById('map-switch');
-        const distanceDisplay = document.getElementById('distance-display');
-        const authModal = document.getElementById('auth-modal');
-        const authBtn = document.getElementById('auth-btn');
-        const closeAuthModalBtn = document.getElementById('close-auth-modal');
-        const authStatusPanel = document.getElementById('auth-status-panel');
-        const authContentPanel = document.getElementById('auth-content-panel');
-        const loggedInPanel = document.getElementById('logged-in-panel');
-        const loggedOutPanel = document.getElementById('logged-out-panel');
-        const authUserName = document.getElementById('auth-user-name');
-        const contextNameInput = document.getElementById('context-name-input');
-        const saveContextBtn = document.getElementById('save-context-btn');
-        const savedContextsDiv = document.getElementById('saved-contexts');
-        const googleSigninBtn = document.getElementById('google-signin-btn');
+        // Legacy code compatibility - will be removed in future versions
 
-        // --- Map state ---
-        let MAP_WIDTH = 0, MAP_HEIGHT = 0;
-        const MAP_DISTANCE_MILES = 1150;
-        const PLAYER_MAP_URL = "fr_tor_2nd_eriadors_map_page-0001.webp";
-        const LOREMASTER_MAP_URL = "fr_tor_2nd_eriadors_map_page_loremaster.webp";
-        const LOCATIONS_URL = "Landmarks1.json";
-        let isPlayerView = true;
+        // Application will be initialized by app.js
 
-        // --- Transformation state ---
-        let scale = 1, panX = 0, panY = 0;
+        // All JavaScript code has been moved to external files
 
-        // --- Interaction states ---
-        let isPanning = false, startPanX = 0, startPanY = 0;
-        let isDrawingMode = false, isDrawing = false;
-        let isAddingLocationMode = false;
-        let isAddingRegionMode = false;
-        let totalPathPixels = 0, lastPoint = null, startPoint = null;
-        let draggedMarker = null, dragStartX = 0, dragStartY = 0;
-        let newLocationCoords = null;
-        let activeLocationId = null;
-        let activeFilters = { known: false, visited: false, colors: [] };
-
-        // --- Journey tracking ---
-        let journeyPath = [];
-        let traversedRegions = new Set();
-        let nearbyLocations = new Set();
-        const PROXIMITY_DISTANCE = 50;
-        let journeyDiscoveries = []; // Chronological list of discoveries (regions and locations)
-
-        // --- Voyage Segments ---
-        let currentVoyage = null;
-        let voyageSegments = [];
-        let currentSegmentIndex = -1;
-        let isVoyageActive = false;
-        let activatedSegments = new Set(); // Track which segments have been activated
-
-        // --- Region creation states ---
-        let currentRegionPoints = [];
-        let tempRegionPath = null;
-
-        // --- Authentication state ---
-        let googleUser = null;
-        let savedContexts = [];
-
-        // --- Auto-sync state ---
-        let autoSyncEnabled = false;
-        let lastSyncTime = 0;
-        const SYNC_DELAY = 2000; // 2 seconds delay before auto-sync
-
-        // --- Authentication Debug Logs ---
-        function logAuth(message, data = null) {
-            console.log(`🔐 [AUTH] ${message}`, data || '');
-        }
-
-        // --- HTML Escape Function ---
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // --- Check Google Authentication Status ---
-        function checkGoogleAuth() {
-            logAuth("Vérification du statut d'authentification...");
-            checkAuthStatus();
-        }
-
-        // --- Check for authentication errors in URL ---
-        function checkAuthError() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('auth_error') === '1') {
-                logAuth("ERREUR: Échec de l'authentification Google détecté dans l'URL");
-                alert("Erreur lors de l'authentification Google. Veuillez réessayer.");
-                // Nettoyer l'URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else if (urlParams.get('auth_success') === '1') {
-                logAuth("SUCCÈS: Authentification Google réussie détectée dans l'URL");
-                // Nettoyer l'URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // Forcer une nouvelle vérification de l'authentification
-                setTimeout(() => {
-                    checkGoogleAuth();
-                }, 1000);
-            }
-        }
-
-        // --- Toggle Authentication Modal ---
-        function toggleAuthModal() {
-            logAuth("Basculement de la modal d'authentification");
-            if (authModal.classList.contains('hidden')) {
-                authModal.classList.remove('hidden');
-                logAuth("Modal d'authentification ouverte");
-            } else {
-                authModal.classList.add('hidden');
-                logAuth("Modal d'authentification fermée");
-            }
-        }
-
-        // --- Initialization ---
-        async function loadInitialLocations() {
-            console.log("Attempting to load locations...");
-            const savedData = localStorage.getItem('middleEarthLocations');
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    if (parsedData && Array.isArray(parsedData.locations)) {
-                       locationsData = parsedData;
-                       console.log("✅ Success: Loaded saved locations from localStorage.");
-                       return;
-                    }
-                } catch (e) {
-                    console.error("Failed to parse saved locations, will fetch from URL.", e);
-                }
-            }
-
-            console.log("No valid saved data found. Fetching from URL:", LOCATIONS_URL);
-            try {
-                // Ajouter un timeout pour éviter les attentes infinies
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
-
-                const response = await fetch(LOCATIONS_URL, {
-                    signal: controller.signal,
-                    cache: 'no-cache' // Éviter les problèmes de cache
-                });
-                clearTimeout(timeoutId);
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                if (data && Array.isArray(data.locations)) {
-                    locationsData = data;
-                    console.log("✅ Success: Loaded default locations from URL.");
-                    saveLocationsToLocal();
-                } else {
-                    throw new Error("Invalid JSON structure from URL");
-                }
-            } catch (error) {
-                console.error("❌ Error fetching locations from URL, using empty list as fallback.", error);
-                if (error.name === 'AbortError') {
-                    console.error("Request timed out after 10 seconds");
-                }
-                locationsData = getDefaultLocations();
-                // Sauvegarder même la liste vide pour éviter les futures tentatives de chargement
-                saveLocationsToLocal();
-            }
-        }
-
-        function initializeMap() {
-            console.log("🗺️ Initializing map...");
-            if (mapImage.naturalWidth === 0) {
-                console.warn("⚠️ Map image not loaded yet, retrying...");
-                return;
-            }
-
-            console.log("📐 Map dimensions:", mapImage.naturalWidth, "x", mapImage.naturalHeight);
-            MAP_WIDTH = mapImage.naturalWidth;
-            MAP_HEIGHT = mapImage.naturalHeight;
-            mapContainer.style.width = `${MAP_WIDTH}px`;
-            mapContainer.style.height = `${MAP_HEIGHT}px`;
-            drawingCanvas.width = MAP_WIDTH;
-            drawingCanvas.height = MAP_HEIGHT;
-            regionsLayer.setAttribute('width', MAP_WIDTH);
-            regionsLayer.setAttribute('height', MAP_HEIGHT);
-            regionsLayer.setAttribute('viewBox', `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`);
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
-            ctx.lineWidth = 5;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            renderLocations();
-            renderRegions();
-            requestAnimationFrame(() => {
-                resetView();
-                mapImage.classList.remove('opacity-0');
-                loaderOverlay.style.opacity = '0';
-                setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
-            });
-            preloadLoremasterMap();
-            console.log("✅ Map initialized successfully");
-        }
-
-        function preloadLoremasterMap() {
-            console.log("Preloading Loremaster map...");
-            const lmImage = new Image();
-            lmImage.onload = () => {
-                console.log("✅ Loremaster map preloaded.");
-                loremasterMapImage.src = LOREMASTER_MAP_URL;
-                mapSwitchBtn.classList.remove('hidden');
-            };
-            lmImage.onerror = () => {
-                console.error("Failed to preload Loremaster map.");
-            };
-            lmImage.src = LOREMASTER_MAP_URL;
-        }
+        
 
         // --- Location Markers & Info Box ---
         function renderLocations() {
