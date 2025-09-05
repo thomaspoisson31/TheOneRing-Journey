@@ -424,34 +424,29 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="space-y-4">
-                    <!-- Section Paramètres de voyage -->
+                <div class="space-y-6">
+                    <!-- Section Groupe d'aventuriers -->
                     <div>
-                        <h4 class="font-bold mb-2"><i class="fas fa-route mr-2"></i>Paramètres de Voyage</h4>
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-300">Vitesse de marche moyenne (miles/jour)</label>
-                            <input type="number" id="settings-travel-speed" value="20" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                    <!-- Section Apparence -->
-                    <div>
-                        <h4 class="font-bold mb-2"><i class="fas fa-paint-brush mr-2"></i>Apparence</h4>
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-300">Thème</label>
-                            <div class="flex space-x-4">
-                                <button class="theme-btn px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md" data-theme="dark">Sombre</button>
-                                <button class="theme-btn px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded-md" data-theme="light">Clair</button>
+                        <h4 class="font-bold mb-3"><i class="fas fa-users mr-2"></i>Groupe d'Aventuriers</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="adventurers-group" class="block text-sm font-medium text-gray-300 mb-2">Description du groupe</label>
+                                <textarea id="adventurers-group" rows="4" placeholder="Décrivez votre groupe d'aventuriers dans les Terres du Milieu..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-vertical"></textarea>
+                            </div>
+                            <div>
+                                <label for="adventurers-quest" class="block text-sm font-medium text-gray-300 mb-2">Description de la quête</label>
+                                <textarea id="adventurers-quest" rows="4" placeholder="Décrivez la quête ou l'objectif commun du groupe..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-vertical"></textarea>
+                            </div>
+                            <div class="flex justify-center">
+                                <button id="generate-adventurers-wizard" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center space-x-2 text-white font-medium transition-colors">
+                                    <span class="gemini-icon">✨</span>
+                                    <span>Wizard - Générer un groupe</span>
+                                </button>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                Le Wizard génère automatiquement un groupe de 2-5 aventuriers (nom, peuple de l'Eriador de la fin du Troisième Âge, occupation) unis par un objectif commun.
                             </div>
                         </div>
-                    </div>
-                    <!-- Section Connexion (pour la synchronisation) -->
-                    <div>
-                        <h4 class="font-bold mb-2"><i class="fas fa-sync-alt mr-2"></i>Synchronisation des données</h4>
-                        <div class="flex items-center space-x-4">
-                            <button id="enable-auto-sync" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Activer la synchronisation automatique</button>
-                            <button id="disable-auto-sync" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg hidden">Désactiver</button>
-                        </div>
-                        <p id="sync-status" class="text-sm text-gray-400 mt-2"></p>
                     </div>
                 </div>
             </div>
@@ -4516,109 +4511,88 @@
                 });
             });
 
-            // Event listener for travel speed
-            const travelSpeedInput = document.getElementById('settings-travel-speed');
-            if (travelSpeedInput) {
-                travelSpeedInput.addEventListener('change', (e) => {
-                    // In a real app, you'd save this to localStorage or user profile
-                    console.log("Vitesse de marche moyenne mise à jour:", e.target.value);
-                    // For now, no specific action, but can be used to adjust journey calculations
-                    // Ensure the value is a number
-                    const newSpeed = parseFloat(e.target.value);
-                    if (!isNaN(newSpeed) && newSpeed > 0) {
-                        // This value is used in milesToDays calculation, which implicitly uses a speed of 20 miles/day.
-                        // For now, we don't have a direct way to change that constant, but we store it.
-                        localStorage.setItem('travelSpeed', newSpeed);
-                        // Potentially re-calculate journey days if the path is already drawn
-                        if (journeyPath.length > 0) {
-                            updateDistanceDisplay();
-                        }
-                    } else {
-                        alert("Veuillez entrer une vitesse de marche valide (nombre positif).");
-                        e.target.value = localStorage.getItem('travelSpeed') || 20; // Reset to previous value
-                    }
-                });
-            }
-
-            // Event listeners for theme buttons
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const theme = e.target.dataset.theme;
-                    // Apply theme (e.g., add class to body)
-                    document.body.className = document.body.className.replace(/theme-dark|theme-light/, ''); // Remove existing theme classes
-                    document.body.classList.add(`theme-${theme}`);
-                    localStorage.setItem('appTheme', theme);
-
-                    // Update button styles
-                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('bg-gray-600', 'hover:bg-gray-500'));
-                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.add('bg-gray-700', 'hover:bg-gray-600'));
-                    e.target.classList.remove('bg-gray-700', 'hover:bg-gray-600');
-                    e.target.classList.add('bg-gray-600', 'hover:bg-gray-500');
-                });
+            // Event listener pour le bouton Wizard
+            waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
+                wizardBtn.addEventListener('click', handleGenerateAdventurers);
             });
-
-            // Event listeners for sync buttons
-            const enableSyncBtn = document.getElementById('enable-auto-sync');
-            const disableSyncBtn = document.getElementById('disable-auto-sync');
-            if (enableSyncBtn) {
-                enableSyncBtn.addEventListener('click', enableAutoSync);
-            }
-            if (disableSyncBtn) {
-                disableSyncBtn.addEventListener('click', disableAutoSync);
-            }
         }
 
         function loadSettings() {
-            // Load travel speed
-            const travelSpeedInput = document.getElementById('settings-travel-speed');
-            if (travelSpeedInput) {
-                const savedSpeed = localStorage.getItem('travelSpeed');
-                travelSpeedInput.value = savedSpeed || 20; // Default to 20 if not set
+            // Charger les données sauvegardées des aventuriers et quête
+            const adventurersGroup = localStorage.getItem('adventurersGroup');
+            const adventurersQuest = localStorage.getItem('adventurersQuest');
+            
+            if (adventurersGroup) {
+                document.getElementById('adventurers-group').value = adventurersGroup;
             }
-
-            // Load theme
-            const savedTheme = localStorage.getItem('appTheme') || 'dark'; // Default to dark
-            document.body.className = document.body.className.replace(/theme-dark|theme-light/, '');
-            document.body.classList.add(`theme-${savedTheme}`);
-
-            // Update button styles for theme
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                if (btn.dataset.theme === savedTheme) {
-                    btn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
-                    btn.classList.add('bg-gray-600', 'hover:bg-gray-500');
-                } else {
-                    btn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
-                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
-                }
-            });
-
-            // Update sync button visibility and status
-            updateSyncStatus();
+            
+            if (adventurersQuest) {
+                document.getElementById('adventurers-quest').value = adventurersQuest;
+            }
+            
+            // Sauvegarder automatiquement les modifications
+            const groupTextarea = document.getElementById('adventurers-group');
+            const questTextarea = document.getElementById('adventurers-quest');
+            
+            if (groupTextarea) {
+                groupTextarea.addEventListener('input', (e) => {
+                    localStorage.setItem('adventurersGroup', e.target.value);
+                    scheduleAutoSync();
+                });
+            }
+            
+            if (questTextarea) {
+                questTextarea.addEventListener('input', (e) => {
+                    localStorage.setItem('adventurersQuest', e.target.value);
+                    scheduleAutoSync();
+                });
+            }
         }
 
-        function updateSyncStatus(message = null) {
-            const syncStatusEl = document.getElementById('sync-status');
-            const enableSyncBtn = document.getElementById('enable-auto-sync');
-            const disableSyncBtn = document.getElementById('disable-auto-sync');
+        async function handleGenerateAdventurers(event) {
+            const button = event.currentTarget;
+            const groupTextarea = document.getElementById('adventurers-group');
+            const questTextarea = document.getElementById('adventurers-quest');
 
-            if (!syncStatusEl || !enableSyncBtn || !disableSyncBtn) return;
+            const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge. 
 
-            if (message) {
-                syncStatusEl.textContent = message;
+Génère entre 2 et 5 aventuriers avec pour chacun :
+- Nom (dans le style de Tolkien)
+- Peuple (Hobbits, Hommes du Nord, Dúnedain, Elfes, Nains - tous présents dans l'Eriador)
+- Occupation/rôle (garde-forestier, marchand, érudit, guerrier, etc.)
+
+Puis décris leur quête ou objectif commun qui les unit dans cette aventure.
+
+Format de réponse :
+**Groupe d'aventuriers :**
+[Description de chaque membre]
+
+**Quête :**
+[Description de leur mission commune]
+
+Reste fidèle à l'univers de Tolkien et à la géographie de l'Eriador.`;
+
+            // Appeler Gemini pour générer le contenu
+            const result = await callGemini(prompt, button);
+            
+            // Analyser le résultat pour séparer groupe et quête
+            const parts = result.split('**Quête :**');
+            if (parts.length === 2) {
+                const groupPart = parts[0].replace('**Groupe d\'aventuriers :**', '').trim();
+                const questPart = parts[1].trim();
+                
+                groupTextarea.value = groupPart;
+                questTextarea.value = questPart;
+                
+                // Sauvegarder
+                localStorage.setItem('adventurersGroup', groupPart);
+                localStorage.setItem('adventurersQuest', questPart);
+                scheduleAutoSync();
             } else {
-                if (autoSyncEnabled && googleUser) {
-                    syncStatusEl.textContent = "Synchronisation automatique activée.";
-                    enableSyncBtn.classList.add('hidden');
-                    disableSyncBtn.classList.remove('hidden');
-                } else if (googleUser) {
-                    syncStatusEl.textContent = "Synchronisation automatique désactivée.";
-                    enableSyncBtn.classList.remove('hidden');
-                    disableSyncBtn.classList.add('hidden');
-                } else {
-                    syncStatusEl.textContent = "Connectez-vous pour activer la synchronisation.";
-                    enableSyncBtn.classList.add('hidden');
-                    disableSyncBtn.classList.add('hidden');
-                }
+                // Si le format n'est pas comme attendu, mettre tout dans le groupe
+                groupTextarea.value = result;
+                localStorage.setItem('adventurersGroup', result);
+                scheduleAutoSync();
             }
         }
 
