@@ -42,7 +42,10 @@
             <button id="gemini-btn" title="Générer du texte avec Gemini" class="w-10 h-10 bg-gray-700 hover:bg-purple-600 rounded transition-colors">
                 <i class="fas fa-magic"></i>
             </button>
-
+            <!-- Settings Button -->
+            <button id="settings-btn" title="Paramètres" class="w-10 h-10 bg-gray-700 hover:bg-yellow-600 rounded transition-colors">
+                <i class="fas fa-cog"></i>
+            </button>
         </div>
 
         <!-- Filter Panel -->
@@ -211,7 +214,7 @@
         <div id="journey-log-modal" class="hidden absolute inset-0 z-40 bg-black bg-opacity-70 flex items-center justify-center p-4">
             <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Chronique de Voyage</h3>
+                    <h3 class="text-xl font-bold" id="voyage-modal-title">Chronique de Voyage</h3>
                     <button id="close-journey-log" class="text-gray-400 hover:text-white"><i class="fas fa-times fa-lg"></i></button>
                 </div>
                 <div id="journey-log-content" class="prose prose-invert overflow-y-auto text-gray-300"></div>
@@ -411,7 +414,48 @@
                     </div>
                 </div>
             </div>
-        ></div>
+        </div>
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] hidden">
+            <div class="bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold"><i class="fas fa-cog mr-2"></i>Paramètres</h3>
+                    <button id="close-settings-modal" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <!-- Section Paramètres de voyage -->
+                    <div>
+                        <h4 class="font-bold mb-2"><i class="fas fa-route mr-2"></i>Paramètres de Voyage</h4>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-300">Vitesse de marche moyenne (miles/jour)</label>
+                            <input type="number" id="settings-travel-speed" value="20" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <!-- Section Apparence -->
+                    <div>
+                        <h4 class="font-bold mb-2"><i class="fas fa-paint-brush mr-2"></i>Apparence</h4>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-300">Thème</label>
+                            <div class="flex space-x-4">
+                                <button class="theme-btn px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md" data-theme="dark">Sombre</button>
+                                <button class="theme-btn px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded-md" data-theme="light">Clair</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Section Connexion (pour la synchronisation) -->
+                    <div>
+                        <h4 class="font-bold mb-2"><i class="fas fa-sync-alt mr-2"></i>Synchronisation des données</h4>
+                        <div class="flex items-center space-x-4">
+                            <button id="enable-auto-sync" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Activer la synchronisation automatique</button>
+                            <button id="disable-auto-sync" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg hidden">Désactiver</button>
+                        </div>
+                        <p id="sync-status" class="text-sm text-gray-400 mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -454,6 +498,9 @@
         const saveContextBtn = document.getElementById('save-context-btn');
         const savedContextsDiv = document.getElementById('saved-contexts');
         const googleSigninBtn = document.getElementById('google-signin-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsModalBtn = document.getElementById('close-settings-modal');
 
         // --- Map state ---
         let MAP_WIDTH = 0, MAP_HEIGHT = 0;
@@ -1550,12 +1597,14 @@
                 autoSyncEnabled = true;
                 loadUserData();
                 console.log("✅ Auto-sync activé");
+                updateSyncStatus("Synchronisation automatique activée.");
             }
         }
 
         function disableAutoSync() {
             autoSyncEnabled = false;
             console.log("❌ Auto-sync désactivé");
+            updateSyncStatus("Synchronisation automatique désactivée.");
         }
 
         function scheduleAutoSync() {
@@ -1752,6 +1801,31 @@
 
                 // Attendre que tous les éléments DOM soient disponibles
                 setupAuthEventListeners();
+
+                // Setup settings event listeners
+                setupSettingsEventListeners();
+
+                // Test des éléments DOM après un délai
+                setTimeout(() => {
+                    logAuth("=== TEST DES ÉLÉMENTS DOM ===");
+                    logAuth("authModal element:", !!document.getElementById('auth-modal'));
+                    logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
+                    logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
+                    logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
+                    logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
+                    logAuth("settings-btn element:", !!document.getElementById('settings-btn'));
+                    logAuth("settings-modal element:", !!document.getElementById('settings-modal'));
+                    logAuth("close-settings-modal element:", !!document.getElementById('close-settings-modal'));
+
+                    const testAuthBtn = document.getElementById('auth-btn');
+                    if (testAuthBtn) {
+                        logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
+                        logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
+                        logAuth("Classes du bouton auth:", testAuthBtn.className);
+                    }
+                    logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
+                }, 2000);
+
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
@@ -1763,24 +1837,6 @@
                     </div>`;
                 }
             });
-
-            // Test des éléments DOM après un délai
-            setTimeout(() => {
-                logAuth("=== TEST DES ÉLÉMENTS DOM ===");
-                logAuth("authModal element:", !!document.getElementById('auth-modal'));
-                logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
-                logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
-                logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
-                logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
-
-                const testAuthBtn = document.getElementById('auth-btn');
-                if (testAuthBtn) {
-                    logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
-                    logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
-                    logAuth("Classes du bouton auth:", testAuthBtn.className);
-                }
-                logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
-            }, 2000);
 
             // Region modal handlers avec vérification null
             const confirmAddRegionBtn = document.getElementById('confirm-add-region');
@@ -1808,13 +1864,6 @@
                     }
                 });
             }
-        }
-
-        // Start the application only once when DOM is loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startApp);
-        } else {
-            startApp();
         }
 
         // --- Functions ---
@@ -3606,7 +3655,7 @@
                 // Update UI elements
                 document.getElementById('filter-known').checked = activeFilters.known;
                 document.getElementById('filter-visited').checked = activeFilters.visited;
-                document.getElementById('filter-show-regions').checked = true; // Assume regions are shown by default
+                document.getElementById('filter-show-regions').checked = true;
                 document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
                     cb.checked = activeFilters.colors.includes(cb.dataset.color);
                 });
@@ -3615,7 +3664,7 @@
                 authModal.classList.add('hidden'); // Close modal after loading
             } catch (error) {
                 console.error("Error loading context:", error);
-                alert("Erreur lors du chargement du contexte.");
+                alert("Error loading context.");
             }
         }
 
@@ -3723,10 +3772,10 @@
 
             // Générer automatiquement tous les segments basés sur les régions traversées
             voyageSegments = generateVoyageSegments();
-            
+
             // Réinitialiser l'état d'activation
             activatedSegments.clear();
-            
+
             isVoyageActive = true;
             currentSegmentIndex = 0;
 
@@ -3745,7 +3794,7 @@
 
         function generateVoyageSegments() {
             const segments = [];
-            
+
             // Extraire les régions dans l'ordre chronologique
             const regionDiscoveries = journeyDiscoveries
                 .filter(d => d.type === 'region')
@@ -3767,7 +3816,7 @@
             for (let i = 0; i < regionDiscoveries.length; i++) {
                 const currentRegion = regionDiscoveries[i];
                 const nextRegion = regionDiscoveries[i + 1];
-                
+
                 segments.push({
                     id: i + 1,
                     duration: 1, // Par défaut 1 jour
@@ -3786,19 +3835,19 @@
             const lastDiscoveries = journeyDiscoveries
                 .sort((a, b) => b.discoveryIndex - a.discoveryIndex)
                 .slice(0, 3);
-            
+
             for (const discovery of lastDiscoveries) {
                 if (discovery.type === 'region') {
                     return discovery.name;
                 }
             }
-            
+
             for (const discovery of lastDiscoveries) {
                 if (discovery.type === 'location') {
                     return discovery.name;
                 }
             }
-            
+
             return 'Point d\'arrivée';
         }
 
@@ -3823,30 +3872,30 @@
 
         function findLocationAtDay(dayTarget) {
             if (!currentVoyage || !journeyPath.length) return "lieu inconnu";
-            
+
             const totalDays = getTotalJourneyDays();
             const targetRatio = Math.min(dayTarget / totalDays, 1);
             const targetPathIndex = Math.floor(targetRatio * (journeyPath.length - 1));
             const targetPoint = journeyPath[targetPathIndex];
-            
+
             // Chercher le lieu le plus proche
             let nearestLocation = null;
             let minDistance = Infinity;
-            
+
             locationsData.locations.forEach(location => {
                 if (!location.coordinates) return;
-                
+
                 const distance = Math.sqrt(
                     Math.pow(location.coordinates.x - targetPoint.x, 2) +
                     Math.pow(location.coordinates.y - targetPoint.y, 2)
                 );
-                
+
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearestLocation = location;
                 }
             });
-            
+
             return nearestLocation ? nearestLocation.name : "lieu inconnu";
         }
 
@@ -3875,10 +3924,10 @@
             const totalDays = getTotalJourneyDays();
             const segmentStartRatio = segmentStartDays / totalDays;
             const segmentEndRatio = (segmentStartDays + segment.duration) / totalDays;
-            
+
             const segmentStartIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
             const segmentEndIndex = Math.min(
-                Math.floor(segmentEndRatio * (journeyPath.length - 1)), 
+                Math.floor(segmentEndRatio * (journeyPath.length - 1)),
                 journeyPath.length - 1
             );
 
@@ -3907,7 +3956,7 @@
                         if (regionSegment) {
                             // Vérifier si cette région est traversée pendant ce jour
                             const regionOverlapsDay = (
-                                regionSegment.entryIndex <= dayEndIndex && 
+                                regionSegment.entryIndex <= dayEndIndex &&
                                 regionSegment.exitIndex >= dayStartIndex
                             );
 
@@ -4042,7 +4091,7 @@
             const segmentName = generateSegmentName(currentSegmentIndex);
             const isActivated = activatedSegments.has(currentSegmentIndex);
             segmentTitle.innerHTML = isActivated ? segmentName : `${segmentName} <span class="text-gray-500">(non activé)</span>`;
-            
+
             console.log("📝 Titre du segment mis à jour:", segmentName, "Activé:", isActivated);
 
             // Mettre à jour les boutons de navigation
@@ -4058,7 +4107,7 @@
 
             // Bouton suivant : vérifier s'il peut y avoir un segment suivant
             const canHaveNextSegment = checkIfMoreSegmentsNeeded() || currentSegmentIndex < voyageSegments.length - 1;
-            
+
             if (!canHaveNextSegment) {
                 nextBtn.style.visibility = 'hidden';
             } else {
@@ -4086,7 +4135,7 @@
             const durationSlider = document.getElementById('current-segment-duration');
             const durationValue = document.getElementById('current-segment-duration-value');
             const currentSegment = voyageSegments[currentSegmentIndex];
-            
+
             durationSlider.value = currentSegment.duration;
             durationValue.textContent = currentSegment.duration;
 
@@ -4100,16 +4149,16 @@
 
         function updateSegmentProgressBar() {
             if (!voyageSegments[currentSegmentIndex]) return;
-            
+
             // Calculer les jours cumulés jusqu'au segment actuel (inclus)
             let cumulativeDays = 0;
             for (let i = 0; i <= currentSegmentIndex; i++) {
                 cumulativeDays += voyageSegments[i].duration;
             }
-            
+
             // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
             const totalVoyageDays = getTotalJourneyDays();
-            
+
             // Calculer le pourcentage de progression
             const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
 
@@ -4140,7 +4189,7 @@
                 console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
             } else if (direction === 'next') {
                 const nextIndex = currentSegmentIndex + 1;
-                
+
                 // Si le segment suivant n'existe pas, le créer dynamiquement
                 if (nextIndex >= voyageSegments.length) {
                     const needsMoreSegments = checkIfMoreSegmentsNeeded();
@@ -4152,13 +4201,13 @@
                         return; // Pas de segment suivant possible
                     }
                 }
-                
+
                 // Si le segment suivant n'est pas activé, l'activer
                 if (!activatedSegments.has(nextIndex)) {
                     activatedSegments.add(nextIndex);
                     console.log("🎬 Activation du segment", nextIndex);
                 }
-                
+
                 currentSegmentIndex = nextIndex;
                 console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
             } else {
@@ -4173,18 +4222,18 @@
         function handleSegmentDurationChange() {
             const newDuration = parseInt(document.getElementById('current-segment-duration').value);
             const durationValue = document.getElementById('current-segment-duration-value');
-            
+
             durationValue.textContent = newDuration;
 
             if (voyageSegments[currentSegmentIndex]) {
                 voyageSegments[currentSegmentIndex].duration = newDuration;
-                
+
                 // Supprimer tous les segments suivants
                 removeFollowingSegments();
-                
+
                 // Recalculer le contenu du segment actuel
                 renderSegmentContent(currentSegmentIndex);
-                
+
                 // Mettre à jour l'affichage complet (y compris le message de fin)
                 updateCurrentSegmentDisplay();
                 scheduleAutoSync();
@@ -4194,7 +4243,7 @@
         function removeFollowingSegments() {
             // Supprimer tous les segments après le segment actuel
             voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
-            
+
             // Supprimer les activations des segments supprimés
             const segmentsToRemove = [];
             activatedSegments.forEach(index => {
@@ -4205,7 +4254,7 @@
             segmentsToRemove.forEach(index => {
                 activatedSegments.delete(index);
             });
-            
+
             console.log("🗑️ Segments suivants supprimés. Nouveaux segments:", voyageSegments.length);
             console.log("🗑️ Segments activés restants:", Array.from(activatedSegments));
         }
@@ -4229,16 +4278,16 @@
             if (currentVoyage && currentVoyage.totalDistance) {
                 distanceToUse = currentVoyage.totalDistance;
             }
-            
+
             if (distanceToUse === 0) {
                 return 0;
             }
-            
+
             const totalMiles = pixelsToMiles(distanceToUse);
             return milesToDays(totalMiles);
         }
 
-        
+
 
         function getRemainingJourneyDays() {
             const totalJourneyDays = getTotalJourneyDays();
@@ -4249,7 +4298,7 @@
         function checkIfMoreSegmentsNeeded() {
             const totalJourneyDays = getTotalJourneyDays();
             const currentSegmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
-            
+
             // Il faut plus de segments si on n'a pas encore couvert toute la durée du voyage
             return currentSegmentDays < totalJourneyDays;
         }
@@ -4258,22 +4307,22 @@
             if (!currentVoyage || !journeyDiscoveries) return;
 
             const nextSegmentIndex = voyageSegments.length;
-            
+
             // Calculer les jours déjà couverts
             const coveredDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
             const totalJourneyDays = getTotalJourneyDays();
-            
+
             // Calculer la position dans le voyage pour ce nouveau segment
             const segmentStartRatio = coveredDays / totalJourneyDays;
             const segmentStartPathIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
-            
+
             // Trouver la prochaine découverte significative après le point actuel
-            const remainingDiscoveries = journeyDiscoveries.filter(discovery => 
+            const remainingDiscoveries = journeyDiscoveries.filter(discovery =>
                 discovery.discoveryIndex > segmentStartPathIndex
             ).sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-            
+
             let startLocation, endLocation;
-            
+
             // Déterminer le point de départ (fin du segment précédent)
             if (voyageSegments.length > 0) {
                 const prevSegment = voyageSegments[voyageSegments.length - 1];
@@ -4281,7 +4330,7 @@
             } else {
                 startLocation = 'Point de départ';
             }
-            
+
             // Déterminer le point d'arrivée du nouveau segment
             if (remainingDiscoveries.length > 0) {
                 // Utiliser la prochaine découverte comme destination
@@ -4291,7 +4340,7 @@
                 // Pas de découverte restante, utiliser la fin du voyage
                 endLocation = findEndLocation();
             }
-            
+
             // Créer le nouveau segment
             const newSegment = {
                 id: nextSegmentIndex + 1,
@@ -4301,7 +4350,7 @@
                 status: 'active',
                 createdAt: new Date().toISOString()
             };
-            
+
             voyageSegments.push(newSegment);
             console.log("🆕 Nouveau segment créé:", newSegment);
         }
@@ -4313,14 +4362,14 @@
             // Nettoyer d'abord le texte de tout HTML résiduel
             const cleanActivity = activity.replace(/<[^>]*>/g, '');
             let processedActivity = cleanActivity;
-            
+
             // Chercher les noms de lieux (en évitant les doublons)
             locationsData.locations.forEach(location => {
                 const locationName = location.name;
                 // Échapper les caractères spéciaux pour la regex
                 const escapedName = locationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-                
+
                 // Vérifier si le nom n'est pas déjà dans un span
                 if (!processedActivity.includes(`data-discovery-name="${locationName}"`)) {
                     processedActivity = processedActivity.replace(regex, (match) => {
@@ -4328,14 +4377,14 @@
                     });
                 }
             });
-            
+
             // Chercher les noms de régions (en évitant les doublons)
             regionsData.regions.forEach(region => {
                 const regionName = region.name;
                 // Échapper les caractères spéciaux pour la regex
                 const escapedName = regionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-                
+
                 // Vérifier si le nom n'est pas déjà dans un span
                 if (!processedActivity.includes(`data-discovery-name="${regionName}"`)) {
                     processedActivity = processedActivity.replace(regex, (match) => {
@@ -4343,13 +4392,13 @@
                     });
                 }
             });
-            
+
             return processedActivity;
         }
 
         function setupSegmentDiscoveryHighlight() {
             const discoveryItems = document.querySelectorAll('#segment-content .segment-discovery-item');
-            
+
             discoveryItems.forEach(item => {
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
@@ -4403,7 +4452,7 @@
             const modal = document.getElementById('voyage-segments-modal');
             if (modal) {
                 modal.classList.remove('hidden');
-                
+
                 // Auto-initialize voyage if path exists but voyage is not active
                 if (journeyPath.length > 0 && journeyDiscoveries.length > 0 && !isVoyageActive) {
                     handleStartVoyage();
@@ -4446,11 +4495,139 @@
         // Backup pour s'assurer que les event listeners sont attachés - slider seulement
         setTimeout(() => {
             const durationSlider = document.getElementById('current-segment-duration');
-            
+
             if (durationSlider && !durationSlider.oninput) {
                 durationSlider.addEventListener('input', handleSegmentDurationChange);
             }
         }, 1000);
+
+        // --- Settings Modal Functions ---
+        function setupSettingsEventListeners() {
+            waitForElement('#settings-btn', (settingsBtn) => {
+                settingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    loadSettings();
+                });
+            });
+
+            waitForElement('#close-settings-modal', (closeSettingsModalBtn) => {
+                closeSettingsModalBtn.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            });
+
+            // Event listener for travel speed
+            const travelSpeedInput = document.getElementById('settings-travel-speed');
+            if (travelSpeedInput) {
+                travelSpeedInput.addEventListener('change', (e) => {
+                    // In a real app, you'd save this to localStorage or user profile
+                    console.log("Vitesse de marche moyenne mise à jour:", e.target.value);
+                    // For now, no specific action, but can be used to adjust journey calculations
+                    // Ensure the value is a number
+                    const newSpeed = parseFloat(e.target.value);
+                    if (!isNaN(newSpeed) && newSpeed > 0) {
+                        // This value is used in milesToDays calculation, which implicitly uses a speed of 20 miles/day.
+                        // For now, we don't have a direct way to change that constant, but we store it.
+                        localStorage.setItem('travelSpeed', newSpeed);
+                        // Potentially re-calculate journey days if the path is already drawn
+                        if (journeyPath.length > 0) {
+                            updateDistanceDisplay();
+                        }
+                    } else {
+                        alert("Veuillez entrer une vitesse de marche valide (nombre positif).");
+                        e.target.value = localStorage.getItem('travelSpeed') || 20; // Reset to previous value
+                    }
+                });
+            }
+
+            // Event listeners for theme buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const theme = e.target.dataset.theme;
+                    // Apply theme (e.g., add class to body)
+                    document.body.className = document.body.className.replace(/theme-dark|theme-light/, ''); // Remove existing theme classes
+                    document.body.classList.add(`theme-${theme}`);
+                    localStorage.setItem('appTheme', theme);
+
+                    // Update button styles
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('bg-gray-600', 'hover:bg-gray-500'));
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.add('bg-gray-700', 'hover:bg-gray-600'));
+                    e.target.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                    e.target.classList.add('bg-gray-600', 'hover:bg-gray-500');
+                });
+            });
+
+            // Event listeners for sync buttons
+            const enableSyncBtn = document.getElementById('enable-auto-sync');
+            const disableSyncBtn = document.getElementById('disable-auto-sync');
+            if (enableSyncBtn) {
+                enableSyncBtn.addEventListener('click', enableAutoSync);
+            }
+            if (disableSyncBtn) {
+                disableSyncBtn.addEventListener('click', disableAutoSync);
+            }
+        }
+
+        function loadSettings() {
+            // Load travel speed
+            const travelSpeedInput = document.getElementById('settings-travel-speed');
+            if (travelSpeedInput) {
+                const savedSpeed = localStorage.getItem('travelSpeed');
+                travelSpeedInput.value = savedSpeed || 20; // Default to 20 if not set
+            }
+
+            // Load theme
+            const savedTheme = localStorage.getItem('appTheme') || 'dark'; // Default to dark
+            document.body.className = document.body.className.replace(/theme-dark|theme-light/, '');
+            document.body.classList.add(`theme-${savedTheme}`);
+
+            // Update button styles for theme
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if (btn.dataset.theme === savedTheme) {
+                    btn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                    btn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+                } else {
+                    btn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                }
+            });
+
+            // Update sync button visibility and status
+            updateSyncStatus();
+        }
+
+        function updateSyncStatus(message = null) {
+            const syncStatusEl = document.getElementById('sync-status');
+            const enableSyncBtn = document.getElementById('enable-auto-sync');
+            const disableSyncBtn = document.getElementById('disable-auto-sync');
+
+            if (!syncStatusEl || !enableSyncBtn || !disableSyncBtn) return;
+
+            if (message) {
+                syncStatusEl.textContent = message;
+            } else {
+                if (autoSyncEnabled && googleUser) {
+                    syncStatusEl.textContent = "Synchronisation automatique activée.";
+                    enableSyncBtn.classList.add('hidden');
+                    disableSyncBtn.classList.remove('hidden');
+                } else if (googleUser) {
+                    syncStatusEl.textContent = "Synchronisation automatique désactivée.";
+                    enableSyncBtn.classList.remove('hidden');
+                    disableSyncBtn.classList.add('hidden');
+                } else {
+                    syncStatusEl.textContent = "Connectez-vous pour activer la synchronisation.";
+                    enableSyncBtn.classList.add('hidden');
+                    disableSyncBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        // Start the application only once when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
 
     </script>
 </body>
