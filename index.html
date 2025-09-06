@@ -4581,18 +4581,25 @@
             const tabButtons = document.querySelectorAll('.settings-tab-button');
             const tabContents = document.querySelectorAll('.settings-tab-content');
 
+            // Remove existing listeners first
             tabButtons.forEach(button => {
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+            });
+
+            // Get updated references after cloning
+            const updatedTabButtons = document.querySelectorAll('.settings-tab-button');
+            
+            updatedTabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const targetTab = button.dataset.tab;
                     
                     // Update active tab button
-                    tabButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                        btn.classList.remove('border-blue-500');
+                    updatedTabButtons.forEach(btn => {
+                        btn.classList.remove('active', 'border-blue-500', 'text-white');
                         btn.classList.add('border-transparent', 'text-gray-400');
                     });
-                    button.classList.add('active');
-                    button.classList.add('border-blue-500', 'text-white');
+                    button.classList.add('active', 'border-blue-500', 'text-white');
                     button.classList.remove('border-transparent', 'text-gray-400');
 
                     // Update active tab content
