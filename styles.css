@@ -313,6 +313,23 @@ body {
     background-color: rgba(75, 85, 99, 0.8);
 }
 
+/* Settings tabs styles */
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: flex !important;
+}
+
+.settings-tab-button {
+    transition: all 0.2s ease;
+}
+
+.settings-tab-button:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
 /* Image view styles */
 .image-view {
     display: flex;

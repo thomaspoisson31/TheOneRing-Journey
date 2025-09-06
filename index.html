@@ -474,7 +474,7 @@
                     </div>
                     
                     <!-- Quête Tab -->
-                    <div id="quest-tab" class="settings-tab-content hidden h-full flex flex-col">
+                    <div id="quest-tab" class="settings-tab-content h-full flex flex-col" style="display: none;">
                         <div class="flex justify-between items-center mb-4 flex-shrink-0">
                             <h4 class="text-lg font-semibold">Description de la quête</h4>
                             <button id="edit-quest-btn" class="text-gray-400 hover:text-white p-2 rounded" title="Modifier">
@@ -4578,41 +4578,54 @@
         }
 
         function setupSettingsTabSwitching() {
-            const tabButtons = document.querySelectorAll('.settings-tab-button');
-            const tabContents = document.querySelectorAll('.settings-tab-content');
+            // Attendre que le DOM soit complètement chargé
+            setTimeout(() => {
+                const tabButtons = document.querySelectorAll('.settings-tab-button');
+                const tabContents = document.querySelectorAll('.settings-tab-content');
 
-            // Remove existing listeners first
-            tabButtons.forEach(button => {
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
-            });
-
-            // Get updated references after cloning
-            const updatedTabButtons = document.querySelectorAll('.settings-tab-button');
-            
-            updatedTabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetTab = button.dataset.tab;
+                console.log('🔧 Setup tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
+                
+                tabButtons.forEach((button, index) => {
+                    // Supprimer les anciens event listeners en clonant
+                    const newButton = button.cloneNode(true);
+                    button.parentNode.replaceChild(newButton, button);
                     
-                    // Update active tab button
-                    updatedTabButtons.forEach(btn => {
-                        btn.classList.remove('active', 'border-blue-500', 'text-white');
-                        btn.classList.add('border-transparent', 'text-gray-400');
+                    // Ajouter le nouvel event listener
+                    newButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetTab = newButton.dataset.tab;
+                        console.log('🔧 Tab clicked:', targetTab);
+                        
+                        // Mettre à jour les références après le clonage
+                        const currentTabButtons = document.querySelectorAll('.settings-tab-button');
+                        const currentTabContents = document.querySelectorAll('.settings-tab-content');
+                        
+                        // Update active tab button
+                        currentTabButtons.forEach(btn => {
+                            btn.classList.remove('active', 'border-blue-500', 'text-white');
+                            btn.classList.add('border-transparent', 'text-gray-400');
+                        });
+                        newButton.classList.add('active', 'border-blue-500', 'text-white');
+                        newButton.classList.remove('border-transparent', 'text-gray-400');
+
+                        // Update active tab content
+                        currentTabContents.forEach(content => {
+                            content.classList.remove('active');
+                            content.classList.add('hidden');
+                        });
+                        
+                        const targetContent = document.getElementById(`${targetTab}-tab`);
+                        console.log('🔧 Target content:', targetContent);
+                        if (targetContent) {
+                            targetContent.classList.add('active');
+                            targetContent.classList.remove('hidden');
+                        }
                     });
-                    button.classList.add('active', 'border-blue-500', 'text-white');
-                    button.classList.remove('border-transparent', 'text-gray-400');
-
-                    // Update active tab content
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    const targetContent = document.getElementById(`${targetTab}-tab`);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
                 });
-            });
 
-            // Setup edit mode listeners
-            setupEditModeListeners();
+                // Setup edit mode listeners
+                setupEditModeListeners();
+            }, 100);
         }
 
         function setupEditModeListeners() {
