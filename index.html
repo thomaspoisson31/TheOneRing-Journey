@@ -4586,12 +4586,21 @@
                     const targetTab = button.dataset.tab;
                     
                     // Update active tab button
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.remove('border-blue-500');
+                        btn.classList.add('border-transparent', 'text-gray-400');
+                    });
                     button.classList.add('active');
+                    button.classList.add('border-blue-500', 'text-white');
+                    button.classList.remove('border-transparent', 'text-gray-400');
 
                     // Update active tab content
                     tabContents.forEach(content => content.classList.remove('active'));
-                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                    const targetContent = document.getElementById(`${targetTab}-tab`);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
                 });
             });
 
