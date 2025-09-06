@@ -417,37 +417,96 @@
         </div>
         <!-- Settings Modal -->
         <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] hidden">
-            <div class="bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-6">
+            <div class="bg-gray-800 rounded-lg p-6 w-[90vw] h-[90vh] mx-4 flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-6 flex-shrink-0">
                     <h3 class="text-xl font-bold"><i class="fas fa-cog mr-2"></i>Paramètres</h3>
                     <button id="close-settings-modal" class="text-gray-400 hover:text-white">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="space-y-6">
-                    <!-- Section Groupe d'aventuriers -->
-                    <div>
-                        <h4 class="font-bold mb-3"><i class="fas fa-users mr-2"></i>Groupe d'Aventuriers</h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="adventurers-group" class="block text-sm font-medium text-gray-300 mb-2">Description du groupe</label>
-                                <textarea id="adventurers-group" rows="4" placeholder="Décrivez votre groupe d'aventuriers dans les Terres du Milieu..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-vertical"></textarea>
-                            </div>
-                            <div>
-                                <label for="adventurers-quest" class="block text-sm font-medium text-gray-300 mb-2">Description de la quête</label>
-                                <textarea id="adventurers-quest" rows="4" placeholder="Décrivez la quête ou l'objectif commun du groupe..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-vertical"></textarea>
-                            </div>
-                            <div class="flex justify-center">
-                                <button id="generate-adventurers-wizard" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center space-x-2 text-white font-medium transition-colors">
+                
+                <!-- Tabs -->
+                <div id="settings-tabs" class="flex border-b border-gray-600 mb-6 flex-shrink-0">
+                    <button class="settings-tab-button active px-6 py-3 text-white border-b-2 border-blue-500 font-medium" data-tab="adventurers">
+                        <i class="fas fa-users mr-2"></i>Aventuriers
+                    </button>
+                    <button class="settings-tab-button px-6 py-3 text-gray-400 border-b-2 border-transparent font-medium hover:text-white" data-tab="quest">
+                        <i class="fas fa-map mr-2"></i>Quête
+                    </button>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="flex-grow overflow-hidden">
+                    <!-- Aventuriers Tab -->
+                    <div id="adventurers-tab" class="settings-tab-content active h-full flex flex-col">
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h4 class="text-lg font-semibold">Description du groupe d'aventuriers</h4>
+                            <div class="flex items-center space-x-2">
+                                <button id="edit-adventurers-btn" class="text-gray-400 hover:text-white p-2 rounded" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button id="generate-adventurers-wizard" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center space-x-2 text-white font-medium transition-colors">
                                     <span class="gemini-icon">✨</span>
-                                    <span>Wizard - Générer un groupe</span>
+                                    <span>Wizard</span>
                                 </button>
                             </div>
-                            <div class="text-xs text-gray-400">
-                                Le Wizard génère automatiquement un groupe de 2-5 aventuriers (nom, peuple de l'Eriador de la fin du Troisième Âge, occupation) unis par un objectif commun.
+                        </div>
+                        
+                        <!-- Mode lecture -->
+                        <div id="adventurers-read-mode" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
+                            <div id="adventurers-content" class="prose prose-invert prose-sm max-w-none">
+                                <p class="text-gray-400 italic">Aucune description d'aventuriers définie.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Mode édition -->
+                        <div id="adventurers-edit-mode" class="hidden flex-grow flex flex-col">
+                            <div class="flex justify-end space-x-2 mb-2">
+                                <button id="cancel-adventurers-edit" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded text-sm">Annuler</button>
+                                <button id="save-adventurers-edit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">Sauvegarder</button>
+                            </div>
+                            <textarea id="adventurers-group" rows="20" placeholder="Décrivez votre groupe d'aventuriers dans les Terres du Milieu... (Markdown supporté)" class="flex-grow w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none font-mono text-sm"></textarea>
+                            <div class="mt-2 text-xs text-gray-400">
+                                Supports Markdown : **gras**, *italique*, # Titres, - listes, etc.
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Quête Tab -->
+                    <div id="quest-tab" class="settings-tab-content hidden h-full flex flex-col">
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h4 class="text-lg font-semibold">Description de la quête</h4>
+                            <button id="edit-quest-btn" class="text-gray-400 hover:text-white p-2 rounded" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Mode lecture -->
+                        <div id="quest-read-mode" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
+                            <div id="quest-content" class="prose prose-invert prose-sm max-w-none">
+                                <p class="text-gray-400 italic">Aucune description de quête définie.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Mode édition -->
+                        <div id="quest-edit-mode" class="hidden flex-grow flex flex-col">
+                            <div class="flex justify-end space-x-2 mb-2">
+                                <button id="cancel-quest-edit" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 rounded text-sm">Annuler</button>
+                                <button id="save-quest-edit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">Sauvegarder</button>
+                            </div>
+                            <textarea id="adventurers-quest" rows="20" placeholder="Décrivez la quête ou l'objectif commun du groupe... (Markdown supporté)" class="flex-grow w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none font-mono text-sm"></textarea>
+                            <div class="mt-2 text-xs text-gray-400">
+                                Supports Markdown : **gras**, *italique*, # Titres, - listes, etc.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Wizard Help -->
+                <div class="mt-4 text-xs text-gray-400 flex-shrink-0">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Le Wizard génère automatiquement un groupe de 2-5 aventuriers (nom, peuple de l'Eriador de la fin du Troisième Âge, occupation) unis par un objectif commun.
                 </div>
             </div>
         </div>
@@ -4502,6 +4561,7 @@
                 settingsBtn.addEventListener('click', () => {
                     settingsModal.classList.remove('hidden');
                     loadSettings();
+                    setupSettingsTabSwitching();
                 });
             });
 
@@ -4517,42 +4577,169 @@
             });
         }
 
-        function loadSettings() {
-            // Charger les données sauvegardées des aventuriers et quête
-            const adventurersGroup = localStorage.getItem('adventurersGroup');
-            const adventurersQuest = localStorage.getItem('adventurersQuest');
-            
-            if (adventurersGroup) {
-                document.getElementById('adventurers-group').value = adventurersGroup;
+        function setupSettingsTabSwitching() {
+            const tabButtons = document.querySelectorAll('.settings-tab-button');
+            const tabContents = document.querySelectorAll('.settings-tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.dataset.tab;
+                    
+                    // Update active tab button
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    // Update active tab content
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                });
+            });
+
+            // Setup edit mode listeners
+            setupEditModeListeners();
+        }
+
+        function setupEditModeListeners() {
+            // Adventurers edit listeners
+            const editAdventurersBtn = document.getElementById('edit-adventurers-btn');
+            const cancelAdventurersEdit = document.getElementById('cancel-adventurers-edit');
+            const saveAdventurersEdit = document.getElementById('save-adventurers-edit');
+            const adventurersReadMode = document.getElementById('adventurers-read-mode');
+            const adventurersEditMode = document.getElementById('adventurers-edit-mode');
+            const adventurersTextarea = document.getElementById('adventurers-group');
+
+            if (editAdventurersBtn) {
+                editAdventurersBtn.addEventListener('click', () => {
+                    adventurersReadMode.classList.add('hidden');
+                    adventurersEditMode.classList.remove('hidden');
+                });
             }
-            
-            if (adventurersQuest) {
-                document.getElementById('adventurers-quest').value = adventurersQuest;
+
+            if (cancelAdventurersEdit) {
+                cancelAdventurersEdit.addEventListener('click', () => {
+                    adventurersEditMode.classList.add('hidden');
+                    adventurersReadMode.classList.remove('hidden');
+                    // Reload original content
+                    const saved = localStorage.getItem('adventurersGroup');
+                    if (adventurersTextarea) {
+                        adventurersTextarea.value = saved || '';
+                    }
+                });
             }
-            
-            // Sauvegarder automatiquement les modifications
-            const groupTextarea = document.getElementById('adventurers-group');
-            const questTextarea = document.getElementById('adventurers-quest');
-            
-            if (groupTextarea) {
-                groupTextarea.addEventListener('input', (e) => {
-                    localStorage.setItem('adventurersGroup', e.target.value);
+
+            if (saveAdventurersEdit) {
+                saveAdventurersEdit.addEventListener('click', () => {
+                    const content = adventurersTextarea.value;
+                    localStorage.setItem('adventurersGroup', content);
+                    updateMarkdownContent('adventurers-content', content);
+                    adventurersEditMode.classList.add('hidden');
+                    adventurersReadMode.classList.remove('hidden');
                     scheduleAutoSync();
                 });
             }
-            
-            if (questTextarea) {
-                questTextarea.addEventListener('input', (e) => {
-                    localStorage.setItem('adventurersQuest', e.target.value);
+
+            // Quest edit listeners
+            const editQuestBtn = document.getElementById('edit-quest-btn');
+            const cancelQuestEdit = document.getElementById('cancel-quest-edit');
+            const saveQuestEdit = document.getElementById('save-quest-edit');
+            const questReadMode = document.getElementById('quest-read-mode');
+            const questEditMode = document.getElementById('quest-edit-mode');
+            const questTextarea = document.getElementById('adventurers-quest');
+
+            if (editQuestBtn) {
+                editQuestBtn.addEventListener('click', () => {
+                    questReadMode.classList.add('hidden');
+                    questEditMode.classList.remove('hidden');
+                });
+            }
+
+            if (cancelQuestEdit) {
+                cancelQuestEdit.addEventListener('click', () => {
+                    questEditMode.classList.add('hidden');
+                    questReadMode.classList.remove('hidden');
+                    // Reload original content
+                    const saved = localStorage.getItem('adventurersQuest');
+                    if (questTextarea) {
+                        questTextarea.value = saved || '';
+                    }
+                });
+            }
+
+            if (saveQuestEdit) {
+                saveQuestEdit.addEventListener('click', () => {
+                    const content = questTextarea.value;
+                    localStorage.setItem('adventurersQuest', content);
+                    updateMarkdownContent('quest-content', content);
+                    questEditMode.classList.add('hidden');
+                    questReadMode.classList.remove('hidden');
                     scheduleAutoSync();
                 });
             }
         }
 
-        async function handleGenerateAdventurers(event) {
-            const button = event.currentTarget;
+        function loadSettings() {
+            // Charger les données sauvegardées des aventuriers et quête
+            const adventurersGroup = localStorage.getItem('adventurersGroup');
+            const adventurersQuest = localStorage.getItem('adventurersQuest');
+            
+            // Update textareas
             const groupTextarea = document.getElementById('adventurers-group');
             const questTextarea = document.getElementById('adventurers-quest');
+            
+            if (groupTextarea && adventurersGroup) {
+                groupTextarea.value = adventurersGroup;
+            }
+            
+            if (questTextarea && adventurersQuest) {
+                questTextarea.value = adventurersQuest;
+            }
+
+            // Update markdown content displays
+            updateMarkdownContent('adventurers-content', adventurersGroup);
+            updateMarkdownContent('quest-content', adventurersQuest);
+        }
+
+        function updateMarkdownContent(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            if (!content || content.trim() === '') {
+                if (elementId === 'adventurers-content') {
+                    element.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                } else {
+                    element.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                }
+                return;
+            }
+
+            // Simple Markdown parsing
+            let html = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            // Wrap with paragraph tags and handle lists
+            html = '<p>' + html + '</p>';
+            html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            html = html.replace(/<\/ul><ul>/g, '');
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p>(<h[123]>)/g, '$1').replace(/(<\/h[123]>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<ul>)/g, '$1').replace(/(<\/ul>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<blockquote>)/g, '$1').replace(/(<\/blockquote>)<\/p>/g, '$1');
+
+            element.innerHTML = html;
+        }
+
+        async function handleGenerateAdventurers(event) {
+            const button = event.currentTarget;
 
             const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge. 
 
@@ -4563,11 +4750,11 @@ Génère entre 2 et 5 aventuriers avec pour chacun :
 
 Puis décris leur quête ou objectif commun qui les unit dans cette aventure.
 
-Format de réponse :
-**Groupe d'aventuriers :**
-[Description de chaque membre]
+Format de réponse en Markdown:
+## Groupe d'aventuriers
+[Description de chaque membre avec **nom en gras**, *peuple en italique*, occupation]
 
-**Quête :**
+## Quête
 [Description de leur mission commune]
 
 Reste fidèle à l'univers de Tolkien et à la géographie de l'Eriador.`;
@@ -4576,13 +4763,21 @@ Reste fidèle à l'univers de Tolkien et à la géographie de l'Eriador.`;
             const result = await callGemini(prompt, button);
             
             // Analyser le résultat pour séparer groupe et quête
-            const parts = result.split('**Quête :**');
+            const parts = result.split('## Quête');
             if (parts.length === 2) {
-                const groupPart = parts[0].replace('**Groupe d\'aventuriers :**', '').trim();
+                const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
                 const questPart = parts[1].trim();
                 
-                groupTextarea.value = groupPart;
-                questTextarea.value = questPart;
+                // Update textareas
+                const groupTextarea = document.getElementById('adventurers-group');
+                const questTextarea = document.getElementById('adventurers-quest');
+                
+                if (groupTextarea) groupTextarea.value = groupPart;
+                if (questTextarea) questTextarea.value = questPart;
+                
+                // Update displays
+                updateMarkdownContent('adventurers-content', groupPart);
+                updateMarkdownContent('quest-content', questPart);
                 
                 // Sauvegarder
                 localStorage.setItem('adventurersGroup', groupPart);
@@ -4590,7 +4785,9 @@ Reste fidèle à l'univers de Tolkien et à la géographie de l'Eriador.`;
                 scheduleAutoSync();
             } else {
                 // Si le format n'est pas comme attendu, mettre tout dans le groupe
-                groupTextarea.value = result;
+                const groupTextarea = document.getElementById('adventurers-group');
+                if (groupTextarea) groupTextarea.value = result;
+                updateMarkdownContent('adventurers-content', result);
                 localStorage.setItem('adventurersGroup', result);
                 scheduleAutoSync();
             }
