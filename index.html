@@ -4772,21 +4772,25 @@
 
             const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge. 
 
-Génère entre 2 et 5 aventuriers avec pour chacun :
-- Nom (dans le style de Tolkien)
-- Peuple (Hobbits, Hommes du Nord, Dúnedain, Elfes, Nains - tous présents dans l'Eriador)
-- Occupation/rôle (garde-forestier, marchand, érudit, guerrier, etc.)
+Voici la procédure à suivre :
 
-Puis décris leur quête ou objectif commun qui les unit dans cette aventure.
+a- Choisis aléatoirement un nombre d'aventurier entre 2 et 5
+b- Pour chaque individu du nombre d'aventurier fais les choses suivantes dans l'ordre :
+- Choisis un peuple aléatoirement (parmi : "Hobbits de la Comté", "Hommes de Bree", "Rôdeur du Nord", "Elfes du Lindon", "Nains des Montagnes Bleues"). Il faut que cette sélection soit réellement aléatoire.
+- Choisis un Nom (dans le style des noms utilisés parmi les races de Tolkien, mais sans utiliser de noms trop connus comme Aragorn, Legolas, Frodo, etc)
+- Choisis Occupation/rôle (garde-forestier, marchand, érudit, guerrier, etc.)
+- Choisis un lien cohérent (famille, ami, collègue, redevable, etc) entre les aventuriers, en faisant en sorte que les aventuriers de races différentes ne soient pas de la même famille.
+
+Puis décris leur quête ou objectif commun qui les unit dans cette aventure, sans préciser ce qu'ils devront faire pour l'atteindre. Explique pourquoi ce sont eux et pas d'autres aventuriers qui poursuivent cette quête.
 
 Format de réponse en Markdown:
 ## Groupe d'aventuriers
-[Description de chaque membre avec **nom en gras**, *peuple en italique*, occupation]
+[Description de chaque membre avec nom (en gras), peuple (en italique), occupation, lien avec les autres aventuriers]
 
 ## Quête
 [Description de leur mission commune]
 
-Reste fidèle à l'univers de Tolkien et à la géographie de l'Eriador.`;
+Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eriador.`;
 
             // Appeler Gemini pour générer le contenu
             const result = await callGemini(prompt, button);
