@@ -13,7 +13,10 @@
 
     <header class="bg-gray-900 text-center p-2 shadow-lg z-20 relative">
         <h1 class="text-xl font-bold tracking-wider">Voyages en Terre du Milieu</h1>
-        <div id="season-indicator" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-2xl" title="Saison actuelle">🌱</div>
+        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center">
+            <div id="calendar-date-indicator" class="text-sm text-gray-300 mr-3 hidden">1 Gwaeron</div>
+            <div id="season-indicator" class="text-2xl" title="Saison actuelle">🌱</div>
+        </div>
     </header>
 
     <!-- Main container -->
@@ -504,95 +507,143 @@
 
                     <!-- Saison Tab -->
                     <div id="season-tab" class="settings-tab-content h-full flex flex-col" style="display: none;">
+                        <!-- Header avec indicateur actuel -->
                         <div class="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h4 class="text-lg font-semibold">Saison de voyage</h4>
-                            <div class="text-sm text-gray-400">
-                                <span id="current-season-symbol" class="text-2xl mr-2">🌱</span>
-                                <span id="current-season-text">Printemps-début</span>
+                            <h4 class="text-lg font-semibold">Saison et Calendrier</h4>
+                            <div class="text-sm text-gray-400 text-right">
+                                <div class="flex items-center">
+                                    <span id="current-season-symbol" class="text-2xl mr-2">🌱</span>
+                                    <div>
+                                        <div id="current-season-text">Printemps-début</div>
+                                        <div id="current-calendar-date" class="text-xs text-gray-500">1 Gwaeron</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-4">
-                            <!-- Printemps -->
+                        <!-- Section Calendrier -->
+                        <div class="mb-6 flex-shrink-0">
                             <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                                <h5 class="text-green-400 font-semibold mb-3 text-center">🌱 Printemps</h5>
-                                <div class="space-y-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="printemps-debut" class="mr-3 text-green-500 focus:ring-green-500" checked>
-                                        <span class="text-sm">Début</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="printemps-milieu" class="mr-3 text-green-500 focus:ring-green-500">
-                                        <span class="text-sm">Milieu</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="printemps-fin" class="mr-3 text-green-500 focus:ring-green-500">
-                                        <span class="text-sm">Fin</span>
-                                    </label>
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="text-blue-400 font-semibold">📅 Calendrier</h5>
+                                    <div class="flex space-x-2">
+                                        <input type="file" id="calendar-file-input" accept=".csv" class="hidden">
+                                        <button id="upload-calendar-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                                            <i class="fas fa-upload mr-1"></i>Importer CSV
+                                        </button>
+                                        <button id="export-calendar-btn" class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm" title="Exporter le calendrier">
+                                            <i class="fas fa-download mr-1"></i>Exporter
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="calendar-status" class="mb-3 text-sm">
+                                    <span id="calendar-status-text" class="text-gray-400">Aucun calendrier chargé</span>
+                                </div>
+
+                                <div id="calendar-date-selector" class="hidden">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Mois</label>
+                                            <select id="calendar-month-select" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                                <option value="">Sélectionner un mois</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Jour</label>
+                                            <select id="calendar-day-select" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                                <option value="">Sélectionner un jour</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Été -->
-                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                                <h5 class="text-yellow-400 font-semibold mb-3 text-center">☀️ Été</h5>
-                                <div class="space-y-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="ete-debut" class="mr-3 text-yellow-500 focus:ring-yellow-500">
-                                        <span class="text-sm">Début</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="ete-milieu" class="mr-3 text-yellow-500 focus:ring-yellow-500">
-                                        <span class="text-sm">Milieu</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="ete-fin" class="mr-3 text-yellow-500 focus:ring-yellow-500">
-                                        <span class="text-sm">Fin</span>
-                                    </label>
+                        <!-- Section Saisons (mode manuel quand pas de calendrier) -->
+                        <div id="manual-seasons-section" class="flex-shrink-0">
+                            <div class="grid grid-cols-3 gap-4">
+                                <!-- Printemps -->
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <h5 class="text-green-400 font-semibold mb-3 text-center">🌱 Printemps</h5>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="printemps-debut" class="mr-3 text-green-500 focus:ring-green-500" checked>
+                                            <span class="text-sm">Début</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="printemps-milieu" class="mr-3 text-green-500 focus:ring-green-500">
+                                            <span class="text-sm">Milieu</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="printemps-fin" class="mr-3 text-green-500 focus:ring-green-500">
+                                            <span class="text-sm">Fin</span>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Automne -->
-                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                                <h5 class="text-orange-400 font-semibold mb-3 text-center">🍂 Automne</h5>
-                                <div class="space-y-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="automne-debut" class="mr-3 text-orange-500 focus:ring-orange-500">
-                                        <span class="text-sm">Début</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="automne-milieu" class="mr-3 text-orange-500 focus:ring-orange-500">
-                                        <span class="text-sm">Milieu</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="automne-fin" class="mr-3 text-orange-500 focus:ring-orange-500">
-                                        <span class="text-sm">Fin</span>
-                                    </label>
+                                <!-- Été -->
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <h5 class="text-yellow-400 font-semibold mb-3 text-center">☀️ Été</h5>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="ete-debut" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                            <span class="text-sm">Début</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="ete-milieu" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                            <span class="text-sm">Milieu</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="ete-fin" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                            <span class="text-sm">Fin</span>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Hiver -->
-                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600 col-start-2">
-                                <h5 class="text-blue-400 font-semibold mb-3 text-center">❄️ Hiver</h5>
-                                <div class="space-y-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="hiver-debut" class="mr-3 text-blue-500 focus:ring-blue-500">
-                                        <span class="text-sm">Début</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="hiver-milieu" class="mr-3 text-blue-500 focus:ring-blue-500">
-                                        <span class="text-sm">Milieu</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="radio" name="season" value="hiver-fin" class="mr-3 text-blue-500 focus:ring-blue-500">
-                                        <span class="text-sm">Fin</span>
-                                    </label>
+                                <!-- Automne -->
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <h5 class="text-orange-400 font-semibold mb-3 text-center">🍂 Automne</h5>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="automne-debut" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                            <span class="text-sm">Début</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="automne-milieu" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                            <span class="text-sm">Milieu</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="automne-fin" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                            <span class="text-sm">Fin</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Hiver -->
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-600 col-start-2">
+                                    <h5 class="text-blue-400 font-semibold mb-3 text-center">❄️ Hiver</h5>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="hiver-debut" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                            <span class="text-sm">Début</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="hiver-milieu" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                            <span class="text-sm">Milieu</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="season" value="hiver-fin" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                            <span class="text-sm">Fin</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-6 text-xs text-gray-400 flex-shrink-0">
                             <i class="fas fa-info-circle mr-1"></i>
-                            La saison sélectionnée apparaît dans la barre de titre et peut influencer les conditions de voyage.
+                            <span id="season-mode-info">Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.</span>
                         </div>
                     </div>
                 </div>
@@ -717,6 +768,11 @@
             'hiver-milieu': 'Hiver-milieu',
             'hiver-fin': 'Hiver-fin'
         };
+
+        // --- Calendar state ---
+        let calendarData = null;
+        let currentCalendarDate = null; // { month: "Gwaeron", day: 1 }
+        let isCalendarMode = false;
 
         // --- Auto-sync state ---
         let autoSyncEnabled = false;
@@ -1789,6 +1845,189 @@
             }, SYNC_DELAY);
         }
 
+        // --- Calendar Functions ---
+        function loadCalendarFromCSV(csvContent) {
+            const lines = csvContent.trim().split('\n');
+            const calendar = [];
+            
+            for (const line of lines) {
+                const parts = line.split(',');
+                if (parts.length >= 3) {
+                    const monthName = parts[0].trim();
+                    const season = parts[1].trim();
+                    const days = parts.slice(2).map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+                    
+                    calendar.push({
+                        name: monthName,
+                        season: season,
+                        days: days
+                    });
+                }
+            }
+            
+            return calendar;
+        }
+
+        function saveCalendarToLocal() {
+            if (calendarData) {
+                localStorage.setItem('calendarData', JSON.stringify(calendarData));
+            }
+            if (currentCalendarDate) {
+                localStorage.setItem('currentCalendarDate', JSON.stringify(currentCalendarDate));
+            }
+            localStorage.setItem('isCalendarMode', isCalendarMode.toString());
+        }
+
+        function loadCalendarFromLocal() {
+            const savedCalendar = localStorage.getItem('calendarData');
+            const savedDate = localStorage.getItem('currentCalendarDate');
+            const savedMode = localStorage.getItem('isCalendarMode');
+            
+            if (savedCalendar) {
+                try {
+                    calendarData = JSON.parse(savedCalendar);
+                } catch (e) {
+                    console.error('Error loading calendar:', e);
+                }
+            }
+            
+            if (savedDate) {
+                try {
+                    currentCalendarDate = JSON.parse(savedDate);
+                } catch (e) {
+                    console.error('Error loading calendar date:', e);
+                }
+            }
+            
+            isCalendarMode = savedMode === 'true';
+        }
+
+        function updateCalendarUI() {
+            const calendarStatus = document.getElementById('calendar-status-text');
+            const dateSelector = document.getElementById('calendar-date-selector');
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const manualSeasons = document.getElementById('manual-seasons-section');
+            const seasonModeInfo = document.getElementById('season-mode-info');
+            
+            if (calendarData && calendarData.length > 0) {
+                isCalendarMode = true;
+                calendarStatus.textContent = `Calendrier chargé (${calendarData.length} mois)`;
+                calendarStatus.className = 'text-green-400';
+                dateSelector.classList.remove('hidden');
+                
+                // Populate month selector
+                monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
+                calendarData.forEach((month, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = month.name;
+                    monthSelect.appendChild(option);
+                });
+                
+                // Set current selections
+                if (currentCalendarDate) {
+                    const monthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
+                    if (monthIndex >= 0) {
+                        monthSelect.value = monthIndex;
+                        updateDaySelector();
+                        daySelect.value = currentCalendarDate.day;
+                    }
+                }
+                
+                // Hide manual seasons
+                manualSeasons.style.opacity = '0.5';
+                manualSeasons.style.pointerEvents = 'none';
+                seasonModeInfo.textContent = 'Mode calendrier : la saison est déterminée automatiquement par la date sélectionnée.';
+            } else {
+                isCalendarMode = false;
+                calendarStatus.textContent = 'Aucun calendrier chargé';
+                calendarStatus.className = 'text-gray-400';
+                dateSelector.classList.add('hidden');
+                
+                // Show manual seasons
+                manualSeasons.style.opacity = '1';
+                manualSeasons.style.pointerEvents = 'auto';
+                seasonModeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
+            }
+        }
+
+        function updateDaySelector() {
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const monthIndex = parseInt(monthSelect.value);
+            
+            daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
+            
+            if (monthIndex >= 0 && calendarData[monthIndex]) {
+                const month = calendarData[monthIndex];
+                month.days.forEach(day => {
+                    const option = document.createElement('option');
+                    option.value = day;
+                    option.textContent = day;
+                    daySelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateCalendarDate() {
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const monthIndex = parseInt(monthSelect.value);
+            const day = parseInt(daySelect.value);
+            
+            if (monthIndex >= 0 && !isNaN(day) && calendarData[monthIndex]) {
+                const month = calendarData[monthIndex];
+                currentCalendarDate = {
+                    month: month.name,
+                    day: day
+                };
+                
+                // Update season based on calendar
+                const calendarSeason = month.season.toLowerCase();
+                let newSeason = 'printemps-debut'; // default
+                
+                if (calendarSeason === 'printemps') {
+                    newSeason = 'printemps-milieu';
+                } else if (calendarSeason === 'été' || calendarSeason === 'ete') {
+                    newSeason = 'ete-milieu';
+                } else if (calendarSeason === 'automne') {
+                    newSeason = 'automne-milieu';
+                } else if (calendarSeason === 'hiver') {
+                    newSeason = 'hiver-milieu';
+                }
+                
+                currentSeason = newSeason;
+                updateSeasonDisplay();
+                saveCalendarToLocal();
+                scheduleAutoSync();
+            }
+        }
+
+        function exportCalendarToCSV() {
+            if (!calendarData || calendarData.length === 0) {
+                alert('Aucun calendrier à exporter');
+                return;
+            }
+            
+            const csvLines = calendarData.map(month => {
+                const daysStr = month.days.join(',');
+                return `${month.name},${month.season},${daysStr}`;
+            });
+            
+            const csvContent = csvLines.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calendrier.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         // --- Season Functions ---
         function updateSeasonDisplay() {
             const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
@@ -1802,17 +2041,36 @@
                 seasonIndicator.title = `Saison actuelle: ${fullName}`;
             }
             
+            // Update calendar date indicator in header
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            if (calendarDateIndicator && currentCalendarDate && isCalendarMode) {
+                calendarDateIndicator.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                calendarDateIndicator.classList.remove('hidden');
+            } else {
+                calendarDateIndicator.classList.add('hidden');
+            }
+            
             // Update settings display
             const currentSeasonSymbol = document.getElementById('current-season-symbol');
             const currentSeasonText = document.getElementById('current-season-text');
+            const currentCalendarDateElement = document.getElementById('current-calendar-date');
+            
             if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
             if (currentSeasonText) currentSeasonText.textContent = fullName;
+            
+            if (currentCalendarDateElement && currentCalendarDate && isCalendarMode) {
+                currentCalendarDateElement.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                currentCalendarDateElement.classList.remove('hidden');
+            } else if (currentCalendarDateElement) {
+                currentCalendarDateElement.classList.add('hidden');
+            }
         }
 
         function setupSeasonListeners() {
+            // Season radio buttons (manual mode)
             document.querySelectorAll('input[name="season"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
-                    if (e.target.checked) {
+                    if (e.target.checked && !isCalendarMode) {
                         currentSeason = e.target.value;
                         localStorage.setItem('currentSeason', currentSeason);
                         updateSeasonDisplay();
@@ -1820,18 +2078,89 @@
                     }
                 });
             });
+            
+            // Calendar upload button
+            const uploadBtn = document.getElementById('upload-calendar-btn');
+            const fileInput = document.getElementById('calendar-file-input');
+            
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file && file.type === 'text/csv') {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                calendarData = loadCalendarFromCSV(event.target.result);
+                                if (calendarData.length > 0) {
+                                    // Set default date (first day of first month)
+                                    currentCalendarDate = {
+                                        month: calendarData[0].name,
+                                        day: calendarData[0].days[0]
+                                    };
+                                    updateCalendarUI();
+                                    updateCalendarDate();
+                                    alert(`Calendrier importé avec succès (${calendarData.length} mois)`);
+                                } else {
+                                    alert('Fichier CSV invalide ou vide');
+                                }
+                            } catch (error) {
+                                console.error('Error importing calendar:', error);
+                                alert('Erreur lors de l\'importation du calendrier');
+                            }
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        alert('Veuillez sélectionner un fichier CSV valide');
+                    }
+                    fileInput.value = ''; // Reset input
+                });
+            }
+            
+            // Calendar export button
+            const exportBtn = document.getElementById('export-calendar-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportCalendarToCSV);
+            }
+            
+            // Calendar month selector
+            const monthSelect = document.getElementById('calendar-month-select');
+            if (monthSelect) {
+                monthSelect.addEventListener('change', () => {
+                    updateDaySelector();
+                    updateCalendarDate();
+                });
+            }
+            
+            // Calendar day selector
+            const daySelect = document.getElementById('calendar-day-select');
+            if (daySelect) {
+                daySelect.addEventListener('change', updateCalendarDate);
+            }
         }
 
         function loadSavedSeason() {
+            // Load calendar data first
+            loadCalendarFromLocal();
+            
             const saved = localStorage.getItem('currentSeason');
             if (saved && seasonNames[saved]) {
                 currentSeason = saved;
             }
             
-            // Update radio button
-            const radioButton = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
-            if (radioButton) {
-                radioButton.checked = true;
+            // Update UI based on calendar mode
+            if (isCalendarMode && calendarData) {
+                updateCalendarUI();
+            } else {
+                // Update radio button for manual mode
+                const radioButton = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
+                if (radioButton) {
+                    radioButton.checked = true;
+                }
+                updateCalendarUI();
             }
             
             updateSeasonDisplay();
@@ -1853,7 +2182,10 @@
                 startPoint: startPoint,
                 lastPoint: lastPoint,
                 journeyDiscoveries: journeyDiscoveries, // Included journey discoveries
-                currentSeason: currentSeason // Include season data
+                currentSeason: currentSeason, // Include season data
+                calendarData: calendarData, // Include calendar data
+                currentCalendarDate: currentCalendarDate,
+                isCalendarMode: isCalendarMode
             };
 
             console.log("🔄 Synchronisation des données:", {
@@ -1959,6 +2291,20 @@
                         currentSeason = userData.currentSeason;
                         localStorage.setItem('currentSeason', currentSeason);
                         console.log("🌱 Saison utilisateur chargée depuis le cloud:", currentSeason);
+                    }
+                    
+                    // Charger le calendrier depuis le cloud
+                    if (userData.calendarData) {
+                        calendarData = userData.calendarData;
+                        console.log("📅 Calendrier utilisateur chargé depuis le cloud");
+                    }
+                    if (userData.currentCalendarDate) {
+                        currentCalendarDate = userData.currentCalendarDate;
+                        console.log("📅 Date calendrier utilisateur chargée depuis le cloud");
+                    }
+                    if (userData.isCalendarMode !== undefined) {
+                        isCalendarMode = userData.isCalendarMode;
+                        console.log("📅 Mode calendrier utilisateur chargé depuis le cloud:", isCalendarMode);
                     }
 
                     // Re-render everything
@@ -3940,6 +4286,20 @@
                     currentSeason = context.data.currentSeason;
                     localStorage.setItem('currentSeason', currentSeason);
                 }
+                
+                // Load calendar data
+                if (context.data.calendarData) {
+                    calendarData = context.data.calendarData;
+                }
+                if (context.data.currentCalendarDate) {
+                    currentCalendarDate = context.data.currentCalendarDate;
+                }
+                if (context.data.isCalendarMode !== undefined) {
+                    isCalendarMode = context.data.isCalendarMode;
+                }
+                
+                // Save calendar data locally
+                saveCalendarToLocal();
 
                 // Redraw journey path if it exists
                 if (journeyPath.length > 0) {
@@ -4229,7 +4589,8 @@
                 return [{
                     day: 1,
                     chronologicalItems: [],
-                    activities: ["🚶 Voyage le long du chemin tracé"]
+                    activities: ["🚶 Voyage le long du chemin tracé"],
+                    calendarDate: getCalendarDateForSegmentDay(segmentIndex, 1)
                 }];
             }
 
@@ -4326,6 +4687,36 @@
             return dailyContent;
         }
 
+        function getCalendarDateForSegmentDay(segmentIndex, dayInSegment) {
+            if (!isCalendarMode || !currentCalendarDate || !calendarData) {
+                return null;
+            }
+            
+            // Calculer le jour absolu depuis le début du voyage
+            let absoluteDay = dayInSegment;
+            for (let i = 0; i < segmentIndex; i++) {
+                absoluteDay += voyageSegments[i].duration;
+            }
+            
+            // Trouver le mois et jour actuels dans le calendrier
+            const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
+            if (currentMonthIndex === -1) return null;
+            
+            let monthIndex = currentMonthIndex;
+            let day = currentCalendarDate.day + absoluteDay - 1;
+            
+            // Naviguer à travers les mois si nécessaire
+            while (day > calendarData[monthIndex].days.length) {
+                day -= calendarData[monthIndex].days.length;
+                monthIndex = (monthIndex + 1) % calendarData.length;
+            }
+            
+            return {
+                month: calendarData[monthIndex].name,
+                day: day
+            };
+        }
+
         function renderSegmentContent(segmentIndex) {
             const segmentContentDiv = document.getElementById('segment-content');
             const dailyContent = calculateSegmentDailyContent(segmentIndex);
@@ -4337,6 +4728,13 @@
 
             const contentHtml = dailyContent.map(dayData => {
                 let dayTitle = `Jour ${dayData.day}`;
+                
+                // Ajouter la date du calendrier si disponible
+                const calendarDate = getCalendarDateForSegmentDay(segmentIndex, dayData.day);
+                if (calendarDate) {
+                    dayTitle += ` (${calendarDate.day} ${calendarDate.month})`;
+                }
+                
                 let dayActivities = [];
 
                 // Ajouter les découvertes dans l'ordre chronologique
