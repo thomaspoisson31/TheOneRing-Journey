@@ -1677,6 +1677,7 @@
                 panX: panX,
                 panY: panY,
                 activeFilters: activeFilters,
+                filters: activeFilters, // Ajout explicite des filtres pour compatibilité
                 journeyPath: journeyPath,
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
@@ -1773,6 +1774,14 @@
                         console.log("🎨 Tracé de voyage restauré");
                     }
 
+                    // Charger les filtres depuis le cloud
+                    if (userData.filters) {
+                        activeFilters = userData.filters;
+                        console.log("🔍 Filtres utilisateur chargés depuis le cloud");
+                        // Sauvegarder localement pour synchronisation
+                        saveFiltersToLocal();
+                    }
+
                     // Re-render everything
                     renderLocations();
                     renderRegions();
@@ -1796,6 +1805,9 @@
             document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
                 cb.checked = activeFilters.colors.includes(cb.dataset.color);
             });
+            
+            // Sauvegarder les filtres après mise à jour
+            saveFiltersToLocal();
         }
 
         // --- Load data and start the app ---
@@ -2518,8 +2530,21 @@
                 </label>
             `).join('');
 
-            document.getElementById('filter-toggle').addEventListener('click', () => {
+            document.getElementById('filter-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
                 filterPanel.classList.toggle('hidden');
+            });
+
+            // Fermer le panneau de filtre en cliquant en dehors
+            document.addEventListener('click', (e) => {
+                if (!filterPanel.contains(e.target) && !document.getElementById('filter-toggle').contains(e.target)) {
+                    filterPanel.classList.add('hidden');
+                }
+            });
+
+            // Empêcher la fermeture en cliquant à l'intérieur du panneau
+            filterPanel.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
 
             document.getElementById('filter-known').addEventListener('change', updateFilters);
@@ -2527,6 +2552,9 @@
             document.querySelectorAll('.filter-color-checkbox').forEach(cb => cb.addEventListener('change', updateFilters));
             document.getElementById('reset-filters').addEventListener('click', resetFilters);
             document.getElementById('filter-show-regions').addEventListener('change', updateFilters); // Add listener for region visibility filter
+            
+            // Charger les filtres sauvegardés
+            loadFiltersFromLocal();
         }
         function updateFilters() {
             activeFilters.known = document.getElementById('filter-known').checked;
@@ -2545,6 +2573,10 @@
             } else {
                 regionsLayer.style.display = 'none';
             }
+
+            // Sauvegarder les filtres dans le localStorage
+            saveFiltersToLocal();
+            scheduleAutoSync();
         }
         function resetFilters() {
             document.getElementById('filter-known').checked = false;
@@ -2552,6 +2584,50 @@
             document.querySelectorAll('.filter-color-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('filter-show-regions').checked = true; // Reset region visibility to checked
             updateFilters();
+        }
+
+        function saveFiltersToLocal() {
+            const filterState = {
+                known: activeFilters.known,
+                visited: activeFilters.visited,
+                colors: activeFilters.colors,
+                showRegions: document.getElementById('filter-show-regions').checked
+            };
+            localStorage.setItem('middleEarthFilters', JSON.stringify(filterState));
+        }
+
+        function loadFiltersFromLocal() {
+            const saved = localStorage.getItem('middleEarthFilters');
+            if (saved) {
+                try {
+                    const filterState = JSON.parse(saved);
+                    activeFilters.known = filterState.known || false;
+                    activeFilters.visited = filterState.visited || false;
+                    activeFilters.colors = filterState.colors || [];
+                    
+                    // Appliquer les filtres à l'interface
+                    document.getElementById('filter-known').checked = activeFilters.known;
+                    document.getElementById('filter-visited').checked = activeFilters.visited;
+                    document.getElementById('filter-show-regions').checked = filterState.showRegions !== undefined ? filterState.showRegions : true;
+                    
+                    // Appliquer les couleurs
+                    document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
+                        cb.checked = activeFilters.colors.includes(cb.dataset.color);
+                    });
+                    
+                    // Appliquer les filtres
+                    renderLocations();
+                    const showRegions = document.getElementById('filter-show-regions').checked;
+                    if (showRegions) {
+                        renderRegions();
+                        regionsLayer.style.display = 'block';
+                    } else {
+                        regionsLayer.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error('Failed to load filters from localStorage:', e);
+                }
+            }
         }
         viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
         // Gestionnaire mousedown principal du viewport
@@ -3572,6 +3648,7 @@
                 panX: panX,
                 panY: panY,
                 activeFilters: activeFilters,
+                filters: activeFilters, // Ajout explicite des filtres pour compatibilité
                 journeyPath: journeyPath,
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
@@ -3667,7 +3744,7 @@
                 scale = context.data.scale || 1;
                 panX = context.data.panX || 0;
                 panY = context.data.panY || 0;
-                activeFilters = context.data.activeFilters || { known: false, visited: false, colors: [] };
+                activeFilters = context.data.activeFilters || context.data.filters || { known: false, visited: false, colors: [] };
 
                 // Load journey data
                 journeyPath = context.data.journeyPath || [];
