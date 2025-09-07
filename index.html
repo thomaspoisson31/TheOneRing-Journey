@@ -421,7 +421,7 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <!-- Tabs -->
                 <div id="settings-tabs" class="flex border-b border-gray-600 mb-6 flex-shrink-0">
                     <button class="settings-tab-button active px-6 py-3 text-white border-b-2 border-blue-500 font-medium" data-tab="adventurers">
@@ -431,7 +431,7 @@
                         <i class="fas fa-map mr-2"></i>Quête
                     </button>
                 </div>
-                
+
                 <!-- Tab Content -->
                 <div class="flex-grow overflow-hidden">
                     <!-- Aventuriers Tab -->
@@ -448,14 +448,14 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Mode lecture -->
                         <div id="adventurers-read-mode" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
                             <div id="adventurers-content" class="prose prose-invert prose-sm max-w-none">
                                 <p class="text-gray-400 italic">Aucune description d'aventuriers définie.</p>
                             </div>
                         </div>
-                        
+
                         <!-- Mode édition -->
                         <div id="adventurers-edit-mode" class="hidden flex-grow flex flex-col">
                             <div class="flex justify-end space-x-2 mb-2">
@@ -468,7 +468,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Quête Tab -->
                     <div id="quest-tab" class="settings-tab-content h-full flex flex-col" style="display: none;">
                         <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -477,14 +477,14 @@
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
-                        
+
                         <!-- Mode lecture -->
                         <div id="quest-read-mode" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
                             <div id="quest-content" class="prose prose-invert prose-sm max-w-none">
                                 <p class="text-gray-400 italic">Aucune description de quête définie.</p>
                             </div>
                         </div>
-                        
+
                         <!-- Mode édition -->
                         <div id="quest-edit-mode" class="hidden flex-grow flex flex-col">
                             <div class="flex justify-end space-x-2 mb-2">
@@ -498,7 +498,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Wizard Help -->
                 <div class="mt-4 text-xs text-gray-400 flex-shrink-0">
                     <i class="fas fa-info-circle mr-1"></i>
@@ -1849,7 +1849,7 @@
 
                 logAuth("Configuration des event listeners d'authentification...");
 
-                // Attendre que tous les éléments DOM soient disponibles
+                // Setup authentication event listeners
                 setupAuthEventListeners();
 
                 // Setup settings event listeners
@@ -4580,22 +4580,22 @@
                 const tabContents = document.querySelectorAll('.settings-tab-content');
 
                 console.log('🔧 Setup tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
-                
+
                 tabButtons.forEach((button, index) => {
                     // Supprimer les anciens event listeners en clonant
                     const newButton = button.cloneNode(true);
                     button.parentNode.replaceChild(newButton, button);
-                    
+
                     // Ajouter le nouvel event listener
                     newButton.addEventListener('click', (e) => {
                         e.preventDefault();
                         const targetTab = newButton.dataset.tab;
                         console.log('🔧 Tab clicked:', targetTab);
-                        
+
                         // Mettre à jour les références après le clonage
                         const currentTabButtons = document.querySelectorAll('.settings-tab-button');
                         const currentTabContents = document.querySelectorAll('.settings-tab-content');
-                        
+
                         // Update active tab button
                         currentTabButtons.forEach(btn => {
                             btn.classList.remove('active', 'border-blue-500', 'text-white');
@@ -4609,7 +4609,7 @@
                             content.classList.remove('active');
                             content.classList.add('hidden');
                         });
-                        
+
                         const targetContent = document.getElementById(`${targetTab}-tab`);
                         console.log('🔧 Target content:', targetContent);
                         if (targetContent) {
@@ -4706,15 +4706,15 @@
             // Charger les données sauvegardées des aventuriers et quête
             const adventurersGroup = localStorage.getItem('adventurersGroup');
             const adventurersQuest = localStorage.getItem('adventurersQuest');
-            
+
             // Update textareas
             const groupTextarea = document.getElementById('adventurers-group');
             const questTextarea = document.getElementById('adventurers-quest');
-            
+
             if (groupTextarea && adventurersGroup) {
                 groupTextarea.value = adventurersGroup;
             }
-            
+
             if (questTextarea && adventurersQuest) {
                 questTextarea.value = adventurersQuest;
             }
@@ -4790,24 +4790,24 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
 
             // Appeler Gemini pour générer le contenu
             const result = await callGemini(prompt, button);
-            
+
             // Analyser le résultat pour séparer groupe et quête
             const parts = result.split('## Quête');
             if (parts.length === 2) {
                 const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
                 const questPart = parts[1].trim();
-                
+
                 // Update textareas
                 const groupTextarea = document.getElementById('adventurers-group');
                 const questTextarea = document.getElementById('adventurers-quest');
-                
+
                 if (groupTextarea) groupTextarea.value = groupPart;
                 if (questTextarea) questTextarea.value = questPart;
-                
+
                 // Update displays
                 updateMarkdownContent('adventurers-content', groupPart);
                 updateMarkdownContent('quest-content', questPart);
-                
+
                 // Sauvegarder
                 localStorage.setItem('adventurersGroup', groupPart);
                 localStorage.setItem('adventurersQuest', questPart);
