@@ -11,8 +11,9 @@
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
 
-    <header class="bg-gray-900 text-center p-2 shadow-lg z-20">
+    <header class="bg-gray-900 text-center p-2 shadow-lg z-20 relative">
         <h1 class="text-xl font-bold tracking-wider">Voyages en Terre du Milieu</h1>
+        <div id="season-indicator" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-2xl" title="Saison actuelle">🌱</div>
     </header>
 
     <!-- Main container -->
@@ -430,6 +431,9 @@
                     <button class="settings-tab-button px-6 py-3 text-gray-400 border-b-2 border-transparent font-medium hover:text-white" data-tab="quest">
                         <i class="fas fa-map mr-2"></i>Quête
                     </button>
+                    <button class="settings-tab-button px-6 py-3 text-gray-400 border-b-2 border-transparent font-medium hover:text-white" data-tab="season">
+                        <i class="fas fa-leaf mr-2"></i>Saison
+                    </button>
                 </div>
 
                 <!-- Tab Content -->
@@ -495,6 +499,100 @@
                             <div class="mt-2 text-xs text-gray-400">
                                 Supports Markdown : **gras**, *italique*, # Titres, - listes, etc.
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Saison Tab -->
+                    <div id="season-tab" class="settings-tab-content h-full flex flex-col" style="display: none;">
+                        <div class="flex justify-between items-center mb-6 flex-shrink-0">
+                            <h4 class="text-lg font-semibold">Saison de voyage</h4>
+                            <div class="text-sm text-gray-400">
+                                <span id="current-season-symbol" class="text-2xl mr-2">🌱</span>
+                                <span id="current-season-text">Printemps-début</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <!-- Printemps -->
+                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                <h5 class="text-green-400 font-semibold mb-3 text-center">🌱 Printemps</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="printemps-debut" class="mr-3 text-green-500 focus:ring-green-500" checked>
+                                        <span class="text-sm">Début</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="printemps-milieu" class="mr-3 text-green-500 focus:ring-green-500">
+                                        <span class="text-sm">Milieu</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="printemps-fin" class="mr-3 text-green-500 focus:ring-green-500">
+                                        <span class="text-sm">Fin</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Été -->
+                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                <h5 class="text-yellow-400 font-semibold mb-3 text-center">☀️ Été</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="ete-debut" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                        <span class="text-sm">Début</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="ete-milieu" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                        <span class="text-sm">Milieu</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="ete-fin" class="mr-3 text-yellow-500 focus:ring-yellow-500">
+                                        <span class="text-sm">Fin</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Automne -->
+                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                <h5 class="text-orange-400 font-semibold mb-3 text-center">🍂 Automne</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="automne-debut" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-sm">Début</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="automne-milieu" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-sm">Milieu</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="automne-fin" class="mr-3 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-sm">Fin</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hiver -->
+                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-600 col-start-2">
+                                <h5 class="text-blue-400 font-semibold mb-3 text-center">❄️ Hiver</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="hiver-debut" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                        <span class="text-sm">Début</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="hiver-milieu" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                        <span class="text-sm">Milieu</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="season" value="hiver-fin" class="mr-3 text-blue-500 focus:ring-blue-500">
+                                        <span class="text-sm">Fin</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-xs text-gray-400 flex-shrink-0">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            La saison sélectionnée apparaît dans la barre de titre et peut influencer les conditions de voyage.
                         </div>
                     </div>
                 </div>
@@ -595,6 +693,30 @@
         // --- Authentication state ---
         let googleUser = null;
         let savedContexts = [];
+
+        // --- Season state ---
+        let currentSeason = 'printemps-debut';
+        const seasonSymbols = {
+            'printemps': '🌱',
+            'ete': '☀️',
+            'automne': '🍂',
+            'hiver': '❄️'
+        };
+
+        const seasonNames = {
+            'printemps-debut': 'Printemps-début',
+            'printemps-milieu': 'Printemps-milieu',
+            'printemps-fin': 'Printemps-fin',
+            'ete-debut': 'Été-début',
+            'ete-milieu': 'Été-milieu',
+            'ete-fin': 'Été-fin',
+            'automne-debut': 'Automne-début',
+            'automne-milieu': 'Automne-milieu',
+            'automne-fin': 'Automne-fin',
+            'hiver-debut': 'Hiver-début',
+            'hiver-milieu': 'Hiver-milieu',
+            'hiver-fin': 'Hiver-fin'
+        };
 
         // --- Auto-sync state ---
         let autoSyncEnabled = false;
@@ -1667,6 +1789,54 @@
             }, SYNC_DELAY);
         }
 
+        // --- Season Functions ---
+        function updateSeasonDisplay() {
+            const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
+            const symbol = seasonSymbols[seasonMainName];
+            const fullName = seasonNames[currentSeason];
+            
+            // Update header indicator
+            const seasonIndicator = document.getElementById('season-indicator');
+            if (seasonIndicator) {
+                seasonIndicator.textContent = symbol;
+                seasonIndicator.title = `Saison actuelle: ${fullName}`;
+            }
+            
+            // Update settings display
+            const currentSeasonSymbol = document.getElementById('current-season-symbol');
+            const currentSeasonText = document.getElementById('current-season-text');
+            if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
+            if (currentSeasonText) currentSeasonText.textContent = fullName;
+        }
+
+        function setupSeasonListeners() {
+            document.querySelectorAll('input[name="season"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        currentSeason = e.target.value;
+                        localStorage.setItem('currentSeason', currentSeason);
+                        updateSeasonDisplay();
+                        scheduleAutoSync();
+                    }
+                });
+            });
+        }
+
+        function loadSavedSeason() {
+            const saved = localStorage.getItem('currentSeason');
+            if (saved && seasonNames[saved]) {
+                currentSeason = saved;
+            }
+            
+            // Update radio button
+            const radioButton = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
+            if (radioButton) {
+                radioButton.checked = true;
+            }
+            
+            updateSeasonDisplay();
+        }
+
         async function autoSyncUserData() {
             if (!googleUser || !autoSyncEnabled) return;
 
@@ -1682,14 +1852,16 @@
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
                 lastPoint: lastPoint,
-                journeyDiscoveries: journeyDiscoveries // Included journey discoveries
+                journeyDiscoveries: journeyDiscoveries, // Included journey discoveries
+                currentSeason: currentSeason // Include season data
             };
 
             console.log("🔄 Synchronisation des données:", {
                 journeyPathLength: journeyPath.length,
                 totalPathPixels: totalPathPixels,
                 hasStartPoint: !!startPoint,
-                hasLastPoint: !!lastPoint
+                hasLastPoint: !!lastPoint,
+                currentSeason: currentSeason
             });
 
             try {
@@ -1703,7 +1875,7 @@
 
                 if (response.ok) {
                     lastSyncTime = Date.now();
-                    console.log("✅ Données utilisateur synchronisées automatiquement (tracé inclus)");
+                    console.log("✅ Données utilisateur synchronisées automatiquement (tracé et saison inclus)");
                 } else {
                     console.error("❌ Erreur lors de la synchronisation automatique");
                 }
@@ -1782,11 +1954,19 @@
                         saveFiltersToLocal();
                     }
 
+                    // Charger la saison depuis le cloud
+                    if (userData.currentSeason && seasonNames[userData.currentSeason]) {
+                        currentSeason = userData.currentSeason;
+                        localStorage.setItem('currentSeason', currentSeason);
+                        console.log("🌱 Saison utilisateur chargée depuis le cloud:", currentSeason);
+                    }
+
                     // Re-render everything
                     renderLocations();
                     renderRegions();
                     applyTransform();
                     updateFiltersUI();
+                    updateSeasonDisplay();
 
                     console.log("✅ Données utilisateur complètement chargées");
                 } else if (response.status === 404) {
@@ -1834,6 +2014,7 @@
                 loadRegionsFromLocal();
                 loadSavedContexts();
                 setupFilters();
+                loadSavedSeason(); // Load season at startup
                 logAuth("Initialisation de l'authentification...");
 
                 // Initialize authentication after a short delay to ensure DOM is ready
@@ -3653,7 +3834,8 @@
                 totalPathPixels: totalPathPixels,
                 startPoint: startPoint,
                 lastPoint: lastPoint,
-                journeyDiscoveries: journeyDiscoveries // Included journey discoveries
+                journeyDiscoveries: journeyDiscoveries, // Included journey discoveries
+                currentSeason: currentSeason // Include season data
             };
 
             try {
@@ -3753,6 +3935,12 @@
                 lastPoint = context.data.lastPoint || null;
                 journeyDiscoveries = context.data.journeyDiscoveries || []; // Load journey discoveries
 
+                // Load season data
+                if (context.data.currentSeason && seasonNames[context.data.currentSeason]) {
+                    currentSeason = context.data.currentSeason;
+                    localStorage.setItem('currentSeason', currentSeason);
+                }
+
                 // Redraw journey path if it exists
                 if (journeyPath.length > 0) {
                     ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -3786,6 +3974,13 @@
                 document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
                     cb.checked = activeFilters.colors.includes(cb.dataset.color);
                 });
+
+                // Update season UI
+                const seasonRadio = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
+                if (seasonRadio) {
+                    seasonRadio.checked = true;
+                }
+                updateSeasonDisplay();
 
                 alert(`Contexte "${context.name}" chargé.`);
                 authModal.classList.add('hidden'); // Close modal after loading
@@ -4799,6 +4994,10 @@
             // Update markdown content displays
             updateMarkdownContent('adventurers-content', adventurersGroup);
             updateMarkdownContent('quest-content', adventurersQuest);
+            
+            // Load season settings
+            loadSavedSeason();
+            setupSeasonListeners();
         }
 
         function updateMarkdownContent(elementId, content) {
