@@ -1916,12 +1916,15 @@
                 calendarStatus.className = 'text-green-400';
                 dateSelector.classList.remove('hidden');
                 
-                // Populate month selector
+                // Populate month selector with season icons
                 monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
                 calendarData.forEach((month, index) => {
                     const option = document.createElement('option');
                     option.value = index;
-                    option.textContent = month.name;
+                    // Get season icon
+                    const seasonMainName = month.season.toLowerCase().split('-')[0];
+                    const seasonIcon = seasonSymbols[seasonMainName] || '🌿';
+                    option.textContent = `${seasonIcon} ${month.name}`;
                     monthSelect.appendChild(option);
                 });
                 
@@ -1935,9 +1938,8 @@
                     }
                 }
                 
-                // Hide manual seasons
-                manualSeasons.style.opacity = '0.5';
-                manualSeasons.style.pointerEvents = 'none';
+                // Hide manual seasons completely
+                manualSeasons.style.display = 'none';
                 seasonModeInfo.textContent = 'Mode calendrier : la saison est déterminée automatiquement par la date sélectionnée.';
             } else {
                 isCalendarMode = false;
@@ -1946,8 +1948,7 @@
                 dateSelector.classList.add('hidden');
                 
                 // Show manual seasons
-                manualSeasons.style.opacity = '1';
-                manualSeasons.style.pointerEvents = 'auto';
+                manualSeasons.style.display = 'block';
                 seasonModeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
             }
         }
@@ -1983,21 +1984,27 @@
                     day: day
                 };
                 
-                // Update season based on calendar
+                // Update season based on exact calendar season
                 const calendarSeason = month.season.toLowerCase();
-                let newSeason = 'printemps-debut'; // default
                 
-                if (calendarSeason === 'printemps') {
-                    newSeason = 'printemps-milieu';
-                } else if (calendarSeason === 'été' || calendarSeason === 'ete') {
-                    newSeason = 'ete-milieu';
-                } else if (calendarSeason === 'automne') {
-                    newSeason = 'automne-milieu';
-                } else if (calendarSeason === 'hiver') {
-                    newSeason = 'hiver-milieu';
+                // Use the exact season from the CSV
+                if (seasonNames[calendarSeason]) {
+                    currentSeason = calendarSeason;
+                } else {
+                    // Fallback for old format seasons
+                    if (calendarSeason === 'printemps') {
+                        currentSeason = 'printemps-milieu';
+                    } else if (calendarSeason === 'été' || calendarSeason === 'ete') {
+                        currentSeason = 'ete-milieu';
+                    } else if (calendarSeason === 'automne') {
+                        currentSeason = 'automne-milieu';
+                    } else if (calendarSeason === 'hiver') {
+                        currentSeason = 'hiver-milieu';
+                    } else {
+                        currentSeason = 'printemps-debut'; // default
+                    }
                 }
                 
-                currentSeason = newSeason;
                 updateSeasonDisplay();
                 saveCalendarToLocal();
                 scheduleAutoSync();
