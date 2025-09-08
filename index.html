@@ -1507,7 +1507,7 @@
         }
 
         function setupRegionColorPickerListeners() {
-            document.getElementById('edit-region-color-picker').querySelectorAll('.color-swatch.forEach(swatch => {
+            document.getElementById('edit-region-color-picker').querySelectorAll('.color-swatch').forEach(swatch => {
                 swatch.addEventListener('click', () => {
                     document.querySelector('#edit-region-color-picker .color-swatch.selected').classList.remove('selected');
                     swatch.classList.add('selected');
