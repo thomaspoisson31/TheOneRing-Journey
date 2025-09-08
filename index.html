@@ -1192,7 +1192,7 @@
         // startApp() function is now in initialization.js
         // Check if the function is available, otherwise define a placeholder
         if (typeof startApp === 'undefined') {
-            console.warn("startApp function not found in initialization.js. Defining a placeholder.");
+            console.warn("startApp function not found in init-manager.js. Defining a placeholder.");
             var startApp = function() {
                 console.log("🚀 Starting application...");
                 // Minimal placeholder logic
@@ -1209,13 +1209,7 @@
             console.error("startApp function is not defined and could not be loaded.");
         }
 
-        // --- Initialization ---
-        // The following functions are now in initialization.js
-        // loadInitialLocations();
-        // initializeMap();
-        // preloadLoremasterMap();
-
-        // Region modal handlers avec vérification null
+        // --- Region modal handlers avec vérification null
         const confirmAddRegionBtn = document.getElementById('confirm-add-region');
         const cancelAddRegionBtn = document.getElementById('cancel-add-region');
 
@@ -2736,7 +2730,7 @@
         async function handleGenerateJourneyLog(event) {
             const button = event.currentTarget;
             if (!startPoint || !lastPoint) {
-                alert("Vous devez commencer un tracé pour générer une chronique de voyage.");
+                alert("Vous devez commencer un tracé sur la carte pour générer une chronique de voyage.");
                 return;
             }
 
@@ -2823,6 +2817,7 @@
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
 
+                            // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -3564,7 +3559,7 @@
                 activatedSegments: Array.from(activatedSegments)
             });
 
-            constcurrentSegmentDiv = document.getElementById('current-segment-display');
+            const currentSegmentDiv = document.getElementById('current-segment-display');
             const noVoyageMessage = document.getElementById('no-voyage-message');
             const progressBar = document.getElementById('voyage-progress-bar');
             const endMessage = document.getElementById('voyage-end-message');
@@ -3868,7 +3863,7 @@
         window.navigateToSegment = navigateToSegment;
 
         function processActivityForHighlight(activity) {
-            // Nettoyer d'abord le texte de tout HTML résiduel
+            // Nettoyer d   clear the text of any HTML tags
             const cleanActivity = activity.replace(/<[^>]*>/g, '');
             let processedActivity = cleanActivity;
 
