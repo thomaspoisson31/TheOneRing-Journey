@@ -1963,6 +1963,118 @@
             }, 100);
         }
 
+        // --- Maps Tab Functions ---
+        function ensureMapsTabExists() {
+            const tabsContainer = document.getElementById('settings-tabs');
+            const mapsTabButton = document.querySelector('.settings-tab-button[data-tab="maps"]');
+
+            if (!mapsTabButton && tabsContainer) {
+                // Créer le bouton de l'onglet Cartes
+                const mapsTab = document.createElement('button');
+                mapsTab.className = 'settings-tab-button px-6 py-3 text-gray-400 border-b-2 border-transparent font-medium hover:text-white';
+                mapsTab.setAttribute('data-tab', 'maps');
+                mapsTab.innerHTML = '<i class="fas fa-map mr-2"></i>Cartes';
+
+                // Insérer l'onglet Cartes en position 1 (après Aventuriers)
+                const adventurersTab = document.querySelector('.settings-tab-button[data-tab="adventurers"]');
+                if (adventurersTab && adventurersTab.nextSibling) {
+                    tabsContainer.insertBefore(mapsTab, adventurersTab.nextSibling);
+                } else {
+                    tabsContainer.appendChild(mapsTab);
+                }
+            }
+
+            // Créer le contenu de l'onglet Cartes s'il n'existe pas
+            let mapsTabContent = document.getElementById('maps-tab');
+            if (!mapsTabContent) {
+                const settingsContent = document.querySelector('.flex-grow.overflow-hidden');
+                if (settingsContent) {
+                    mapsTabContent = document.createElement('div');
+                    mapsTabContent.id = 'maps-tab';
+                    mapsTabContent.className = 'settings-tab-content h-full flex flex-col';
+                    mapsTabContent.style.display = 'none';
+
+                    mapsTabContent.innerHTML = `
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h4 class="text-lg font-semibold">Gestion des cartes</h4>
+                            <div class="flex items-center space-x-2">
+                                <button id="upload-map-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center space-x-2">
+                                    <i class="fas fa-upload mr-1"></i>
+                                    <span>Ajouter une carte</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-400 mb-4 flex-shrink-0">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Dimensions recommandées : 5103 x 3296 pixels (formats supportés : WEBP, PNG, JPG)
+                        </div>
+
+                        <div class="flex-grow overflow-hidden flex flex-col">
+                            <div class="mb-4 flex-shrink-0">
+                                <h5 class="text-md font-semibold mb-2">Cartes actives</h5>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Carte par défaut (joueur)</label>
+                                        <select id="active-player-map" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                            <option value="default">Carte par défaut</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Carte gardien</label>
+                                        <select id="active-loremaster-map" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                            <option value="default">Carte par défaut</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow overflow-hidden">
+                                <h5 class="text-md font-semibold mb-2">Cartes disponibles</h5>
+                                <div id="maps-list" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <p class="text-gray-400 italic text-center">Aucune carte personnalisée.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="file" id="map-file-input" accept=".webp,.png,.jpg,.jpeg" class="hidden">
+                    `;
+
+                    settingsContent.appendChild(mapsTabContent);
+                }
+            }
+        }
+
+        function loadMapSettings() {
+            // Cette fonction sera appelée pour charger les paramètres des cartes
+            const mapsList = document.getElementById('maps-list');
+            if (mapsList) {
+                // Pour l'instant, afficher un message par défaut
+                mapsList.innerHTML = '<p class="text-gray-400 italic text-center">Aucune carte personnalisée.</p>';
+            }
+        }
+
+        function setupMapsEventListeners() {
+            // Cette fonction sera appelée pour configurer les listeners de l'onglet cartes
+            const uploadBtn = document.getElementById('upload-map-btn');
+            const fileInput = document.getElementById('map-file-input');
+
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Pour l'instant, juste un message
+                        alert('Upload de cartes sera implémenté prochainement');
+                    }
+                });
+            }
+        }
+
+
         function setupSettingsEventListeners() {
             waitForElement('#settings-btn', (settingsBtn) => {
                 settingsBtn.addEventListener('click', () => {
@@ -2286,403 +2398,6 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
         // Setup authentication event listeners (already defined above)
 
         // Helper function to wait for an element (already defined above)
-
-        // --- Gemini API Functions ---
-        async function callGemini(prompt, button) {
-            const buttonIcon = button.querySelector('.gemini-icon') || button;
-            const originalContent = buttonIcon.innerHTML;
-            buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
-            button.disabled = true;
-
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const payload = { contents: chatHistory };
-
-            try {
-                // Récupérer la clé API depuis le serveur
-                const configResponse = await fetch('/api/gemini/config');
-                const config = await configResponse.json();
-
-                if (!config.api_key_configured || !config.api_key) {
-                    console.error("Gemini API key not configured on server.");
-                    buttonIcon.innerHTML = originalContent;
-                    button.disabled = false;
-                    return "Erreur: Clé API Gemini non configurée sur le serveur.";
-                }
-
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.api_key}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    // Try to get more details from the response body if available
-                    let errorMsg = `API request failed with status ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
-                    } catch (jsonError) {
-                        // Ignore JSON parsing errors
-                    }
-                    throw new Error(errorMsg);
-                }
-
-                const result = await response.json();
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                    return result.candidates[0].content.parts[0].text;
-                } else {
-                    // Handle cases where the response might be empty or malformed
-                    console.warn("Received empty or malformed response from Gemini API:", result);
-                    throw new Error("Invalid response structure from API");
-                }
-            } catch (error) {
-                console.error("Gemini API call failed:", error);
-                return `Désolé, une erreur est survenue lors de la génération du texte: ${error.message}`;
-            } finally {
-                buttonIcon.innerHTML = originalContent;
-                button.disabled = false;
-            }
-        }
-
-        function findNearestLocation(point) {
-            if (!point) return { name: 'un lieu sauvage' };
-            let nearest = null;
-            let minDistance = Infinity;
-            locationsData.locations.forEach(loc => {
-                // Ensure location has valid coordinates before calculating distance
-                if (loc.coordinates && typeof loc.coordinates.x !== 'undefined' && typeof loc.coordinates.y !== 'undefined') {
-                    const distance = Math.sqrt(Math.pow(loc.coordinates.x - point.x, 2) + Math.pow(loc.coordinates.y - point.y, 2));
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearest = loc;
-                    }
-                }
-            });
-            return nearest || { name: 'un lieu inconnu' };
-        }
-
-        async function handleGenerateJourneyLog(event) {
-            const button = event.currentTarget;
-            if (!startPoint || !lastPoint) {
-                alert("Vous devez commencer un tracé pour générer une chronique de voyage.");
-                return;
-            }
-
-            const startLocation = findNearestLocation(startPoint);
-            const endLocation = findNearestLocation(lastPoint);
-            const miles = Math.round(totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH));
-            const days = (Math.ceil((miles / 20) * 2) / 2).toFixed(1);
-
-            // Générer la liste des découvertes chronologiques pour le prompt
-            let journeyDetails = '';
-            if (journeyDiscoveries && journeyDiscoveries.length > 0) {
-                // Trier par ordre de découverte
-                const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-
-                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
-                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
-
-                    // Calculer le temps pour atteindre cette découverte
-                    let startIndex = 0;
-                    if (index > 0) {
-                        const prevDiscovery = chronologicalDiscoveries[index - 1];
-                        if (prevDiscovery.type === 'region' && window.regionSegments) {
-                            const segment = window.regionSegments.get(prevDiscovery.name);
-                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
-                        } else {
-                            startIndex = prevDiscovery.discoveryIndex;
-                        }
-                    }
-
-                    const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
-                    const reachMiles = pixelsToMiles(reachDistance);
-                    const reachDays = milesToDays(reachMiles);
-
-                    // Check if this is a starting location (close to journey start)
-                    let travelInfo;
-                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
-                        // Find the actual location to check distance from start point
-                        const location = locationsData.locations.find(loc => loc.name === discovery.name);
-                        if (location && location.coordinates) {
-                            const distanceFromStart = Math.sqrt(
-                                Math.pow(location.coordinates.x - startPoint.x, 2) +
-                                Math.pow(location.coordinates.y - startPoint.y, 2)
-                            );
-                            if (distanceFromStart <= 20) {
-                                travelInfo = "(point de départ)";
-                            } else {
-                                // Add proximity information for locations
-                                let proximityText = '';
-                                if (discovery.proximityType === 'traversed') {
-                                    proximityText = ', traversé';
-                                } else if (discovery.proximityType === 'nearby') {
-                                    proximityText = ', passage à proximité';
-                                }
-                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                            }
-                        } else {
-                            // Add proximity information for locations
-                            let proximityText = '';
-                            if (discovery.proximityType === 'traversed') {
-                                proximityText = ', traversé';
-                            } else if (discovery.proximityType === 'nearby') {
-                                proximityText = ', passage à proximité';
-                            }
-                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                        }
-                    } else {
-                        // Add proximity information for locations
-                        let proximityText = '';
-                        if (discovery.type === 'location') {
-                            if (discovery.proximityType === 'traversed') {
-                                proximityText = ', traversé';
-                            } else if (discovery.proximityType === 'nearby') {
-                                proximityText = ', passage à proximité';
-                            }
-                        }
-                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                    }
-
-                    let displayText = `${icon} ${discovery.name} ${travelInfo}`;
-
-                    // For regions, also calculate duration inside the region
-                    if (discovery.type === 'region' && window.regionSegments) {
-                        const segment = window.regionSegments.get(discovery.name);
-                        if (segment) {
-                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
-                            const regionMiles = pixelsToMiles(regionDistance);
-                            const regionDays = milesToDays(regionMiles);
-
-                            // Replace travelInfo for regions to include duration
-                            if (travelInfo === "(point de départ)") {
-                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
-                            } else {
-                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
-                            }
-                        }
-                    }
-
-                    // Get tooltip content
-                    const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
-
-                    // Create span sans tooltip par défaut
-                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
-                });
-
-                // Join with line breaks instead of commas
-                const discoveryListHTML = discoveryElements.join('<br>');
-
-                // Show only one section with all discoveries
-                traversedRegionsInfo.classList.remove('hidden');
-                traversedRegionsList.innerHTML = discoveryListHTML;
-                nearbyLocationsInfo.classList.add('hidden');
-
-                // Update the title to reflect mixed content
-                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
-                if (regionsTitle) {
-                    regionsTitle.textContent = 'Découvertes du voyage :';
-                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
-                }
-
-                // Setup enhanced tooltips
-                setupDiscoveryTooltips();
-
-                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
-            }
-
-            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage a débuté à ${startLocation.name} et s'est terminé près de ${endLocation.name}, couvrant une distance d'environ ${miles} miles, soit environ ${days} jours de marche. ${journeyDetails}. Organise le récit par étapes journalières, en décrivant brièvement l'ambiance et les paysages rencontrés.`;
-
-
-            const journeyLogContent = document.getElementById('journey-log-content');
-            journeyLogContent.innerHTML = '<p>Génération de la chronique en cours...</p>';
-            journeyLogModal.classList.remove('hidden');
-
-            const result = await callGemini(prompt, button);
-            journeyLogContent.innerHTML = result.replace(/\n/g, '<br>');
-        }
-
-        function getDiscoveryTooltipContent(discoveryName, type) {
-            let data;
-            if (type === 'location') {
-                data = locationsData.locations.find(loc => loc.name === discoveryName);
-            } else if (type === 'region') {
-                data = regionsData.regions.find(reg => reg.name === discoveryName);
-            }
-
-            if (!data) return '';
-
-            let content = '';
-            if (data.description) {
-                content += `<div><strong>Description :</strong><br>${data.description}</div>`;
-            }
-
-            return content;
-        }
-
-        function setupDiscoveryTooltips() {
-            // Remove existing tooltips
-            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
-            existingTooltips.forEach(tooltip => tooltip.remove());
-
-            const discoveryItems = document.querySelectorAll('.discovery-item');
-
-            discoveryItems.forEach(item => {
-                const discoveryName = item.dataset.discoveryName;
-                const discoveryType = item.dataset.discoveryType;
-
-                // Remove the default browser tooltip
-                item.removeAttribute('title');
-
-                item.addEventListener('mouseenter', (e) => {
-                    // Highlight the corresponding location or region on the map
-                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
-
-                    const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
-
-                    if (tooltipContent) {
-                        const tooltip = document.createElement('div');
-                        tooltip.className = 'discovery-tooltip';
-                        tooltip.innerHTML = tooltipContent;
-                        tooltip.style.cssText = `
-                            position: absolute;
-                            background: rgba(17, 24, 39, 0.95);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 8px;
-                            border: 1px solid #4b5563;
-                            font-size: 14px;
-                            max-width: 320px;
-                            z-index: 1000;
-                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                            line-height: 1.4;
-                        `;
-
-                        document.body.appendChild(tooltip);
-
-                        // Position tooltip à gauche de l'élément
-                        const rect = item.getBoundingClientRect();
-                        const tooltipRect = tooltip.getBoundingClientRect();
-
-                        let left = rect.left + window.scrollX - tooltipRect.width - 10;
-                        let top = rect.top + window.scrollY;
-
-                        // Si le tooltip déborde à gauche, le placer à droite
-                        if (left < 10) {
-                            left = rect.right + window.scrollX + 10;
-                        }
-
-                        // Ajuster si le tooltip déborde en haut
-                        if (top < window.scrollY + 10) {
-                            top = window.scrollY + 10;
-                        }
-
-                        // Ajuster si le tooltip déborde en bas
-                        if (top + tooltipRect.height > window.innerHeight + window.scrollY - 10) {
-                            top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
-                        }
-
-                        tooltip.style.left = left + 'px';
-                        tooltip.style.top = top + 'px';
-                    }
-                });
-
-                item.addEventListener('mouseleave', () => {
-                    // Remove highlight from the map
-                    highlightDiscoveryOnMap(discoveryName, discoveryType, false);
-
-                    const tooltips = document.querySelectorAll('.discovery-tooltip');
-                    tooltips.forEach(tooltip => tooltip.remove());
-                });
-
-                // Add click event listener to open modal
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    if (discoveryType === 'location') {
-                        const location = locationsData.locations.find(loc => loc.name === discoveryName);
-                        if (location) {
-                            // Simulate a click event on the location marker to open its info box
-                            const fakeEvent = {
-                                currentTarget: { dataset: { id: location.id.toString() } },
-                                stopPropagation: () => {},
-                                preventDefault: () => {}
-                            };
-
-                            showInfoBox(fakeEvent);
-
-                            // Force expand the info box
-                            if (!infoBox.classList.contains('expanded')) {
-                                toggleInfoBoxExpand();
-                            }
-                        }
-                    } else if (discoveryType === 'region') {
-                        const region = regionsData.regions.find(reg => reg.name === discoveryName);
-                        if (region) {
-                            // Simulate a click event on the region to open its info box
-                            const fakeEvent = {
-                                stopPropagation: () => {},
-                                preventDefault: () => {}
-                            };
-
-                            showRegionInfo(fakeEvent, region);
-
-                            if (!infoBox.classList.contains('expanded')) {
-                                toggleInfoBoxExpand();
-                            }
-                        }
-                    }
-                });
-            });
-        }
-
-        function highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
-            if (discoveryType === 'location') {
-                // Find and highlight location marker
-                const locationMarkers = document.querySelectorAll('.location-marker');
-                locationMarkers.forEach(marker => {
-                    const locationId = parseInt(marker.dataset.id, 10);
-                    const location = locationsData.locations.find(loc => loc.id === locationId);
-
-                    if (location && location.name === discoveryName) {
-                        if (highlight) {
-                            marker.style.borderColor = '#60a5fa'; // Light blue
-                            marker.style.borderWidth = '6px';
-                            marker.style.zIndex = '1000';
-                        } else {
-                            // Restore original border
-                            marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-                            marker.style.borderWidth = '4px';
-                            marker.style.zIndex = '';
-                        }
-                    }
-                });
-            } else if (discoveryType === 'region') {
-                // Find and highlight region path
-                const regionPaths = regionsLayer.querySelectorAll('.region');
-                regionPaths.forEach(path => {
-                    const regionId = parseInt(path.dataset.regionId, 10);
-                    const region = regionsData.regions.find(reg => reg.id === regionId);
-
-                    if (region && region.name === discoveryName) {
-                        if (highlight) {
-                            path.style.stroke = '#1e40af'; // Dark blue
-                            path.style.strokeWidth = '6'; // Thicker border
-                            path.style.zIndex = '1000';
-                        } else {
-                            // Restore original stroke
-                            path.style.stroke = colorMap[region.color] || colorMap.green;
-                            path.style.strokeWidth = '2';
-                            path.style.zIndex = '';
-                        }
-                    }
-                });
-            }
-        }
-        document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
-        document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
         // --- Gemini API Functions ---
         async function callGemini(prompt, button) {
@@ -3373,90 +3088,6 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
                     loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur lors du démarrage.<button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button></div>`;
                 }
             });
-
-            // Check for authentication errors in the URL
-            checkAuthError();
-
-            // Load initial data
-            loadInitialLocations().then(() => {
-                loadRegionsFromLocal();
-                loadSavedContexts();
-                setupFilters();
-                loadSavedSeason(); // Load season settings
-                ensureMapsTabExists(); // Ensure Maps tab exists before setting up listeners
-                setupSettingsEventListeners(); // Setup all settings listeners, including Maps tab
-                loadMapSettings(); // Load map settings from localStorage
-
-                // Initial authentication check
-                setTimeout(() => {
-                    checkGoogleAuth();
-                }, 100);
-
-                // Load map image and initialize map
-                if (mapImage) {
-                    mapImage.onload = () => {
-                        initializeMap();
-                    };
-                    mapImage.onerror = () => {
-                        handleImageError();
-                    };
-                    mapImage.src = PLAYER_MAP_URL;
-                }
-
-                // Setup other general event listeners
-                if (infoBoxClose) {
-                    infoBoxClose.addEventListener('click', hideInfoBox);
-                }
-
-                setupAuthEventListeners(); // Ensure auth listeners are set
-
-                // Region modal handlers
-                const confirmAddRegionBtn = document.getElementById('confirm-add-region');
-                const cancelAddRegionBtn = document.getElementById('cancel-add-region');
-
-                if (confirmAddRegionBtn) {
-                    confirmAddRegionBtn.addEventListener('click', saveRegion);
-                }
-                if (cancelAddRegionBtn) {
-                    cancelAddRegionBtn.addEventListener('click', () => {
-                        if (addRegionModal) addRegionModal.classList.add('hidden');
-                        cancelRegionCreation();
-                    });
-                }
-
-                // Double-click to complete region
-                if (viewport) {
-                    viewport.addEventListener('dblclick', (event) => {
-                        if (isAddingRegionMode && currentRegionPoints.length >= 3) {
-                            event.preventDefault();
-                            completeRegion();
-                        }
-                    });
-                }
-
-                // Load user data if logged in
-                if (googleUser) {
-                    loadUserData();
-                }
-
-                console.log("✅ Application initialized successfully");
-
-            }).catch(error => {
-                console.error("❌ Error during app startup:", error);
-                // Display error message in loader overlay
-                if (loaderOverlay) {
-                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur lors du démarrage.<button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button></div>`;
-                }
-            });
-        }
-
-        // Add the Maps tab to the settings modal structure if it doesn't exist
-        // This ensures the tab is available when settings are opened
-        document.addEventListener('DOMContentLoaded', ensureMapsTabExists);
-
-        // Modified startApp function to include new initializations
-        function startApp() {
-            console.log("🚀 Starting application...");
 
             // Check for authentication errors in the URL
             checkAuthError();
