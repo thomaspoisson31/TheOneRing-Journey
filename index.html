@@ -1984,26 +1984,15 @@
                     day: day
                 };
                 
-                // Update season based on exact calendar season
+                // Update season based on exact calendar season - use the season directly from CSV
                 const calendarSeason = month.season.toLowerCase();
+                console.log("📅 Saison du calendrier CSV:", calendarSeason, "pour le mois:", month.name);
                 
-                // Use the exact season from the CSV
-                if (seasonNames[calendarSeason]) {
-                    currentSeason = calendarSeason;
-                } else {
-                    // Fallback for old format seasons
-                    if (calendarSeason === 'printemps') {
-                        currentSeason = 'printemps-milieu';
-                    } else if (calendarSeason === 'été' || calendarSeason === 'ete') {
-                        currentSeason = 'ete-milieu';
-                    } else if (calendarSeason === 'automne') {
-                        currentSeason = 'automne-milieu';
-                    } else if (calendarSeason === 'hiver') {
-                        currentSeason = 'hiver-milieu';
-                    } else {
-                        currentSeason = 'printemps-debut'; // default
-                    }
-                }
+                // Use the exact season from the CSV as-is
+                currentSeason = calendarSeason;
+                
+                // Save the season for consistency
+                localStorage.setItem('currentSeason', currentSeason);
                 
                 updateSeasonDisplay();
                 saveCalendarToLocal();
@@ -2038,8 +2027,18 @@
         // --- Season Functions ---
         function updateSeasonDisplay() {
             const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
-            const symbol = seasonSymbols[seasonMainName];
-            const fullName = seasonNames[currentSeason];
+            const symbol = seasonSymbols[seasonMainName] || '🌿'; // fallback symbol
+            
+            // Use the season name from seasonNames if available, otherwise use currentSeason directly
+            const fullName = seasonNames[currentSeason] || currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
+            
+            console.log("🌱 Affichage saison:", {
+                currentSeason: currentSeason,
+                seasonMainName: seasonMainName,
+                symbol: symbol,
+                fullName: fullName,
+                isCalendarMode: isCalendarMode
+            });
             
             // Update header indicator
             const seasonIndicator = document.getElementById('season-indicator');
