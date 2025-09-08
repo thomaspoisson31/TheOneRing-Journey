@@ -57,6 +57,7 @@ def init_db():
             google_id TEXT UNIQUE,
             email TEXT,
             name TEXT,
+            active_maps_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -133,6 +134,33 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
+
+    # Table des cartes utilisateur
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_maps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            data TEXT NOT NULL,
+            file_size INTEGER,
+            file_type TEXT,
+            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+
+    # Migration : Ajouter la colonne active_maps_json si elle n'existe pas
+    try:
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'active_maps_json' not in columns:
+            print("🔧 Migration : ajout de la colonne active_maps_json à la table users")
+            cursor.execute("ALTER TABLE users ADD COLUMN active_maps_json TEXT")
+            print("✅ Colonne active_maps_json ajoutée avec succès")
+    except sqlite3.OperationalError as e:
+        print(f"⚠️  Erreur lors de la migration de la colonne active_maps_json: {e}")
 
     conn.commit()
     conn.close()
@@ -712,6 +740,118 @@ def get_gemini_config():
         'api_key_configured': bool(GOOGLE_API_KEY),
         'api_key': GOOGLE_API_KEY if GOOGLE_API_KEY else None
     })
+
+@app.route('/api/maps', methods=['GET'])
+def get_user_maps():
+    """Obtenir les cartes de l'utilisateur"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    conn = get_db_connection()
+    maps = conn.execute(
+        'SELECT * FROM user_maps WHERE user_id = ? ORDER BY upload_date DESC',
+        (session['user_id'],)
+    ).fetchall()
+    conn.close()
+
+    return jsonify([{
+        'id': str(map['id']),
+        'name': map['name'],
+        'filename': map['filename'],
+        'data': map['data'],
+        'uploadDate': map['upload_date'],
+        'size': map['file_size'],
+        'type': map['file_type']
+    } for map in maps])
+
+@app.route('/api/maps', methods=['POST'])
+def upload_map():
+    """Uploader une nouvelle carte"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    data = request.json
+    if not data or not all(k in data for k in ['name', 'filename', 'data']):
+        return jsonify({'error': 'Données manquantes'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        '''INSERT INTO user_maps (user_id, name, filename, data, file_size, file_type, upload_date) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (session['user_id'], data['name'], data['filename'], data['data'], 
+         data.get('size', 0), data.get('type', ''), datetime.now())
+    )
+    map_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return jsonify({'id': map_id, 'message': 'Carte uploadée avec succès'})
+
+@app.route('/api/maps/<int:map_id>', methods=['DELETE'])
+def delete_map(map_id):
+    """Supprimer une carte"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    conn = get_db_connection()
+    
+    # Vérifier que la carte appartient à l'utilisateur
+    map_record = conn.execute(
+        'SELECT * FROM user_maps WHERE id = ? AND user_id = ?',
+        (map_id, session['user_id'])
+    ).fetchone()
+
+    if map_record is None:
+        conn.close()
+        return jsonify({'error': 'Carte non trouvée'}), 404
+
+    # Supprimer la carte
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM user_maps WHERE id = ?', (map_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Carte supprimée avec succès'})
+
+@app.route('/api/maps/active', methods=['GET'])
+def get_active_maps():
+    """Obtenir les cartes actives de l'utilisateur"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    conn = get_db_connection()
+    active_maps = conn.execute(
+        'SELECT active_maps_json FROM users WHERE id = ?',
+        (session['user_id'],)
+    ).fetchone()
+    conn.close()
+
+    if active_maps and active_maps['active_maps_json']:
+        return jsonify(json.loads(active_maps['active_maps_json']))
+    else:
+        return jsonify({'default': 'default-player', 'loremaster': 'default-loremaster'})
+
+@app.route('/api/maps/active', methods=['PUT'])
+def update_active_maps():
+    """Mettre à jour les cartes actives"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non authentifié'}), 401
+
+    data = request.json
+    if not data:
+        return jsonify({'error': 'Données manquantes'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        'UPDATE users SET active_maps_json = ? WHERE id = ?',
+        (json.dumps(data), session['user_id'])
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Cartes actives mises à jour'})
 
 @app.route('/auth/verify-config')
 def verify_oauth_config():
