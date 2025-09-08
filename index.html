@@ -844,7 +844,7 @@
         let tempRegionPath = null;
 
         // --- Authentication state ---
-        let currentUser = null; // Renamed from googleUser for broader compatibility
+        let googleUser = null;
         let savedContexts = [];
 
         // --- Season state ---
@@ -1176,17 +1176,12 @@
         // --- Toggle Authentication Modal ---
         function toggleAuthModal() {
             logAuth("Basculement de la modal d'authentification");
-            const authModal = document.getElementById('auth-modal');
-            if (authModal) {
-                if (authModal.classList.contains('hidden')) {
-                    authModal.classList.remove('hidden');
-                    logAuth("Modal d'authentification ouverte");
-                } else {
-                    authModal.classList.add('hidden');
-                    logAuth("Modal d'authentification fermée");
-                }
+            if (authModal.classList.contains('hidden')) {
+                authModal.classList.remove('hidden');
+                logAuth("Modal d'authentification ouverte");
             } else {
-                logAuth("Erreur: Modal d'authentification non trouvée!");
+                authModal.classList.add('hidden');
+                logAuth("Modal d'authentification fermée");
             }
         }
 
@@ -2183,7 +2178,7 @@
 
         // --- Auto-sync Functions ---
         function enableAutoSync() {
-            if (currentUser) {
+            if (googleUser) {
                 autoSyncEnabled = true;
                 loadUserData();
                 console.log("✅ Auto-sync activé");
@@ -2198,7 +2193,7 @@
         }
 
         function scheduleAutoSync() {
-            if (!autoSyncEnabled || !currentUser) return;
+            if (!autoSyncEnabled || !googleUser) return;
 
             // Debounce: attendre 2 secondes après la dernière modification
             clearTimeout(window.autoSyncTimeout);
@@ -2535,7 +2530,7 @@
         }
 
         async function autoSyncUserData() {
-            if (!currentUser || !autoSyncEnabled) return;
+            if (!googleUser || !autoSyncEnabled) return;
 
             const userData = {
                 locations: locationsData,
@@ -2585,7 +2580,7 @@
         }
 
         async function loadUserData() {
-            if (!currentUser) return;
+            if (!googleUser) return;
 
             try {
                 const response = await fetch('/api/user/data');
@@ -2703,22 +2698,11 @@
             saveFiltersToLocal();
         }
 
-        // --- Start the app ---
-        // Ensure the app starts only once when the DOM is ready
-        function initializeApp() {
-            // Global error handlers
-            window.addEventListener('unhandledrejection', function(event) {
-                console.error('⚠️ Promesse rejetée non gérée:', event.reason);
-                event.preventDefault();
-            });
+        // --- Load data and start the app ---
+        function startApp() {
+            console.log("🚀 Starting application...");
 
-            window.addEventListener('error', function(event) {
-                console.error('⚠️ Erreur JavaScript:', event.error);
-            });
-
-            console.log('🚀 Starting application...');
-
-            // Global timeout for the application startup
+            // Ajouter un timeout global pour éviter les chargements infinis
             const startTimeout = setTimeout(() => {
                 if (loaderOverlay && loaderOverlay.style.display !== 'none') {
                     console.error("❌ Application startup timed out");
@@ -2729,9 +2713,9 @@
                         <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
                     </div>`;
                 }
-            }, 30000); // 30 seconds timeout
+            }, 30000); // 30 secondes timeout
 
-            // Check for authentication errors in the URL
+            // Vérifier les erreurs d'authentification dans l'URL
             checkAuthError();
 
             loadInitialLocations().then(() => {
@@ -2766,12 +2750,14 @@
                 }
 
                 logAuth("Configuration des event listeners d'authentification...");
+
+                // Setup authentication event listeners
                 setupAuthEventListeners();
 
                 // Setup settings event listeners
                 setupSettingsEventListeners();
 
-                // Test DOM elements after a delay
+                // Test des éléments DOM après un délai
                 setTimeout(() => {
                     logAuth("=== TEST DES ÉLÉMENTS DOM ===");
                     logAuth("authModal element:", !!document.getElementById('auth-modal'));
@@ -2804,7 +2790,7 @@
                 }
             });
 
-            // Region modal handlers with null checks
+            // Region modal handlers avec vérification null
             const confirmAddRegionBtn = document.getElementById('confirm-add-region');
             const cancelAddRegionBtn = document.getElementById('cancel-add-region');
 
@@ -2832,6 +2818,7 @@
             }
         }
 
+        // --- Functions ---
         // --- Region Functions ---
         function renderRegions() {
             regionsLayer.innerHTML = '';
@@ -3751,7 +3738,7 @@
             localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData));
             scheduleAutoSync(); // Synchroniser après modification
         }
-        function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); document.body.removeChild(downloadAnchorNode); URL.revokeObjectURL(url); }
+        function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         function importLocationsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.locations)) { locationsData = importedData; renderLocations(); saveLocationsToLocal(); } else { alert("Fichier JSON invalide."); } } catch (err) { alert("Erreur lors de la lecture du fichier."); console.error(err); } }; reader.readAsText(file); }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
@@ -4053,7 +4040,7 @@
                     const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
 
                     // Create span sans tooltip par défaut
-                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="region">${displayText}</span>`;
+                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">${displayText}</span>`;
                 });
 
                 // Join with line breaks instead of commas
@@ -4457,33 +4444,26 @@
 
         // --- Google Authentication Functions ---
         async function checkAuthStatus() {
-            logAuth("🔐 [AUTH] Vérification du statut d'authentification...", "");
+            logAuth("Vérification du statut d'authentification...");
             try {
                 const response = await fetch('/api/auth/user');
-                logAuth("🔐 [AUTH] Réponse reçue:", response.status);
+                logAuth("Réponse reçue:", response.status, response.statusText);
+                const data = await response.json();
+                logAuth("Données d'authentification reçues:", data);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    logAuth("🔐 [AUTH] Données d'authentification reçues:", data);
-
-                    if (data.authenticated && data.user) {
-                        currentUser = data.user;
-                        logAuth("🔐 [AUTH] Utilisateur authentifié:", currentUser.name);
-                        updateAuthUI(true);
-                        await loadSavedContexts();
-                        enableAutoSync();
-                    } else {
-                        currentUser = null;
-                        logAuth("🔐 [AUTH] Utilisateur non authentifié", "");
-                        updateAuthUI(false);
-                    }
+                if (data.authenticated) {
+                    googleUser = data.user;
+                    logAuth("Utilisateur authentifié:", googleUser);
                 } else {
-                    throw new Error(`HTTP ${response.status}`);
+                    googleUser = null;
+                    logAuth("Utilisateur non authentifié");
                 }
+
+                displayAuthStatus();
             } catch (error) {
-                logAuth("🔐 [AUTH] Erreur lors de la vérification d'authentification:", error.message || error);
-                currentUser = null;
-                updateAuthUI(false);
+                logAuth("Erreur lors de la vérification d'authentification:", error);
+                googleUser = null;
+                displayAuthStatus();
             }
         }
 
@@ -4493,8 +4473,9 @@
             window.location.href = '/auth/google';
         }
 
-        function updateAuthUI(isAuthenticated) {
-            logAuth("Mise à jour de l'interface utilisateur d'authentification");
+        function displayAuthStatus() {
+            logAuth("Affichage du statut d'authentification");
+            logAuth("GoogleUser:", googleUser);
             authStatusPanel.classList.add('hidden');
             authContentPanel.classList.remove('hidden');
 
@@ -4502,28 +4483,28 @@
             const userProfilePic = document.getElementById('user-profile-pic');
             const authBtn = document.getElementById('auth-btn');
 
-            if (isAuthenticated) {
+            if (googleUser) {
                 logAuth("Affichage du panneau utilisateur connecté");
                 loggedInPanel.classList.remove('hidden');
                 loggedOutPanel.classList.add('hidden');
-                authUserName.textContent = currentUser.name || currentUser.email || 'Utilisateur';
+                authUserName.textContent = googleUser.name || googleUser.email || 'Utilisateur';
 
                 // Afficher la photo de profil si disponible
-                if (currentUser.picture) {
-                    userProfilePic.src = currentUser.picture;
+                if (googleUser.picture) {
+                    userProfilePic.src = googleUser.picture;
                     userProfilePic.classList.remove('hidden');
                     authIcon.classList.add('hidden');
-                    authBtn.title = `Connecté en tant que ${currentUser.name || currentUser.email}`;
+                    authBtn.title = `Connecté en tant que ${googleUser.name || googleUser.email}`;
                 } else {
                     // Pas de photo, garder l'icône mais changer le style
                     userProfilePic.classList.add('hidden');
                     authIcon.classList.remove('hidden');
                     authIcon.className = 'fas fa-user-check text-green-400';
-                    authBtn.title = `Connecté en tant que ${currentUser.name || currentUser.email}`;
+                    authBtn.title = `Connecté en tant que ${googleUser.name || googleUser.email}`;
                 }
 
-                // loadSavedContexts() est appelé dans checkAuthStatus après la confirmation de connexion
-                // enableAutoSync() est appelé dans checkAuthStatus après la confirmation de connexion
+                loadSavedContexts(); // Load contexts after confirming login
+                enableAutoSync(); // Activer la synchronisation automatique
             } else {
                 logAuth("Affichage du panneau utilisateur non connecté");
                 loggedInPanel.classList.add('hidden');
@@ -4545,7 +4526,7 @@
                 alert("Veuillez entrer un nom pour le contexte.");
                 return;
             }
-            if (!currentUser) {
+            if (!googleUser) {
                 alert("Vous devez être connecté pour sauvegarder des contextes.");
                 return;
             }
@@ -4590,10 +4571,8 @@
         }
 
         async function loadSavedContexts() {
-            if (!currentUser) return;
-
             savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Chargement des contextes...</p>';
-            if (!currentUser) {
+            if (!googleUser) {
                 savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Connectez-vous pour voir vos contextes.</p>';
                 return;
             }
@@ -4601,26 +4580,25 @@
             try {
                 const response = await fetch('/api/contexts');
                 if (response.ok) {
-                    const contexts = await response.json();
-                    savedContexts = contexts; // Store fetched contexts
-                    displaySavedContexts(contexts);
+                    savedContexts = await response.json();
+                    renderSavedContexts();
                 } else {
-                    throw new Error(`Erreur HTTP: ${response.status}`);
+                    throw new Error(`Failed to fetch contexts: ${response.status}`);
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement des contextes:', error.message || error);
+                console.error("Error loading contexts:", error);
                 savedContextsDiv.innerHTML = '<p class="text-red-500">Impossible de charger les contextes.</p>';
             }
         }
 
-        function displaySavedContexts(contexts) {
+        function renderSavedContexts() {
             savedContextsDiv.innerHTML = ''; // Clear previous content
-            if (!contexts || contexts.length === 0) {
+            if (savedContexts.length === 0) {
                 savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Aucun contexte sauvegardé.</p>';
                 return;
             }
 
-            contexts.forEach(context => {
+            savedContexts.forEach(context => {
                 const contextEl = document.createElement('div');
                 contextEl.className = 'flex justify-between items-center bg-gray-700 p-2 rounded mb-1';
                 contextEl.innerHTML = `
@@ -4745,7 +4723,7 @@
 
                 if (response.ok) {
                     savedContexts = savedContexts.filter(c => c.id !== contextId);
-                    displaySavedContexts(savedContexts);
+                    renderSavedContexts();
                     alert("Contexte supprimé.");
                 } else {
                     throw new Error(`Failed to delete context: ${response.status}`);
@@ -5608,21 +5586,17 @@
 
         // --- Settings Modal Functions ---
         function openSettingsOnSeasonTab() {
-            try {
-                settingsModal.classList.remove('hidden');
-                loadSettings();
-                setupSettingsTabSwitching();
+            settingsModal.classList.remove('hidden');
+            loadSettings();
+            setupSettingsTabSwitching();
 
-                // Ouvrir directement l'onglet "Saisons"
-                setTimeout(() => {
-                    const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
-                    if (seasonTabButton) {
-                        seasonTabButton.click();
-                    }
-                }, 100);
-            } catch (error) {
-                console.error('Erreur lors de l\'ouverture des paramètres:', error);
-            }
+            // Ouvrir directement l'onglet "Saisons"
+            setTimeout(() => {
+                const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
+                if (seasonTabButton) {
+                    seasonTabButton.click();
+                }
+            }, 100);
         }
 
         function setupSettingsEventListeners() {
@@ -5916,9 +5890,9 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
 
         // Start the application only once when DOM is loaded
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
+            document.addEventListener('DOMContentLoaded', startApp);
         } else {
-            initializeApp();
+            startApp();
         }
 
     </script>
