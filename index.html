@@ -868,6 +868,39 @@
             console.log(`🔐 [AUTH] ${message}`, data || '');
         }
 
+        // --- Load Initial Data Functions ---
+        async function loadInitialLocations() {
+            try {
+                console.log("🗺️ Loading locations from:", LOCATIONS_URL);
+                const response = await fetch(LOCATIONS_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log("✅ Locations loaded:", data.locations?.length || 0, "locations");
+                locationsData = data;
+                scheduleAutoSync();
+            } catch (error) {
+                console.warn("⚠️ Could not load locations:", error);
+                locationsData = getDefaultLocations();
+            }
+        }
+
+        function loadRegionsFromLocal() {
+            const saved = localStorage.getItem('regionsData');
+            if (saved) {
+                try {
+                    regionsData = JSON.parse(saved);
+                    console.log("✅ Regions loaded from localStorage:", regionsData.regions?.length || 0, "regions");
+                } catch (error) {
+                    console.warn("⚠️ Error parsing saved regions:", error);
+                    regionsData = getDefaultRegions();
+                }
+            } else {
+                regionsData = getDefaultRegions();
+            }
+        }
+
         // --- Check for authentication errors in URL ---
         function checkAuthError() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -884,6 +917,63 @@
                 }
             } else if (urlParams.has('auth_success')) {
                 console.log('✅ Authentification réussie');
+            }
+        }
+
+        // --- Map Functions ---
+        function initializeMap() {
+            console.log("🗺️ Initializing map...");
+            MAP_WIDTH = mapImage.naturalWidth;
+            MAP_HEIGHT = mapImage.naturalHeight;
+            
+            console.log(`📏 Map dimensions: ${MAP_WIDTH}x${MAP_HEIGHT}`);
+            
+            // Set canvas dimensions
+            drawingCanvas.width = MAP_WIDTH;
+            drawingCanvas.height = MAP_HEIGHT;
+            
+            // Set SVG dimensions
+            regionsLayer.setAttribute('width', MAP_WIDTH);
+            regionsLayer.setAttribute('height', MAP_HEIGHT);
+            regionsLayer.setAttribute('viewBox', `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`);
+            
+            // Apply initial styles
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            
+            // Initial rendering
+            renderLocations();
+            renderRegions();
+            
+            // Set initial scale and position
+            scale = Math.min(viewport.clientWidth / MAP_WIDTH, viewport.clientHeight / MAP_HEIGHT) * 0.8;
+            panX = (viewport.clientWidth - MAP_WIDTH * scale) / 2;
+            panY = (viewport.clientHeight - MAP_HEIGHT * scale) / 2;
+            
+            applyTransform();
+            setupEventListeners();
+            
+            // Hide loader
+            if (loaderOverlay) {
+                loaderOverlay.style.display = 'none';
+            }
+            
+            console.log("✅ Map initialized successfully");
+        }
+
+        function handleImageError() {
+            console.error("❌ Failed to load map image");
+            if (loaderOverlay) {
+                loaderOverlay.innerHTML = `
+                    <div class="text-2xl text-red-500 text-center p-4">
+                        <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
+                        Erreur lors du chargement de la carte.
+                        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                            Recharger
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -3183,6 +3273,190 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
 
             const result = await callGemini(prompt, button);
             journeyLogContent.innerHTML = result.replace(/\n/g, '<br>');
+        }
+
+        // --- Rendering Functions ---
+        function renderLocations() {
+            locationsLayer.innerHTML = '';
+            
+            if (!locationsData || !locationsData.locations) return;
+            
+            locationsData.locations.forEach(location => {
+                if (!location.coordinates) return;
+                
+                const marker = document.createElement('div');
+                marker.className = 'location-marker';
+                marker.dataset.id = location.id;
+                marker.style.cssText = `
+                    position: absolute;
+                    left: ${location.coordinates.x - 12}px;
+                    top: ${location.coordinates.y - 12}px;
+                    width: 24px;
+                    height: 24px;
+                    background-color: ${colorMap[location.color] || colorMap.red};
+                    border: 4px solid ${location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)'};
+                    border-radius: 50%;
+                    cursor: pointer;
+                    z-index: 10;
+                    transition: transform 0.2s ease;
+                `;
+                
+                marker.addEventListener('click', showInfoBox);
+                marker.addEventListener('mouseenter', () => {
+                    marker.style.transform = 'scale(1.2)';
+                });
+                marker.addEventListener('mouseleave', () => {
+                    marker.style.transform = 'scale(1)';
+                });
+                
+                locationsLayer.appendChild(marker);
+            });
+        }
+
+        function renderRegions() {
+            regionsLayer.innerHTML = '';
+            
+            if (!regionsData || !regionsData.regions) return;
+            
+            regionsData.regions.forEach(region => {
+                if (!region.path || region.path.length < 3) return;
+                
+                const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const pathData = `M ${region.path.map(p => `${p.x},${p.y}`).join(' L ')} Z`;
+                
+                pathElement.setAttribute('d', pathData);
+                pathElement.setAttribute('fill', regionColorMap[region.color] || regionColorMap.green);
+                pathElement.setAttribute('stroke', colorMap[region.color] || colorMap.green);
+                pathElement.setAttribute('stroke-width', '2');
+                pathElement.setAttribute('opacity', '0.7');
+                pathElement.className = 'region';
+                pathElement.dataset.regionId = region.id;
+                
+                pathElement.addEventListener('click', (e) => showRegionInfo(e, region));
+                
+                regionsLayer.appendChild(pathElement);
+            });
+        }
+
+        function applyTransform() {
+            const transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            mapContainer.style.transform = transform;
+        }
+
+        // --- Event Handlers ---
+        function showInfoBox(event) {
+            // Implementation here
+            console.log("Info box triggered");
+        }
+
+        function showRegionInfo(event, region) {
+            // Implementation here
+            console.log("Region info triggered", region);
+        }
+
+        function hideInfoBox() {
+            if (infoBox) infoBox.classList.add('hidden');
+        }
+
+        function setupEventListeners() {
+            // Setup viewport events
+            if (viewport) {
+                viewport.addEventListener('wheel', handleWheel);
+                viewport.addEventListener('mousedown', handleMouseDown);
+                viewport.addEventListener('mousemove', handleMouseMove);
+                viewport.addEventListener('mouseup', handleMouseUp);
+                viewport.addEventListener('click', handleClick);
+            }
+        }
+
+        function handleWheel(event) {
+            // Implementation here
+        }
+
+        function handleMouseDown(event) {
+            // Implementation here
+        }
+
+        function handleMouseMove(event) {
+            // Implementation here
+        }
+
+        function handleMouseUp(event) {
+            // Implementation here
+        }
+
+        function handleClick(event) {
+            // Implementation here
+        }
+
+        function setupFilters() {
+            // Implementation here
+        }
+
+        function updateFilters() {
+            // Implementation here
+        }
+
+        function loadSavedSeason() {
+            const saved = localStorage.getItem('currentSeason');
+            if (saved && seasonNames[saved]) {
+                currentSeason = saved;
+            }
+            updateSeasonDisplay();
+        }
+
+        function updateSeasonDisplay() {
+            const seasonIndicator = document.getElementById('season-indicator');
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            
+            if (seasonIndicator) {
+                const mainSeason = currentSeason.split('-')[0];
+                seasonIndicator.textContent = seasonSymbols[mainSeason] || '🌱';
+                seasonIndicator.title = `Saison actuelle: ${seasonNames[currentSeason]}`;
+            }
+            
+            if (calendarDateIndicator && currentCalendarDate) {
+                calendarDateIndicator.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                calendarDateIndicator.classList.remove('hidden');
+            }
+        }
+
+        function setupSeasonListeners() {
+            // Setup season radio buttons
+            document.querySelectorAll('input[name="season"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        currentSeason = e.target.value;
+                        localStorage.setItem('currentSeason', currentSeason);
+                        updateSeasonDisplay();
+                        scheduleAutoSync();
+                    }
+                });
+            });
+        }
+
+        function saveCalendarToLocal() {
+            if (calendarData) {
+                localStorage.setItem('calendarData', JSON.stringify(calendarData));
+            }
+            if (currentCalendarDate) {
+                localStorage.setItem('currentCalendarDate', JSON.stringify(currentCalendarDate));
+            }
+            localStorage.setItem('isCalendarMode', isCalendarMode.toString());
+        }
+
+        function loadUserData() {
+            // Implementation for loading user data
+        }
+
+        function loadSavedContexts() {
+            // Implementation for loading saved contexts
+        }
+
+        function toggleAuthModal() {
+            if (authModal) {
+                authModal.classList.toggle('hidden');
+            }
         }
 
         // --- Load data and start the app ---
