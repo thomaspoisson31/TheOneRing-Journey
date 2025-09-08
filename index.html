@@ -14,8 +14,8 @@
     <header class="bg-gray-900 text-center p-2 shadow-lg z-20 relative">
         <h1 class="text-xl font-bold tracking-wider">Voyages en Terre du Milieu</h1>
         <div class="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center">
-            <div id="calendar-date-indicator" class="text-sm text-gray-300 mr-3 hidden">1 Gwaeron</div>
-            <div id="season-indicator" class="text-2xl" title="Saison actuelle">🌱</div>
+            <div id="calendar-date-indicator" class="text-sm text-gray-300 mr-3 hidden cursor-pointer hover:text-white transition-colors" title="Cliquez pour ouvrir les paramètres de saison">1 Gwaeron</div>
+            <div id="season-indicator" class="text-2xl cursor-pointer hover:scale-110 transition-transform" title="Cliquez pour ouvrir les paramètres de saison">🌱</div>
         </div>
     </header>
 
@@ -5228,6 +5228,20 @@
         }, 1000);
 
         // --- Settings Modal Functions ---
+        function openSettingsOnSeasonTab() {
+            settingsModal.classList.remove('hidden');
+            loadSettings();
+            setupSettingsTabSwitching();
+            
+            // Ouvrir directement l'onglet "Saisons"
+            setTimeout(() => {
+                const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
+                if (seasonTabButton) {
+                    seasonTabButton.click();
+                }
+            }, 100);
+        }
+
         function setupSettingsEventListeners() {
             waitForElement('#settings-btn', (settingsBtn) => {
                 settingsBtn.addEventListener('click', () => {
@@ -5246,6 +5260,15 @@
             // Event listener pour le bouton Wizard
             waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
                 wizardBtn.addEventListener('click', handleGenerateAdventurers);
+            });
+
+            // Event listeners pour les indicateurs de saison dans le header
+            waitForElement('#season-indicator', (seasonIndicator) => {
+                seasonIndicator.addEventListener('click', openSettingsOnSeasonTab);
+            });
+
+            waitForElement('#calendar-date-indicator', (calendarIndicator) => {
+                calendarIndicator.addEventListener('click', openSettingsOnSeasonTab);
             });
         }
 
