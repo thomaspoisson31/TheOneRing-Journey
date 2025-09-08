@@ -789,9 +789,184 @@
         let lastSyncTime = 0;
         const SYNC_DELAY = 2000; // 2 seconds delay before auto-sync
 
+        // --- Check Google Authentication ---
+        function checkGoogleAuth() {
+            checkAuthStatus();
+        }
+
+        // --- Auto-sync functions ---
+        function enableAutoSync() {
+            autoSyncEnabled = true;
+            console.log('🔄 Auto-sync activé');
+        }
+
+        function disableAutoSync() {
+            autoSyncEnabled = false;
+            console.log('🔄 Auto-sync désactivé');
+        }
+
+        function scheduleAutoSync() {
+            if (!autoSyncEnabled || !googleUser) return;
+
+            clearTimeout(window.autoSyncTimeout);
+            window.autoSyncTimeout = setTimeout(async () => {
+                try {
+                    await autoSaveToCloud();
+                } catch (error) {
+                    console.error('Erreur lors de la sync automatique:', error);
+                }
+            }, SYNC_DELAY);
+        }
+
+        async function autoSaveToCloud() {
+            if (!googleUser) return;
+
+            const currentData = {
+                locations: locationsData,
+                regions: regionsData,
+                scale: scale,
+                panX: panX,
+                panY: panY,
+                activeFilters: activeFilters,
+                journeyPath: journeyPath,
+                totalPathPixels: totalPathPixels,
+                startPoint: startPoint,
+                lastPoint: lastPoint,
+                journeyDiscoveries: journeyDiscoveries,
+                currentSeason: currentSeason,
+                calendarData: calendarData,
+                currentCalendarDate: currentCalendarDate,
+                isCalendarMode: isCalendarMode,
+                voyageSegments: voyageSegments,
+                currentSegmentIndex: currentSegmentIndex,
+                isVoyageActive: isVoyageActive,
+                activatedSegments: Array.from(activatedSegments)
+            };
+
+            try {
+                const response = await fetch('/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(currentData)
+                });
+
+                if (response.ok) {
+                    lastSyncTime = Date.now();
+                    console.log('🔄 Auto-sync réussie');
+                } else {
+                    console.warn('⚠️ Erreur lors de l\'auto-sync');
+                }
+            } catch (error) {
+                console.error('❌ Erreur réseau lors de l\'auto-sync:', error);
+            }
+        }
+
         // --- Authentication Debug Logs ---
         function logAuth(message, data = null) {
             console.log(`🔐 [AUTH] ${message}`, data || '');
+        }
+
+        // --- Check for authentication errors in URL ---
+        function checkAuthError() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('auth_error')) {
+                const errorType = urlParams.get('auth_error');
+                const errorDesc = urlParams.get('desc') || '';
+                console.warn(`🚨 Auth Error: ${errorType} - ${errorDesc}`);
+                
+                // Optionally show user-friendly error message
+                if (errorType === 'oauth_not_configured') {
+                    console.warn('OAuth non configuré sur le serveur');
+                } else if (errorType === 'google_error') {
+                    console.warn('Erreur Google OAuth:', errorDesc);
+                }
+            } else if (urlParams.has('auth_success')) {
+                console.log('✅ Authentification réussie');
+            }
+        }
+
+        // --- Ensure Maps tab exists ---
+        function ensureMapsExists() {
+            const tabsContainer = document.getElementById('settings-tabs');
+            const mapsTabButton = document.querySelector('.settings-tab-button[data-tab="maps"]');
+
+            if (!mapsTabButton && tabsContainer) {
+                // Créer le bouton de l'onglet Cartes
+                const mapsTab = document.createElement('button');
+                mapsTab.className = 'settings-tab-button px-6 py-3 text-gray-400 border-b-2 border-transparent font-medium hover:text-white';
+                mapsTab.setAttribute('data-tab', 'maps');
+                mapsTab.innerHTML = '<i class="fas fa-map mr-2"></i>Cartes';
+
+                // Insérer l'onglet Cartes en position 1 (après Aventuriers)
+                const adventurersTab = document.querySelector('.settings-tab-button[data-tab="adventurers"]');
+                if (adventurersTab && adventurersTab.nextSibling) {
+                    tabsContainer.insertBefore(mapsTab, adventurersTab.nextSibling);
+                } else {
+                    tabsContainer.appendChild(mapsTab);
+                }
+            }
+
+            // Créer le contenu de l'onglet Cartes s'il n'existe pas
+            let mapsTabContent = document.getElementById('maps-tab');
+            if (!mapsTabContent) {
+                const settingsContent = document.querySelector('.flex-grow.overflow-hidden');
+                if (settingsContent) {
+                    mapsTabContent = document.createElement('div');
+                    mapsTabContent.id = 'maps-tab';
+                    mapsTabContent.className = 'settings-tab-content h-full flex flex-col';
+                    mapsTabContent.style.display = 'none';
+
+                    mapsTabContent.innerHTML = `
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h4 class="text-lg font-semibold">Gestion des cartes</h4>
+                            <div class="flex items-center space-x-2">
+                                <button id="upload-map-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center space-x-2">
+                                    <i class="fas fa-upload mr-1"></i>
+                                    <span>Ajouter une carte</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-400 mb-4 flex-shrink-0">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Dimensions recommandées : 5103 x 3296 pixels (formats supportés : WEBP, PNG, JPG)
+                        </div>
+
+                        <div class="flex-grow overflow-hidden flex flex-col">
+                            <div class="mb-4 flex-shrink-0">
+                                <h5 class="text-md font-semibold mb-2">Cartes actives</h5>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Carte par défaut (joueur)</label>
+                                        <select id="active-player-map" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                            <option value="default">Carte par défaut</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Carte gardien</label>
+                                        <select id="active-loremaster-map" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
+                                            <option value="default">Carte par défaut</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow overflow-hidden">
+                                <h5 class="text-md font-semibold mb-2">Cartes disponibles</h5>
+                                <div id="maps-list" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <p class="text-gray-400 italic text-center">Aucune carte personnalisée.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="file" id="map-file-input" accept=".webp,.png,.jpg,.jpeg" class="hidden">
+                    `;
+
+                    settingsContent.appendChild(mapsTabContent);
+                }
+            }
         }
 
         // --- HTML Escape Function ---
