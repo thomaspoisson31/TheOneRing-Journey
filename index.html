@@ -97,7 +97,7 @@
             </div>
             <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2">
                 <div id="traversed-regions-info" class="hidden">
-                    <div class="font-semibold text-green-400 mb-1">Régions traversées :</div>
+                    <div class="font-semibold text-blue-400 mb-1">Découvertes du voyage :</div>
                     <div id="traversed-regions-list" class="text-gray-300"></div>
                 </div>
                 <div id="nearby-locations-info" class="hidden">
@@ -544,7 +544,7 @@
                     </div>
 
                     <!-- Aventuriers Tab -->
-                    <div id="adventurers-tab" class="settings-tab-content h-full flex flex-col">
+                    <div id="adventurers-tab" class="settings-tab-content h-full flex flex-col" style="display: none;">
                         <div class="flex justify-between items-center mb-4 flex-shrink-0">
                             <h4 class="text-lg font-semibold">Description du groupe d'aventuriers</h4>
                             <div class="flex items-center space-x-2">
@@ -638,7 +638,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div id="calendar-status" class="mb-3 text-sm">
                                     <span id="calendar-status-text" class="text-gray-400">Aucun calendrier chargé</span>
                                 </div>
@@ -893,7 +893,7 @@
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');
             const savedConfig = localStorage.getItem('currentMapConfig');
-            
+
             if (savedMaps) {
                 try {
                     availableMaps = JSON.parse(savedMaps);
@@ -902,7 +902,7 @@
                     availableMaps = [];
                 }
             }
-            
+
             if (savedConfig) {
                 try {
                     currentMapConfig = JSON.parse(savedConfig);
@@ -910,7 +910,7 @@
                     console.error('Error loading map config:', e);
                 }
             }
-            
+
             // Ajouter les cartes par défaut si la liste est vide
             if (availableMaps.length === 0) {
                 availableMaps = [
@@ -946,7 +946,7 @@
             mapsGrid.innerHTML = availableMaps.map(map => {
                 const isActive = (map.type === 'player' && currentMapConfig.playerMap === map.filename) ||
                                 (map.type === 'loremaster' && currentMapConfig.loremasterMap === map.filename);
-                
+
                 return `
                     <div class="bg-gray-800 rounded-lg p-3 border ${isActive ? 'border-blue-500' : 'border-gray-600'} relative">
                         ${isActive ? '<div class="absolute top-2 right-2 text-blue-400"><i class="fas fa-check-circle"></i></div>' : ''}
@@ -956,8 +956,8 @@
                         <div class="text-sm font-medium text-white mb-1">${map.name}</div>
                         <div class="text-xs text-gray-400 mb-2">${map.type === 'player' ? 'Carte Joueur' : 'Carte Gardien'}</div>
                         <div class="flex space-x-2">
-                            <button class="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs ${isActive ? 'opacity-50 cursor-not-allowed' : ''}" 
-                                    onclick="setActiveMap('${map.filename}', '${map.type}')" 
+                            <button class="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs ${isActive ? 'opacity-50 cursor-not-allowed' : ''}"
+                                    onclick="setActiveMap('${map.filename}', '${map.type}')"
                                     ${isActive ? 'disabled' : ''}>
                                 ${isActive ? 'Active' : 'Activer'}
                             </button>
@@ -983,7 +983,7 @@
                 loremasterMapImage.src = filename;
                 document.getElementById('active-loremaster-map-preview').src = filename;
             }
-            
+
             saveMapsData();
             renderMapsGrid();
         }
@@ -997,7 +997,7 @@
             const previewContainer = document.getElementById('map-preview-container');
             const previewImage = document.getElementById('map-preview-image');
             const saveText = document.getElementById('save-map-text');
-            
+
             if (editIndex >= 0) {
                 const map = availableMaps[editIndex];
                 title.innerHTML = '<i class="fas fa-map-marked-alt mr-2"></i>Modifier la carte';
@@ -1014,7 +1014,7 @@
                 document.querySelector('input[name="map-type"][value="player"]').checked = true;
                 saveText.textContent = 'Ajouter';
             }
-            
+
             modal.classList.remove('hidden');
         }
 
@@ -1032,7 +1032,7 @@
                 alert('Impossible de supprimer une carte par défaut.');
                 return;
             }
-            
+
             if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
                 availableMaps.splice(index, 1);
                 saveMapsData();
@@ -1043,12 +1043,12 @@
         function setupMapsEventListeners() {
             // Bouton ajouter une carte
             document.getElementById('add-map-btn')?.addEventListener('click', () => openMapModal());
-            
+
             // Boutons de la modal
             document.getElementById('close-map-modal')?.addEventListener('click', closeMapModal);
             document.getElementById('cancel-map-btn')?.addEventListener('click', closeMapModal);
             document.getElementById('save-map-btn')?.addEventListener('click', saveMap);
-            
+
             // Preview de l'image lors de la sélection
             document.getElementById('map-file-input')?.addEventListener('change', handleMapFileSelect);
         }
@@ -1057,7 +1057,7 @@
             const file = event.target.files[0];
             const previewContainer = document.getElementById('map-preview-container');
             const previewImage = document.getElementById('map-preview-image');
-            
+
             if (file && file.type.match('image.*')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -1072,23 +1072,23 @@
             const nameInput = document.getElementById('map-name-input');
             const fileInput = document.getElementById('map-file-input');
             const mapType = document.querySelector('input[name="map-type"]:checked').value;
-            
+
             if (!nameInput.value.trim()) {
                 alert('Veuillez entrer un nom pour la carte.');
                 return;
             }
-            
+
             if (editingMapIndex >= 0) {
                 // Modification d'une carte existante
                 availableMaps[editingMapIndex].name = nameInput.value.trim();
                 availableMaps[editingMapIndex].type = mapType;
-                
+
                 if (fileInput.files.length > 0) {
                     // Nouvelle image sélectionnée
                     const file = fileInput.files[0];
                     const filename = `map_${Date.now()}_${file.name}`;
                     availableMaps[editingMapIndex].filename = filename;
-                    
+
                     // Note: Dans un vrai système, ici on uploadrait le fichier
                     // Pour cette démo, on utilise un data URL
                     const reader = new FileReader();
@@ -1107,10 +1107,10 @@
                     alert('Veuillez sélectionner un fichier image.');
                     return;
                 }
-                
+
                 const file = fileInput.files[0];
                 const filename = `map_${Date.now()}_${file.name}`;
-                
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const newMap = {
@@ -1121,7 +1121,7 @@
                         isDefault: false,
                         dataUrl: e.target.result
                     };
-                    
+
                     availableMaps.push(newMap);
                     saveMapsData();
                     renderMapsGrid();
@@ -1130,7 +1130,7 @@
                 reader.readAsDataURL(file);
                 return;
             }
-            
+
             saveMapsData();
             renderMapsGrid();
             closeMapModal();
@@ -2206,14 +2206,14 @@
         function loadCalendarFromCSV(csvContent) {
             const lines = csvContent.trim().split('\n');
             const calendar = [];
-            
+
             for (const line of lines) {
                 const parts = line.split(',');
                 if (parts.length >= 3) {
                     const monthName = parts[0].trim();
                     const season = parts[1].trim();
                     const days = parts.slice(2).map(d => parseInt(d.trim())).filter(d => !isNaN(d));
-                    
+
                     calendar.push({
                         name: monthName,
                         season: season,
@@ -2221,7 +2221,7 @@
                     });
                 }
             }
-            
+
             return calendar;
         }
 
@@ -2239,7 +2239,7 @@
             const savedCalendar = localStorage.getItem('calendarData');
             const savedDate = localStorage.getItem('currentCalendarDate');
             const savedMode = localStorage.getItem('isCalendarMode');
-            
+
             if (savedCalendar) {
                 try {
                     calendarData = JSON.parse(savedCalendar);
@@ -2247,7 +2247,7 @@
                     console.error('Error loading calendar:', e);
                 }
             }
-            
+
             if (savedDate) {
                 try {
                     currentCalendarDate = JSON.parse(savedDate);
@@ -2255,7 +2255,7 @@
                     console.error('Error loading calendar date:', e);
                 }
             }
-            
+
             isCalendarMode = savedMode === 'true';
         }
 
@@ -2266,13 +2266,13 @@
             const daySelect = document.getElementById('calendar-day-select');
             const manualSeasons = document.getElementById('manual-seasons-section');
             const seasonModeInfo = document.getElementById('season-mode-info');
-            
+
             if (calendarData && calendarData.length > 0) {
                 isCalendarMode = true;
                 calendarStatus.textContent = `Calendrier chargé (${calendarData.length} mois)`;
                 calendarStatus.className = 'text-green-400';
                 dateSelector.classList.remove('hidden');
-                
+
                 // Populate month selector with season icons
                 monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
                 calendarData.forEach((month, index) => {
@@ -2284,7 +2284,7 @@
                     option.textContent = `${seasonIcon} ${month.name}`;
                     monthSelect.appendChild(option);
                 });
-                
+
                 // Set current selections
                 if (currentCalendarDate) {
                     const monthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
@@ -2294,7 +2294,7 @@
                         daySelect.value = currentCalendarDate.day;
                     }
                 }
-                
+
                 // Hide manual seasons completely
                 manualSeasons.style.display = 'none';
                 seasonModeInfo.textContent = 'Mode calendrier : la saison est déterminée automatiquement par la date sélectionnée.';
@@ -2303,7 +2303,7 @@
                 calendarStatus.textContent = 'Aucun calendrier chargé';
                 calendarStatus.className = 'text-gray-400';
                 dateSelector.classList.add('hidden');
-                
+
                 // Show manual seasons
                 manualSeasons.style.display = 'block';
                 seasonModeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
@@ -2314,9 +2314,9 @@
             const monthSelect = document.getElementById('calendar-month-select');
             const daySelect = document.getElementById('calendar-day-select');
             const monthIndex = parseInt(monthSelect.value);
-            
+
             daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
-            
+
             if (monthIndex >= 0 && calendarData[monthIndex]) {
                 const month = calendarData[monthIndex];
                 month.days.forEach(day => {
@@ -2333,24 +2333,24 @@
             const daySelect = document.getElementById('calendar-day-select');
             const monthIndex = parseInt(monthSelect.value);
             const day = parseInt(daySelect.value);
-            
+
             if (monthIndex >= 0 && !isNaN(day) && calendarData[monthIndex]) {
                 const month = calendarData[monthIndex];
                 currentCalendarDate = {
                     month: month.name,
                     day: day
                 };
-                
+
                 // Update season based on exact calendar season - use the season directly from CSV
                 const calendarSeason = month.season.toLowerCase();
                 console.log("📅 Saison du calendrier CSV:", calendarSeason, "pour le mois:", month.name);
-                
+
                 // Use the exact season from the CSV as-is
                 currentSeason = calendarSeason;
-                
+
                 // Save the season for consistency
                 localStorage.setItem('currentSeason', currentSeason);
-                
+
                 updateSeasonDisplay();
                 saveCalendarToLocal();
                 scheduleAutoSync();
@@ -2362,16 +2362,16 @@
                 alert('Aucun calendrier à exporter');
                 return;
             }
-            
+
             const csvLines = calendarData.map(month => {
                 const daysStr = month.days.join(',');
                 return `${month.name},${month.season},${daysStr}`;
             });
-            
+
             const csvContent = csvLines.join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
-            
+
             const a = document.createElement('a');
             a.href = url;
             a.download = 'calendrier.csv';
@@ -2385,10 +2385,10 @@
         function updateSeasonDisplay() {
             const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
             const symbol = seasonSymbols[seasonMainName] || '🌿'; // fallback symbol
-            
+
             // Use the season name from seasonNames if available, otherwise use currentSeason directly
             const fullName = seasonNames[currentSeason] || currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
-            
+
             console.log("🌱 Affichage saison:", {
                 currentSeason: currentSeason,
                 seasonMainName: seasonMainName,
@@ -2396,14 +2396,14 @@
                 fullName: fullName,
                 isCalendarMode: isCalendarMode
             });
-            
+
             // Update header indicator
             const seasonIndicator = document.getElementById('season-indicator');
             if (seasonIndicator) {
                 seasonIndicator.textContent = symbol;
                 seasonIndicator.title = `Saison actuelle: ${fullName}`;
             }
-            
+
             // Update calendar date indicator in header
             const calendarDateIndicator = document.getElementById('calendar-date-indicator');
             if (calendarDateIndicator && currentCalendarDate && isCalendarMode) {
@@ -2412,15 +2412,15 @@
             } else {
                 calendarDateIndicator.classList.add('hidden');
             }
-            
+
             // Update settings display
             const currentSeasonSymbol = document.getElementById('current-season-symbol');
             const currentSeasonText = document.getElementById('current-season-text');
             const currentCalendarDateElement = document.getElementById('current-calendar-date');
-            
+
             if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
             if (currentSeasonText) currentSeasonText.textContent = fullName;
-            
+
             if (currentCalendarDateElement && currentCalendarDate && isCalendarMode) {
                 currentCalendarDateElement.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
                 currentCalendarDateElement.classList.remove('hidden');
@@ -2441,16 +2441,16 @@
                     }
                 });
             });
-            
+
             // Calendar upload button
             const uploadBtn = document.getElementById('upload-calendar-btn');
             const fileInput = document.getElementById('calendar-file-input');
-            
+
             if (uploadBtn && fileInput) {
                 uploadBtn.addEventListener('click', () => {
                     fileInput.click();
                 });
-                
+
                 fileInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file && file.type === 'text/csv') {
@@ -2482,13 +2482,13 @@
                     fileInput.value = ''; // Reset input
                 });
             }
-            
+
             // Calendar export button
             const exportBtn = document.getElementById('export-calendar-btn');
             if (exportBtn) {
                 exportBtn.addEventListener('click', exportCalendarToCSV);
             }
-            
+
             // Calendar month selector
             const monthSelect = document.getElementById('calendar-month-select');
             if (monthSelect) {
@@ -2497,7 +2497,7 @@
                     updateCalendarDate();
                 });
             }
-            
+
             // Calendar day selector
             const daySelect = document.getElementById('calendar-day-select');
             if (daySelect) {
@@ -2508,12 +2508,12 @@
         function loadSavedSeason() {
             // Load calendar data first
             loadCalendarFromLocal();
-            
+
             const saved = localStorage.getItem('currentSeason');
             if (saved && seasonNames[saved]) {
                 currentSeason = saved;
             }
-            
+
             // Update UI based on calendar mode
             if (isCalendarMode && calendarData) {
                 updateCalendarUI();
@@ -2525,7 +2525,7 @@
                 }
                 updateCalendarUI();
             }
-            
+
             updateSeasonDisplay();
         }
 
@@ -2633,7 +2633,6 @@
 
                             // Mettre à jour l'affichage des distances
                             updateDistanceDisplay();
-
                             // Réinitialiser les régions traversées et lieux proches
                             updateJourneyInfo();
                         }
@@ -2655,7 +2654,7 @@
                         localStorage.setItem('currentSeason', currentSeason);
                         console.log("🌱 Saison utilisateur chargée depuis le cloud:", currentSeason);
                     }
-                    
+
                     // Charger le calendrier depuis le cloud
                     if (userData.calendarData) {
                         calendarData = userData.calendarData;
@@ -2694,7 +2693,7 @@
             document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
                 cb.checked = activeFilters.colors.includes(cb.dataset.color);
             });
-            
+
             // Sauvegarder les filtres après mise à jour
             saveFiltersToLocal();
         }
@@ -2998,7 +2997,7 @@
 
         function updateImageTabForRegionEdit(region) {
             const imageTab = document.getElementById('image-tab');
-            const images = region.images || [];
+            const images = getRegionImages(region);
             const imagesHtml = generateImageEditHTML(images);
 
             const colorPickerHtml = Object.keys(regionColorMap).map(color =>
@@ -3443,7 +3442,7 @@
             document.querySelectorAll('.filter-color-checkbox').forEach(cb => cb.addEventListener('change', updateFilters));
             document.getElementById('reset-filters').addEventListener('click', resetFilters);
             document.getElementById('filter-show-regions').addEventListener('change', updateFilters); // Add listener for region visibility filter
-            
+
             // Charger les filtres sauvegardés
             loadFiltersFromLocal();
         }
@@ -3495,17 +3494,17 @@
                     activeFilters.known = filterState.known || false;
                     activeFilters.visited = filterState.visited || false;
                     activeFilters.colors = filterState.colors || [];
-                    
+
                     // Appliquer les filtres à l'interface
                     document.getElementById('filter-known').checked = activeFilters.known;
                     document.getElementById('filter-visited').checked = activeFilters.visited;
                     document.getElementById('filter-show-regions').checked = filterState.showRegions !== undefined ? filterState.showRegions : true;
-                    
+
                     // Appliquer les couleurs
                     document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
                         cb.checked = activeFilters.colors.includes(cb.dataset.color);
                     });
-                    
+
                     // Appliquer les filtres
                     renderLocations();
                     const showRegions = document.getElementById('filter-show-regions').checked;
@@ -4650,7 +4649,7 @@
                     currentSeason = context.data.currentSeason;
                     localStorage.setItem('currentSeason', currentSeason);
                 }
-                
+
                 // Load calendar data
                 if (context.data.calendarData) {
                     calendarData = context.data.calendarData;
@@ -4661,7 +4660,7 @@
                 if (context.data.isCalendarMode !== undefined) {
                     isCalendarMode = context.data.isCalendarMode;
                 }
-                
+
                 // Save calendar data locally
                 saveCalendarToLocal();
 
@@ -5055,26 +5054,26 @@
             if (!isCalendarMode || !currentCalendarDate || !calendarData) {
                 return null;
             }
-            
+
             // Calculer le jour absolu depuis le début du voyage
             let absoluteDay = dayInSegment;
             for (let i = 0; i < segmentIndex; i++) {
                 absoluteDay += voyageSegments[i].duration;
             }
-            
+
             // Trouver le mois et jour actuels dans le calendrier
             const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
             if (currentMonthIndex === -1) return null;
-            
+
             let monthIndex = currentMonthIndex;
             let day = currentCalendarDate.day + absoluteDay - 1;
-            
+
             // Naviguer à travers les mois si nécessaire
             while (day > calendarData[monthIndex].days.length) {
                 day -= calendarData[monthIndex].days.length;
                 monthIndex = (monthIndex + 1) % calendarData.length;
             }
-            
+
             return {
                 month: calendarData[monthIndex].name,
                 day: day
@@ -5092,13 +5091,13 @@
 
             const contentHtml = dailyContent.map(dayData => {
                 let dayTitle = `Jour ${dayData.day}`;
-                
+
                 // Ajouter la date du calendrier si disponible
                 const calendarDate = getCalendarDateForSegmentDay(segmentIndex, dayData.day);
                 if (calendarDate) {
                     dayTitle += ` (${calendarDate.day} ${calendarDate.month})`;
                 }
-                
+
                 let dayActivities = [];
 
                 // Ajouter les découvertes dans l'ordre chronologique
@@ -5131,7 +5130,7 @@
         }
 
         function updateCurrentSegmentDisplay() {
-            console.log("🔄 Mise à jour affichage segment:", {
+            console.log("🔄 Mise à jour segment:", {
                 currentSegmentIndex: currentSegmentIndex,
                 totalSegments: voyageSegments.length,
                 isVoyageActive: isVoyageActive,
@@ -5590,7 +5589,7 @@
             settingsModal.classList.remove('hidden');
             loadSettings();
             setupSettingsTabSwitching();
-            
+
             // Ouvrir directement l'onglet "Saisons"
             setTimeout(() => {
                 const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
@@ -5782,11 +5781,11 @@
             // Update markdown content displays
             updateMarkdownContent('adventurers-content', adventurersGroup);
             updateMarkdownContent('quest-content', adventurersQuest);
-            
+
             // Load season settings
             loadSavedSeason();
             setupSeasonListeners();
-            
+
             // Load and render maps
             renderMapsGrid();
         }
@@ -5833,7 +5832,7 @@
         async function handleGenerateAdventurers(event) {
             const button = event.currentTarget;
 
-            const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge. 
+            const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
 
 Voici la procédure à suivre :
 
