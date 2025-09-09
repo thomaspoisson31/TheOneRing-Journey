@@ -1,5 +1,4 @@
-
-        // --- DATA ---
+// --- Data ---
         const colorMap = { red: 'rgba(239, 68, 68, 0.8)', blue: 'rgba(59, 130, 246, 0.8)', green: 'rgba(34, 197, 94, 0.8)', violet: 'rgba(139, 92, 246, 0.8)', orange: 'rgba(252, 169, 3, 0.8)', black: 'rgba(17, 24, 39, 0.8)' };
         const regionColorMap = { red: 'rgba(239, 68, 68, 0.15)', blue: 'rgba(59, 130, 246, 0.15)', green: 'rgba(34, 197, 94, 0.15)', violet: 'rgba(139, 92, 246, 0.15)', orange: 'rgba(252, 169, 3, 0.15)', black: 'rgba(17, 24, 39, 0.15)' };
         const getDefaultLocations = () => ({ "locations": [] }); // Fallback to empty if fetch fails
@@ -3332,9 +3331,6 @@
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
 
-                // Remove the default browser tooltip
-                item.removeAttribute('title');
-
                 item.addEventListener('mouseenter', (e) => {
                     // Highlight the corresponding location or region on the map
                     highlightDiscoveryOnMap(discoveryName, discoveryType, true);
@@ -3564,7 +3560,7 @@
         async function handleGenerateJourneyLog(event) {
             const button = event.currentTarget;
             if (!startPoint || !lastPoint) {
-                alert("Vous devez commencer un tracé pour générer une chronique de voyage.");
+                alert("Vous devez commencer un tracé sur la carte pour générer une chronique de voyage.");
                 return;
             }
 
@@ -4741,21 +4737,25 @@
         }
 
         function setupSegmentDiscoveryHighlight() {
-            const discoveryItems = document.querySelectorAll('#segment-content .segment-discovery-item');
+            // Remove existing tooltips
+            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            const discoveryItems = document.querySelectorAll('.segment-discovery-item');
 
             discoveryItems.forEach(item => {
                 const discoveryName = item.dataset.discoveryName;
                 const discoveryType = item.dataset.discoveryType;
 
                 item.addEventListener('mouseenter', () => {
-                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+                    highlightDiscoveryOnMap(discoveryName,                discoveryType, true);
                 });
 
                 item.addEventListener('mouseleave', () => {
                     highlightDiscoveryOnMap(discoveryName, discoveryType, false);
                 });
 
-                // Ajouter un clic pour ouvrir la modal correspondante
+                // Add click event listener to open modal
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -5153,7 +5153,21 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
             }
         }
 
-        // Start the application only once when DOM is loaded
+        // --- Sync Status Display Function ---
+        function updateSyncStatus(message) {
+            console.log(`🔄 Sync Status: ${message}`);
+            // You can also display this message in the UI if there's a status element
+            const statusElement = document.getElementById('sync-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.opacity = '1';
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
+                }, 3000); // Hide after 3 seconds
+            }
+        }
+
+        // Démarrer l'application quand le DOM est prêt
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApp);
         } else {
