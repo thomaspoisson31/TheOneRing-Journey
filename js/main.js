@@ -5155,6 +5155,20 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
             }
         }
 
+        // --- Sync Status Display Function ---
+        function updateSyncStatus(message) {
+            console.log(`🔄 Sync Status: ${message}`);
+            // You can also display this message in the UI if there's a status element
+            const statusElement = document.getElementById('sync-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.opacity = '1';
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
+                }, 3000); // Hide after 3 seconds
+            }
+        }
+
         // Démarrer l'application quand le DOM est prêt
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApp);
@@ -5162,5 +5176,3 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
             initializeApp();
         }
 
-// Démarrer l'application
-initializeApp();
