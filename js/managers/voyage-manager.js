@@ -1,4 +1,3 @@
-
 class VoyageManager {
     constructor(domElements) {
         this.dom = domElements;
@@ -14,14 +13,14 @@ class VoyageManager {
     setupEventListeners() {
         const voyageBtn = this.dom.getElementById('voyage-segments-btn');
         const closeBtn = this.dom.getElementById('close-voyage-segments');
-        
+
         if (voyageBtn) {
             voyageBtn.addEventListener('click', () => {
                 this.dom.showModal(this.dom.voyageSegmentsModal);
                 this.updateDisplay();
             });
         }
-        
+
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
                 this.dom.hideModal(this.dom.voyageSegmentsModal);
@@ -31,13 +30,13 @@ class VoyageManager {
         // Navigation buttons (now for day navigation)
         const prevBtn = this.dom.getElementById('prev-segment-btn');
         const nextBtn = this.dom.getElementById('next-segment-btn');
-        
+
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
                 this.navigateToDay(this.currentDayIndex - 1);
             });
         }
-        
+
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
                 this.navigateToDay(this.currentDayIndex + 1);
@@ -48,7 +47,7 @@ class VoyageManager {
     updateDisplay() {
         const noVoyageMessage = this.dom.getElementById('no-voyage-message');
         const currentSegmentDisplay = this.dom.getElementById('current-segment-display');
-        
+
         // Utiliser les variables globales existantes
         if (journeyPath.length === 0) {
             noVoyageMessage.classList.remove('hidden');
@@ -69,7 +68,7 @@ class VoyageManager {
 
         // Build absolute timeline
         const absoluteTimeline = this.buildAbsoluteTimeline();
-        
+
         // Generate day by day data
         this.dayByDayData = [];
         for (let day = 1; day <= this.totalJourneyDays; day++) {
@@ -114,13 +113,13 @@ class VoyageManager {
 
         const absoluteTimeline = [];
         let currentAbsoluteDay = 1;
-        
+
         discoveries.forEach(discovery => {
             if (discovery.type === 'location') {
                 // Calculer le jour où le lieu est atteint
                 const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
                 const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
-                
+
                 absoluteTimeline.push({
                     discovery: discovery,
                     absoluteDay: discoveryDay,
@@ -130,14 +129,14 @@ class VoyageManager {
                 // Utiliser les segments de région s'ils existent
                 if (window.regionSegments && window.regionSegments.has(discovery.name)) {
                     const regionSegment = window.regionSegments.get(discovery.name);
-                    
+
                     // Calculer les jours basés sur les indices
                     const startRatio = regionSegment.entryIndex / totalPathPoints;
                     const endRatio = regionSegment.exitIndex / totalPathPoints;
-                    
+
                     const regionStartDay = Math.max(1, Math.ceil(startRatio * this.totalJourneyDays));
                     const regionEndDay = Math.max(regionStartDay, Math.ceil(endRatio * this.totalJourneyDays));
-                    
+
                     absoluteTimeline.push({
                         discovery: discovery,
                         absoluteStartDay: regionStartDay,
@@ -148,7 +147,7 @@ class VoyageManager {
                     // Fallback si pas de segment
                     const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
                     const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
-                    
+
                     absoluteTimeline.push({
                         discovery: discovery,
                         absoluteStartDay: discoveryDay,
@@ -167,7 +166,7 @@ class VoyageManager {
         if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
             typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
             typeof calendarData !== 'undefined' && calendarData) {
-            
+
             const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
             if (currentMonthIndex === -1) return `Jour ${day}`;
 
@@ -182,7 +181,7 @@ class VoyageManager {
 
             return `${calendarDay} ${calendarData[monthIndex].name}`;
         }
-        
+
         return `Jour ${day}`;
     }
 
@@ -193,19 +192,19 @@ class VoyageManager {
         }
 
         const currentDay = this.dayByDayData[this.currentDayIndex];
-        
+
         // Update title with calendar date
         this.updateDayTitle(currentDay);
-        
+
         // Update content
         this.updateDayContent(currentDay);
-        
+
         // Update navigation buttons
         this.updateNavigationButtons();
-        
+
         // Update progress bar
         this.updateProgressBar();
-        
+
         // Remove duration slider (no longer needed)
         this.hideDurationSlider();
     }
@@ -230,7 +229,7 @@ class VoyageManager {
             const icon = discovery.type === 'region' ? '🗺️' : '📍';
             const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
             let actionText = '';
-            
+
             if (discovery.proximityType) {
                 actionText = discovery.proximityType === 'traversed' ? 'Traversé' : 'Passage à proximité';
             } else if (discovery.type === 'region') {
@@ -238,7 +237,7 @@ class VoyageManager {
             } else {
                 actionText = 'Découvert';
             }
-            
+
             return `
                 <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg">
                     <span class="text-2xl">${icon}</span>
@@ -269,7 +268,7 @@ class VoyageManager {
         if (targetDayIndex < 0 || targetDayIndex >= this.totalJourneyDays) {
             return;
         }
-        
+
         this.currentDayIndex = targetDayIndex;
         this.renderCurrentDay();
     }
@@ -277,13 +276,13 @@ class VoyageManager {
     updateNavigationButtons() {
         const prevBtn = this.dom.getElementById('prev-segment-btn');
         const nextBtn = this.dom.getElementById('next-segment-btn');
-        
+
         if (prevBtn) {
             prevBtn.style.opacity = this.currentDayIndex > 0 ? '1' : '0.3';
             prevBtn.style.cursor = this.currentDayIndex > 0 ? 'pointer' : 'not-allowed';
             prevBtn.title = this.currentDayIndex > 0 ? 'Jour précédent' : 'Premier jour';
         }
-        
+
         if (nextBtn) {
             const canGoNext = this.currentDayIndex < (this.totalJourneyDays - 1);
             nextBtn.style.opacity = canGoNext ? '1' : '0.3';
@@ -315,7 +314,7 @@ class VoyageManager {
             const progressPercentage = ((this.currentDayIndex + 1) / this.totalJourneyDays) * 100;
             progressFill.style.width = `${progressPercentage}%`;
             progressMarker.style.left = `calc(${progressPercentage}% - 12px)`;
-            
+
             // Update marker text
             const markerText = progressMarker.querySelector('span');
             if (markerText) {
@@ -327,11 +326,11 @@ class VoyageManager {
     renderEmptyDay() {
         const segmentTitle = this.dom.getElementById('segment-title');
         const segmentContent = this.dom.getElementById('segment-content');
-        
+
         if (segmentTitle) {
             segmentTitle.textContent = 'Aucun voyage tracé';
         }
-        
+
         if (segmentContent) {
             segmentContent.innerHTML = '<p class="text-gray-400 text-center p-4">Tracez un chemin sur la carte pour voir les détails du voyage.</p>';
         }
