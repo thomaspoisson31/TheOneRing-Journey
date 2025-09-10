@@ -66,6 +66,9 @@ class VoyageManager {
         const days = Math.ceil(miles / 20); // 20 miles per day
         this.totalJourneyDays = Math.max(1, days);
 
+        // Récupérer ou définir la date de début du voyage
+        this.journeyStartDate = this.getJourneyStartDate();
+
         // Build absolute timeline
         const absoluteTimeline = this.buildAbsoluteTimeline();
 
@@ -161,17 +164,72 @@ class VoyageManager {
         return absoluteTimeline;
     }
 
-    getCalendarDateForDay(day) {
-        // Utiliser les variables globales du calendrier
+    getJourneyStartDate() {
+        // Vérifier si une date de début est déjà enregistrée pour ce voyage
+        const savedJourneyData = this.getSavedJourneyData();
+        if (savedJourneyData && savedJourneyData.startDate) {
+            return savedJourneyData.startDate;
+        }
+
+        // Si pas de date sauvée, utiliser la date courante et l'enregistrer
         if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
             typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
             typeof calendarData !== 'undefined' && calendarData) {
+            
+            const startDate = {
+                month: currentCalendarDate.month,
+                day: currentCalendarDate.day,
+                monthIndex: calendarData.findIndex(m => m.name === currentCalendarDate.month)
+            };
 
-            const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
-            if (currentMonthIndex === -1) return `Jour ${day}`;
+            // Sauvegarder la date de début
+            this.saveJourneyStartDate(startDate);
+            return startDate;
+        }
 
-            let monthIndex = currentMonthIndex;
-            let calendarDay = currentCalendarDate.day + day - 1;
+        return null;
+    }
+
+    getSavedJourneyData() {
+        if (typeof journeyPath === 'undefined' || journeyPath.length === 0) return null;
+        
+        // Créer une signature unique du voyage basée sur les points du tracé
+        const pathSignature = this.createPathSignature(journeyPath);
+        const savedData = localStorage.getItem(`journey_${pathSignature}`);
+        
+        return savedData ? JSON.parse(savedData) : null;
+    }
+
+    saveJourneyStartDate(startDate) {
+        if (typeof journeyPath === 'undefined' || journeyPath.length === 0) return;
+        
+        const pathSignature = this.createPathSignature(journeyPath);
+        const journeyData = {
+            startDate: startDate,
+            pathSignature: pathSignature,
+            savedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem(`journey_${pathSignature}`, JSON.stringify(journeyData));
+        console.log(`📅 Date de début du voyage sauvegardée : ${startDate.day} ${startDate.month}`);
+    }
+
+    createPathSignature(path) {
+        // Créer une signature basée sur les premiers et derniers points + longueur totale
+        if (path.length === 0) return 'empty';
+        
+        const start = path[0];
+        const end = path[path.length - 1];
+        const length = path.length;
+        
+        return `${Math.round(start.x)}_${Math.round(start.y)}_${Math.round(end.x)}_${Math.round(end.y)}_${length}`;
+    }
+
+    getCalendarDateForDay(day) {
+        // Utiliser la date de début fixe du voyage plutôt que la date courante
+        if (this.journeyStartDate && typeof calendarData !== 'undefined' && calendarData) {
+            let monthIndex = this.journeyStartDate.monthIndex;
+            let calendarDay = this.journeyStartDate.day + day - 1;
 
             // Navigate through months if necessary
             while (calendarDay > calendarData[monthIndex].days.length) {
@@ -447,41 +505,37 @@ class VoyageManager {
 
         // Mettre à jour la date du calendrier principal si on est en mode calendrier
         if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
-            typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
-            typeof calendarData !== 'undefined' && calendarData) {
+            this.journeyStartDate && typeof calendarData !== 'undefined' && calendarData) {
 
-            // Calculer la nouvelle date
-            const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
-            if (currentMonthIndex !== -1) {
-                let monthIndex = currentMonthIndex;
-                let newDay = currentCalendarDate.day + this.totalJourneyDays - 1;
+            // Calculer la nouvelle date basée sur la date de début fixe du voyage
+            let monthIndex = this.journeyStartDate.monthIndex;
+            let newDay = this.journeyStartDate.day + this.totalJourneyDays - 1;
 
-                // Naviguer à travers les mois si nécessaire
-                while (newDay > calendarData[monthIndex].days.length) {
-                    newDay -= calendarData[monthIndex].days.length;
-                    monthIndex = (monthIndex + 1) % calendarData.length;
-                }
+            // Naviguer à travers les mois si nécessaire
+            while (newDay > calendarData[monthIndex].days.length) {
+                newDay -= calendarData[monthIndex].days.length;
+                monthIndex = (monthIndex + 1) % calendarData.length;
+            }
 
-                // Mettre à jour la date courante globale
-                currentCalendarDate = {
-                    month: calendarData[monthIndex].name,
-                    day: newDay
-                };
+            // Mettre à jour la date courante globale
+            currentCalendarDate = {
+                month: calendarData[monthIndex].name,
+                day: newDay
+            };
 
-                // Sauvegarder la nouvelle date
-                if (typeof saveCalendarToLocal === 'function') {
-                    saveCalendarToLocal();
-                }
+            // Sauvegarder la nouvelle date
+            if (typeof saveCalendarToLocal === 'function') {
+                saveCalendarToLocal();
+            }
 
-                // Mettre à jour l'affichage de la saison
-                if (typeof updateSeasonDisplay === 'function') {
-                    updateSeasonDisplay();
-                }
+            // Mettre à jour l'affichage de la saison
+            if (typeof updateSeasonDisplay === 'function') {
+                updateSeasonDisplay();
+            }
 
-                // Programmer une synchronisation
-                if (typeof scheduleAutoSync === 'function') {
-                    scheduleAutoSync();
-                }
+            // Programmer une synchronisation
+            if (typeof scheduleAutoSync === 'function') {
+                scheduleAutoSync();
             }
         }
 
