@@ -516,6 +516,11 @@
                 setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
             });
             preloadLoremasterMap();
+
+            // Initialize VoyageManager
+            voyageManager = new VoyageManager(dom);
+            voyageManager.init();
+
             console.log("✅ Map initialized successfully");
         }
 
@@ -4228,7 +4233,7 @@
             const segment = voyageSegments[segmentIndex];
             const dailyContent = [];
 
-            // Calculer les jours couverts par ce segment
+            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
             let segmentStartDays = 0;
             for (let i = 0; i < segmentIndex; i++) {
                 segmentStartDays += voyageSegments[i].duration;
@@ -4802,59 +4807,7 @@
         }
 
         // --- Event listeners pour les segments de voyage ---
-        document.getElementById('voyage-segments-btn').addEventListener('click', () => {
-            console.log("🚢 Bouton segments de voyage cliqué");
-            const modal = document.getElementById('voyage-segments-modal');
-            if (modal) {
-                modal.classList.remove('hidden');
-
-                // Auto-initialize voyage if path exists but voyage is not active
-                if (journeyPath.length > 0 && journeyDiscoveries.length > 0 && !isVoyageActive) {
-                    handleStartVoyage();
-                } else {
-                    updateVoyageSegmentsDisplay();
-                }
-            }
-        });
-
-        document.getElementById('close-voyage-segments').addEventListener('click', () => {
-            console.log("❌ Fermeture modal segments de voyage");
-            const modal = document.getElementById('voyage-segments-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        });
-
-        // Ajouter les event listeners pour les boutons de navigation
-        document.getElementById('prev-segment-btn').addEventListener('click', () => {
-            console.log("⬅️ Clic bouton segment précédent - Index actuel:", currentSegmentIndex);
-            navigateToSegment('prev');
-        });
-
-        document.getElementById('next-segment-btn').addEventListener('click', () => {
-            console.log("➡️ Clic bouton segment suivant - Index actuel:", currentSegmentIndex);
-            navigateToSegment('next');
-        });
-
-        // Event listeners pour la nouvelle interface
-        document.addEventListener('DOMContentLoaded', () => {
-            // Navigation entre segments - supprimé car déjà défini plus haut
-
-            // Slider de durée du segment actuel
-            const durationSlider = document.getElementById('current-segment-duration');
-            if (durationSlider) {
-                durationSlider.addEventListener('input', handleSegmentDurationChange);
-            }
-        });
-
-        // Backup pour s'assurer que les event listeners sont attachés - slider seulement
-        setTimeout(() => {
-            const durationSlider = document.getElementById('current-segment-duration');
-
-            if (durationSlider && !durationSlider.oninput) {
-                durationSlider.addEventListener('input', handleSegmentDurationChange);
-            }
-        }, 1000);
+        // Les event listeners pour les segments de voyage sont maintenant gérés par VoyageManager
 
         // --- Settings Modal Functions ---
         function openSettingsOnSeasonTab() {
