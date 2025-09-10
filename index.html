@@ -371,7 +371,7 @@
 
         <!-- Voyage Segments Modal -->
         <div id="voyage-segments-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center p-4">
-            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col absolute top-4 right-4" style="font-family: 'Merriweather', serif; max-width: 400px;">
+            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex flex-col ml-20" style="font-family: 'Merriweather', serif; width: 90%; height: 90%;">
                 <div class="flex justify-end items-center p-2">
                     <button id="close-voyage-segments" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
@@ -385,21 +385,30 @@
 
                         <!-- Segment actuel -->
                         <div id="current-segment-display" class="hidden flex-1 flex flex-col p-4">
+                            <!-- Barre de progression -->
+                            <div id="voyage-progress-bar" class="hidden mb-4">
+                                <div class="relative w-full bg-gray-700 rounded-full h-2">
+                                    <div id="progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 50%"></div>
+                                    <div id="progress-marker" class="absolute top-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white transform -translate-y-2 transition-all duration-300 cursor-pointer" style="left: calc(50% - 12px);" title="Progression du voyage">
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Titre avec navigation -->
                             <div class="flex items-center justify-between mb-4">
-                                <button id="prev-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Segment précédent">
+                                <button id="prev-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Jour précédent">
                                     <i class="fas fa-chevron-left"></i>
                                 </button>
                                 <h4 id="segment-title" class="text-lg font-semibold text-center flex-1" style="font-family: 'Merriweather', serif;">
                                 1 Gwaeron
                             </h4>
-                                <button id="next-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Segment suivant">
+                                <button id="next-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Jour suivant">
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                             </div>
 
                             <!-- Contenu du segment organisé par jour -->
-                            <div id="segment-content" class="flex-1 overflow-y-auto mb-4 max-h-60">
+                            <div id="segment-content" class="flex-1 overflow-y-auto">
                                 <div class="space-y-3">
                                     <div class="day-section">
                                         <h5 class="font-semibold text-blue-300 mb-2">Jour 1 : Bree</h5>
@@ -427,23 +436,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Indicateur de progression en bas -->
-                    <div id="voyage-progress-bar" class="hidden p-4 border-t border-gray-700">
-                        <div class="text-center mb-2">
-                            <span id="progress-indicator" class="text-sm text-gray-300">Progression : 4 jours / 8</span>
-                        </div>
-                        <div class="relative w-full bg-gray-700 rounded-full h-2">
-                            <div id="progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 50%"></div>
-                            <div id="progress-marker" class="absolute top-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white transform -translate-y-2 transition-all duration-300" style="left: calc(50% - 12px);">
-                                <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-white font-bold">4</span>
-                            </div>
-                        </div>
-                        <div class="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>1</span>
-                            <span id="total-days">8</span>
                         </div>
                     </div>
 

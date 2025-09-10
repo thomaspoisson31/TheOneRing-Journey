@@ -228,11 +228,11 @@ class VoyageManager {
             let actionText = '';
 
             if (discovery.proximityType) {
-                actionText = discovery.proximityType === 'traversed' ? 'Traversé' : 'Passage à proximité';
+                actionText = discovery.proximityType === 'traversed' ? 'traversée' : 'passage à proximité';
             } else if (discovery.type === 'region') {
-                actionText = 'Traversée';
+                actionText = 'traversée';
             } else {
-                actionText = 'Découvert';
+                actionText = 'découvert';
             }
 
             return `
@@ -240,7 +240,7 @@ class VoyageManager {
                     <span class="text-2xl">${icon}</span>
                     <div class="flex-1">
                         <div class="font-medium text-white">${discovery.name}</div>
-                        <div class="text-sm text-gray-400">${typeText} • ${actionText}</div>
+                        <div class="text-sm text-gray-400">${typeText} - ${actionText}</div>
                     </div>
                 </div>
             `;
@@ -248,7 +248,6 @@ class VoyageManager {
 
         segmentContent.innerHTML = `
             <div class="space-y-3">
-                <h5 class="font-semibold text-blue-400 mb-3">Lieux et régions traversés :</h5>
                 ${discoveriesHtml}
             </div>
         `;
@@ -285,22 +284,12 @@ class VoyageManager {
     }
 
     updateProgressBar() {
-        const progressIndicator = this.dom.getElementById('progress-indicator');
         const progressFill = this.dom.getElementById('progress-fill');
         const progressMarker = this.dom.getElementById('progress-marker');
-        const totalDaysSpan = this.dom.getElementById('total-days');
         const progressBar = this.dom.getElementById('voyage-progress-bar');
 
         if (progressBar) {
             progressBar.classList.remove('hidden');
-        }
-
-        if (progressIndicator) {
-            progressIndicator.textContent = `Progression : ${this.currentDayIndex + 1} / ${this.totalJourneyDays} jours`;
-        }
-
-        if (totalDaysSpan) {
-            totalDaysSpan.textContent = this.totalJourneyDays;
         }
 
         if (progressFill && progressMarker) {
@@ -308,11 +297,8 @@ class VoyageManager {
             progressFill.style.width = `${progressPercentage}%`;
             progressMarker.style.left = `calc(${progressPercentage}% - 12px)`;
 
-            // Update marker text
-            const markerText = progressMarker.querySelector('span');
-            if (markerText) {
-                markerText.textContent = this.currentDayIndex + 1;
-            }
+            // Update tooltip
+            progressMarker.title = `Progression : ${this.currentDayIndex + 1} / ${this.totalJourneyDays} jours`;
         }
     }
 
