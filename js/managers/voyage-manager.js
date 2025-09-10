@@ -463,26 +463,24 @@ class VoyageManager {
                 }
 
                 // Mettre à jour la date courante globale
-                if (typeof window !== 'undefined') {
-                    window.currentCalendarDate = {
-                        month: calendarData[monthIndex].name,
-                        day: newDay
-                    };
+                currentCalendarDate = {
+                    month: calendarData[monthIndex].name,
+                    day: newDay
+                };
 
-                    // Sauvegarder la nouvelle date
-                    if (typeof saveCalendarToLocal === 'function') {
-                        saveCalendarToLocal();
-                    }
+                // Sauvegarder la nouvelle date
+                if (typeof saveCalendarToLocal === 'function') {
+                    saveCalendarToLocal();
+                }
 
-                    // Mettre à jour l'affichage de la saison
-                    if (typeof updateSeasonDisplay === 'function') {
-                        updateSeasonDisplay();
-                    }
+                // Mettre à jour l'affichage de la saison
+                if (typeof updateSeasonDisplay === 'function') {
+                    updateSeasonDisplay();
+                }
 
-                    // Programmer une synchronisation
-                    if (typeof scheduleAutoSync === 'function') {
-                        scheduleAutoSync();
-                    }
+                // Programmer une synchronisation
+                if (typeof scheduleAutoSync === 'function') {
+                    scheduleAutoSync();
                 }
             }
         }
