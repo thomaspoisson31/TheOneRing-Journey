@@ -49,7 +49,8 @@ class VoyageManager {
         const noVoyageMessage = this.dom.getElementById('no-voyage-message');
         const currentSegmentDisplay = this.dom.getElementById('current-segment-display');
         
-        if (AppState.journey.path.length === 0) {
+        // Utiliser les variables globales existantes
+        if (journeyPath.length === 0) {
             noVoyageMessage.classList.remove('hidden');
             currentSegmentDisplay.classList.add('hidden');
         } else {
@@ -61,9 +62,9 @@ class VoyageManager {
     }
 
     generateJourneyData() {
-        // Calculate total journey duration
-        const miles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
-        const days = Math.ceil(miles / CONFIG.JOURNEY.MILES_PER_DAY);
+        // Calculate total journey duration using global variables
+        const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+        const days = Math.ceil(miles / 20); // 20 miles per day
         this.totalJourneyDays = Math.max(1, days);
 
         // Build absolute timeline
@@ -106,38 +107,55 @@ class VoyageManager {
     }
 
     buildAbsoluteTimeline() {
-        const discoveries = AppState.journey.discoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
-        const totalMiles = AppState.journey.totalPathPixels * (CONFIG.MAP.DISTANCE_MILES / AppState.mapDimensions.width);
-        const totalPathPoints = AppState.journey.path.length;
+        // Utiliser les variables globales journeyDiscoveries
+        const discoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+        const totalMiles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+        const totalPathPoints = journeyPath.length;
 
         const absoluteTimeline = [];
         let currentAbsoluteDay = 1;
         
         discoveries.forEach(discovery => {
             if (discovery.type === 'location') {
+                // Calculer le jour où le lieu est atteint
+                const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
+                const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
+                
                 absoluteTimeline.push({
                     discovery: discovery,
-                    absoluteDay: currentAbsoluteDay,
+                    absoluteDay: discoveryDay,
                     type: 'location'
                 });
             } else if (discovery.type === 'region') {
-                // Calculate region's natural duration
-                const segmentLength = discovery.endIndex - discovery.startIndex + 1;
-                const segmentRatio = segmentLength / totalPathPoints;
-                const segmentMiles = totalMiles * segmentRatio;
-                const regionDuration = Math.max(1, Math.ceil(segmentMiles / CONFIG.JOURNEY.MILES_PER_DAY));
-                
-                const regionStartDay = currentAbsoluteDay;
-                const regionEndDay = currentAbsoluteDay + regionDuration - 1;
-                
-                absoluteTimeline.push({
-                    discovery: discovery,
-                    absoluteStartDay: regionStartDay,
-                    absoluteEndDay: regionEndDay,
-                    type: 'region'
-                });
-                
-                currentAbsoluteDay += regionDuration;
+                // Utiliser les segments de région s'ils existent
+                if (window.regionSegments && window.regionSegments.has(discovery.name)) {
+                    const regionSegment = window.regionSegments.get(discovery.name);
+                    
+                    // Calculer les jours basés sur les indices
+                    const startRatio = regionSegment.entryIndex / totalPathPoints;
+                    const endRatio = regionSegment.exitIndex / totalPathPoints;
+                    
+                    const regionStartDay = Math.max(1, Math.ceil(startRatio * this.totalJourneyDays));
+                    const regionEndDay = Math.max(regionStartDay, Math.ceil(endRatio * this.totalJourneyDays));
+                    
+                    absoluteTimeline.push({
+                        discovery: discovery,
+                        absoluteStartDay: regionStartDay,
+                        absoluteEndDay: regionEndDay,
+                        type: 'region'
+                    });
+                } else {
+                    // Fallback si pas de segment
+                    const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
+                    const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
+                    
+                    absoluteTimeline.push({
+                        discovery: discovery,
+                        absoluteStartDay: discoveryDay,
+                        absoluteEndDay: discoveryDay,
+                        type: 'region'
+                    });
+                }
             }
         });
 
@@ -145,8 +163,7 @@ class VoyageManager {
     }
 
     getCalendarDateForDay(day) {
-        // This function should integrate with the calendar system
-        // For now, return a simple day representation
+        // Utiliser les variables globales du calendrier
         if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
             typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
             typeof calendarData !== 'undefined' && calendarData) {

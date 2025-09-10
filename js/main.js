@@ -136,6 +136,9 @@
             voyageSegmentsModal: document.getElementById('voyage-segments-modal')
         };
 
+        // --- Voyage Manager ---
+        let voyageManager;
+
         // --- Maps Management Functions ---
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');
