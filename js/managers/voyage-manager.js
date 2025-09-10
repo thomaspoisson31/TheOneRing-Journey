@@ -204,9 +204,6 @@ class VoyageManager {
 
         // Update progress bar
         this.updateProgressBar();
-
-        // Remove duration slider (no longer needed)
-        this.hideDurationSlider();
     }
 
     updateDayTitle(dayData) {
@@ -255,13 +252,6 @@ class VoyageManager {
                 ${discoveriesHtml}
             </div>
         `;
-    }
-
-    hideDurationSlider() {
-        const durationContainer = this.dom.querySelector('.mb-4');
-        if (durationContainer && durationContainer.querySelector('#current-segment-duration')) {
-            durationContainer.style.display = 'none';
-        }
     }
 
     navigateToDay(targetDayIndex) {
