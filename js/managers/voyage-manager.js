@@ -236,7 +236,7 @@ class VoyageManager {
             }
 
             return `
-                <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">
                     <span class="text-2xl">${icon}</span>
                     <div class="flex-1">
                         <div class="font-medium text-white">${discovery.name}</div>
@@ -252,6 +252,9 @@ class VoyageManager {
                 ${discoveriesHtml}
             </div>
         `;
+
+        // Setup event listeners for discoveries
+        this.setupDiscoveryInteractions();
     }
 
     navigateToDay(targetDayIndex) {
@@ -329,6 +332,99 @@ class VoyageManager {
         const progressBar = this.dom.getElementById('voyage-progress-bar');
         if (progressBar) {
             progressBar.classList.add('hidden');
+        }
+    }
+
+    setupDiscoveryInteractions() {
+        const discoveryItems = document.querySelectorAll('.discovery-item');
+
+        discoveryItems.forEach(item => {
+            const discoveryName = item.dataset.discoveryName;
+            const discoveryType = item.dataset.discoveryType;
+
+            // Survol - highlight sur la carte
+            item.addEventListener('mouseenter', () => {
+                this.highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+            });
+
+            item.addEventListener('mouseleave', () => {
+                this.highlightDiscoveryOnMap(discoveryName, discoveryType, false);
+            });
+
+            // Clic - ouvrir la modal
+            item.addEventListener('click', () => {
+                this.openDiscoveryModal(discoveryName, discoveryType);
+            });
+        });
+    }
+
+    highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
+        if (discoveryType === 'location') {
+            // Utiliser la fonction globale pour les lieux
+            if (typeof highlightDiscoveryOnMap === 'function') {
+                highlightDiscoveryOnMap(discoveryName, discoveryType, highlight);
+            }
+        } else if (discoveryType === 'region') {
+            // Utiliser la fonction globale pour les régions
+            if (typeof highlightDiscoveryOnMap === 'function') {
+                highlightDiscoveryOnMap(discoveryName, discoveryType, highlight);
+            }
+        }
+    }
+
+    openDiscoveryModal(discoveryName, discoveryType) {
+        // Fermer la modal des segments de voyage
+        this.dom.hideModal(this.dom.voyageSegmentsModal);
+
+        if (discoveryType === 'location') {
+            // Trouver le lieu et ouvrir sa modal
+            if (typeof locationsData !== 'undefined' && locationsData.locations) {
+                const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                if (location) {
+                    // Simuler un événement de clic sur le marqueur
+                    const fakeEvent = {
+                        currentTarget: { dataset: { id: location.id.toString() } },
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
+
+                    if (typeof showInfoBox === 'function') {
+                        showInfoBox(fakeEvent);
+
+                        // Forcer l'expansion de la info box
+                        const infoBox = document.getElementById('info-box');
+                        if (infoBox && !infoBox.classList.contains('expanded')) {
+                            if (typeof toggleInfoBoxExpand === 'function') {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (discoveryType === 'region') {
+            // Trouver la région et ouvrir sa modal
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                if (region) {
+                    // Simuler un événement de clic sur la région
+                    const fakeEvent = {
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
+
+                    if (typeof showRegionInfo === 'function') {
+                        showRegionInfo(fakeEvent, region);
+
+                        // Forcer l'expansion de la info box
+                        const infoBox = document.getElementById('info-box');
+                        if (infoBox && !infoBox.classList.contains('expanded')) {
+                            if (typeof toggleInfoBoxExpand === 'function') {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
