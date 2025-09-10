@@ -217,43 +217,69 @@ class VoyageManager {
         const segmentContent = this.dom.getElementById('segment-content');
         if (!segmentContent) return;
 
+        let contentHtml = '';
+
         if (dayData.discoveries.length === 0) {
-            segmentContent.innerHTML = '<p class="text-gray-500 text-sm italic text-center p-4">Voyage tranquille...</p>';
-            return;
-        }
+            contentHtml = '<p class="text-gray-500 text-sm italic text-center p-4">Voyage tranquille...</p>';
+        } else {
+            const discoveriesHtml = dayData.discoveries.map(discovery => {
+                const icon = discovery.type === 'region' ? '🗺️' : '📍';
+                const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
+                let actionText = '';
 
-        const discoveriesHtml = dayData.discoveries.map(discovery => {
-            const icon = discovery.type === 'region' ? '🗺️' : '📍';
-            const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
-            let actionText = '';
+                if (discovery.proximityType) {
+                    actionText = discovery.proximityType === 'traversed' ? 'traversée' : 'passage à proximité';
+                } else if (discovery.type === 'region') {
+                    actionText = 'traversée';
+                } else {
+                    actionText = 'découvert';
+                }
 
-            if (discovery.proximityType) {
-                actionText = discovery.proximityType === 'traversed' ? 'traversée' : 'passage à proximité';
-            } else if (discovery.type === 'region') {
-                actionText = 'traversée';
-            } else {
-                actionText = 'découvert';
-            }
-
-            return `
-                <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">
-                    <span class="text-2xl">${icon}</span>
-                    <div class="flex-1">
-                        <div class="font-medium text-white">${discovery.name}</div>
-                        <div class="text-sm text-gray-400">${typeText} - ${actionText}</div>
+                return `
+                    <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">
+                        <span class="text-2xl">${icon}</span>
+                        <div class="flex-1">
+                            <div class="font-medium text-white">${discovery.name}</div>
+                            <div class="text-sm text-gray-400">${typeText} - ${actionText}</div>
+                        </div>
                     </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div class="space-y-3">
+                    ${discoveriesHtml}
                 </div>
             `;
-        }).join('');
+        }
 
-        segmentContent.innerHTML = `
-            <div class="space-y-3">
-                ${discoveriesHtml}
-            </div>
-        `;
+        // Ajouter le bouton "Terminer le voyage" si on est au dernier jour
+        const isLastDay = this.currentDayIndex === (this.totalJourneyDays - 1);
+        if (isLastDay) {
+            contentHtml += `
+                <div class="mt-6 pt-4 border-t border-gray-600">
+                    <button id="finish-journey-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>Terminer le voyage</span>
+                    </button>
+                </div>
+            `;
+        }
+
+        segmentContent.innerHTML = contentHtml;
 
         // Setup event listeners for discoveries
         this.setupDiscoveryInteractions();
+
+        // Setup event listener for finish journey button if it exists
+        if (isLastDay) {
+            const finishBtn = this.dom.getElementById('finish-journey-btn');
+            if (finishBtn) {
+                finishBtn.addEventListener('click', () => {
+                    this.finishJourney();
+                });
+            }
+        }
     }
 
     navigateToDay(targetDayIndex) {
@@ -412,5 +438,59 @@ class VoyageManager {
                 }
             }
         }
+    }
+
+    finishJourney() {
+        // Obtenir la date du dernier jour
+        const lastDayData = this.dayByDayData[this.totalJourneyDays - 1];
+        if (!lastDayData) return;
+
+        // Mettre à jour la date du calendrier principal si on est en mode calendrier
+        if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
+            typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
+            typeof calendarData !== 'undefined' && calendarData) {
+
+            // Calculer la nouvelle date
+            const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
+            if (currentMonthIndex !== -1) {
+                let monthIndex = currentMonthIndex;
+                let newDay = currentCalendarDate.day + this.totalJourneyDays - 1;
+
+                // Naviguer à travers les mois si nécessaire
+                while (newDay > calendarData[monthIndex].days.length) {
+                    newDay -= calendarData[monthIndex].days.length;
+                    monthIndex = (monthIndex + 1) % calendarData.length;
+                }
+
+                // Mettre à jour la date courante globale
+                if (typeof window !== 'undefined') {
+                    window.currentCalendarDate = {
+                        month: calendarData[monthIndex].name,
+                        day: newDay
+                    };
+
+                    // Sauvegarder la nouvelle date
+                    if (typeof saveCalendarToLocal === 'function') {
+                        saveCalendarToLocal();
+                    }
+
+                    // Mettre à jour l'affichage de la saison
+                    if (typeof updateSeasonDisplay === 'function') {
+                        updateSeasonDisplay();
+                    }
+
+                    // Programmer une synchronisation
+                    if (typeof scheduleAutoSync === 'function') {
+                        scheduleAutoSync();
+                    }
+                }
+            }
+        }
+
+        // Fermer la modal des segments de voyage
+        this.dom.hideModal(this.dom.voyageSegmentsModal);
+
+        // Afficher un message de confirmation (optionnel)
+        console.log(`🏁 Voyage terminé ! Date finale : ${lastDayData.calendarDate}`);
     }
 }
