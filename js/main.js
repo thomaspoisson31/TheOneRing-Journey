@@ -127,6 +127,15 @@
         };
         let editingMapIndex = -1;
 
+        // --- DOM Helper ---
+        const dom = {
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (selector) => document.querySelector(selector),
+            showModal: (modal) => modal.classList.remove('hidden'),
+            hideModal: (modal) => modal.classList.add('hidden'),
+            voyageSegmentsModal: document.getElementById('voyage-segments-modal')
+        };
+
         // --- Maps Management Functions ---
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');
@@ -5175,4 +5184,3 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
         } else {
             initializeApp();
         }
-
