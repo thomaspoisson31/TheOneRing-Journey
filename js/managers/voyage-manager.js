@@ -17,6 +17,11 @@ class VoyageManager {
         if (voyageBtn) {
             voyageBtn.addEventListener('click', () => {
                 this.dom.showModal(this.dom.voyageSegmentsModal);
+                // Appliquer le style fond blanc
+                const modalContent = this.dom.voyageSegmentsModal.querySelector('.bg-gray-900');
+                if (modalContent) {
+                    modalContent.classList.add('voyage-modal-white');
+                }
                 this.updateDisplay();
             });
         }
@@ -715,7 +720,7 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
             descriptionModal.className = 'hidden absolute inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4';
             
             descriptionModal.innerHTML = `
-                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col journey-description-modal-white">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-white">Description de la journée</h3>
                         <button id="close-journey-description" class="text-gray-400 hover:text-white">
