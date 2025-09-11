@@ -545,6 +545,67 @@ body {
     display: flex;
 }
 
+/* Styles pour les modales de voyage en fond blanc */
+.voyage-modal-white {
+    background-color: white !important;
+    color: black !important;
+}
+
+.voyage-modal-white * {
+    color: black !important;
+}
+
+.voyage-modal-white .text-white {
+    color: black !important;
+}
+
+.voyage-modal-white .text-gray-400,
+.voyage-modal-white .text-gray-300 {
+    color: #666666 !important;
+}
+
+.voyage-modal-white .bg-gray-800 {
+    background-color: #f5f5f5 !important;
+}
+
+.voyage-modal-white .bg-gray-700:hover {
+    background-color: #e5e5e5 !important;
+}
+
+.voyage-modal-white .border-gray-700 {
+    border-color: #cccccc !important;
+}
+
+.voyage-modal-white .border-gray-600 {
+    border-color: #dddddd !important;
+}
+
+.journey-description-modal-white {
+    background-color: white !important;
+    color: black !important;
+}
+
+.journey-description-modal-white * {
+    color: black !important;
+}
+
+.journey-description-modal-white .text-white {
+    color: black !important;
+}
+
+.journey-description-modal-white .text-gray-400,
+.journey-description-modal-white .text-gray-300 {
+    color: #666666 !important;
+}
+
+.journey-description-modal-white .border-gray-700 {
+    border-color: #cccccc !important;
+}
+
+.journey-description-modal-white .border-gray-600 {
+    border-color: #dddddd !important;
+}
+
 /* Markdown content styles */
 .prose {
     color: #e5e7eb;
