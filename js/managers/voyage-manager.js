@@ -864,16 +864,12 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
             if (describeBtn) {
                 const buttonText = describeBtn.querySelector('span:last-child');
                 if (buttonText) {
-                    buttonText.textContent = 'Voir les descriptions détaillées';
+                    buttonText.textContent = 'Descriptions générées ✓';
                 }
-            }
-
-            // Afficher la description de la journée courante dans la modale détaillée
-            const currentDayDescription = this.journeyDescriptions[this.currentDayIndex + 1];
-            if (currentDayDescription) {
-                this.displayJourneyDescription(currentDayDescription, true);
-            } else {
-                alert('Aucune description trouvée pour cette journée.');
+                
+                // Désactiver le bouton pour indiquer que l'action est terminée
+                describeBtn.style.opacity = '0.7';
+                describeBtn.style.cursor = 'default';
             }
 
         } catch (error) {
