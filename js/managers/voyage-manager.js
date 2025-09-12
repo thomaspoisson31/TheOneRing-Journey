@@ -321,6 +321,10 @@ class VoyageManager {
         // Ajouter les boutons en bas
         let buttonsHtml = `
             <div class="mt-6 pt-4 border-t border-gray-600 space-y-3">
+                <div id="current-day-description" class="hidden bg-gray-800 rounded-lg p-4 mb-3">
+                    <div class="text-sm text-gray-400 mb-2">Description de la journée :</div>
+                    <div id="current-day-description-text" class="text-gray-200 leading-relaxed text-sm"></div>
+                </div>
                 <button id="describe-journey-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium flex items-center justify-center space-x-2 transition-colors">
                     <span class="gemini-icon">✨</span>
                     <span>Décrire le voyage</span>
@@ -354,6 +358,9 @@ class VoyageManager {
             });
         }
 
+        // Afficher la description de la journée courante si elle existe
+        this.updateCurrentDayDescription();
+
         // Setup event listener for finish journey button if it exists
         if (isLastDay) {
             const finishBtn = this.dom.getElementById('finish-journey-btn');
@@ -372,6 +379,23 @@ class VoyageManager {
 
         this.currentDayIndex = targetDayIndex;
         this.renderCurrentDay();
+    }
+
+    updateCurrentDayDescription() {
+        const descriptionContainer = document.getElementById('current-day-description');
+        const descriptionText = document.getElementById('current-day-description-text');
+        
+        if (!descriptionContainer || !descriptionText) return;
+
+        const currentDayNumber = this.currentDayIndex + 1;
+        const description = this.journeyDescriptions[currentDayNumber];
+
+        if (description) {
+            descriptionText.innerHTML = description.replace(/\n/g, '<br>');
+            descriptionContainer.classList.remove('hidden');
+        } else {
+            descriptionContainer.classList.add('hidden');
+        }
     }
 
     updateNavigationButtons() {
@@ -832,7 +856,19 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                 this.journeyDescriptions[dayDesc.day] = dayDesc.description;
             });
 
-            // Afficher la description de la journée courante
+            // Mettre à jour l'affichage de la description courante dans la modale
+            this.updateCurrentDayDescription();
+
+            // Changer le texte du bouton pour indiquer qu'on peut maintenant voir les détails
+            const describeBtn = this.dom.getElementById('describe-journey-btn');
+            if (describeBtn) {
+                const buttonText = describeBtn.querySelector('span:last-child');
+                if (buttonText) {
+                    buttonText.textContent = 'Voir les descriptions détaillées';
+                }
+            }
+
+            // Afficher la description de la journée courante dans la modale détaillée
             const currentDayDescription = this.journeyDescriptions[this.currentDayIndex + 1];
             if (currentDayDescription) {
                 this.displayJourneyDescription(currentDayDescription, true);
