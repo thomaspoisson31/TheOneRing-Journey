@@ -2980,9 +2980,9 @@
             console.log("🔄 Synchronisation après effacement du tracé");
             scheduleAutoSync(); // Synchroniser après effacement du tracé
         });
-        document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
+        document.getElementById('export-locations').addEventListener('click', exportUnifiedData);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
-        document.getElementById('import-file-input').addEventListener('change', importLocationsFromFile);
+        document.getElementById('import-file-input').addEventListener('change', importUnifiedData);
 
         // Event listeners pour l'import des régions
         const importRegionsBtn = document.getElementById('import-regions');
@@ -2991,11 +2991,11 @@
 
         if (importRegionsBtn && importRegionsInput) {
             importRegionsBtn.addEventListener('click', () => importRegionsInput.click());
-            importRegionsInput.addEventListener('change', importRegionsFromFile);
+            importRegionsInput.addEventListener('change', importUnifiedData);
         }
 
         if (exportRegionsBtn) {
-            exportRegionsBtn.addEventListener('click', exportRegionsToFile);
+            exportRegionsBtn.addEventListener('click', exportUnifiedData);
         }
         // document.getElementById('reset-locations').addEventListener('click', () => { if (confirm("Voulez-vous vraiment réinitialiser tous les lieux par défaut ?")) { locationsData = getDefaultLocations(); renderLocations(); saveLocationsToLocal(); } });
         mapSwitchBtn.addEventListener('click', () => {
@@ -3020,78 +3020,277 @@
             localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData));
             scheduleAutoSync(); // Synchroniser après modification
         }
-        function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); document.body.removeChild(downloadAnchorNode); URL.revokeObjectURL(url); }
-        function importLocationsFromFile(event) { 
-            const file = event.target.files[0]; 
-            if (!file) return; 
+        // === FONCTIONS UNIFIÉES D'IMPORT/EXPORT ===
+        
+        function exportUnifiedData() {
+            // Fusionner les lieux et les régions dans un seul tableau locations
+            const allLocations = [];
+            
+            // Ajouter tous les lieux normaux
+            if (locationsData.locations) {
+                locationsData.locations.forEach(location => {
+                    allLocations.push({
+                        ...location,
+                        type: location.type || "custom" // S'assurer qu'il y a un type
+                    });
+                });
+            }
+            
+            // Ajouter toutes les régions (converties en format location avec type="region")
+            if (regionsData.regions) {
+                regionsData.regions.forEach(region => {
+                    // Convertir la structure de région en format location unifié
+                    const regionAsLocation = {
+                        id: region.id,
+                        name: region.name,
+                        description: region.description || "",
+                        imageUrl: region.imageUrl || "",
+                        color: region.color,
+                        known: region.known !== undefined ? region.known : true,
+                        visited: region.visited !== undefined ? region.visited : false,
+                        type: "region",
+                        coordinates: {
+                            points: region.points || [] // Les points du polygone de la région
+                        }
+                    };
+                    
+                    // Ajouter les propriétés additionnelles si elles existent
+                    if (region.Rumeur) regionAsLocation.Rumeur = region.Rumeur;
+                    if (region.Tradition_Ancienne) regionAsLocation.Tradition_Ancienne = region.Tradition_Ancienne;
+                    
+                    allLocations.push(regionAsLocation);
+                });
+            }
+            
+            const unifiedData = {
+                locations: allLocations
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(unifiedData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "Landmark.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            document.body.removeChild(downloadAnchorNode);
+            console.log(`✅ Export unifié terminé - ${allLocations.length} éléments sauvegardés (lieux et régions)`);
+        }
+        
+        // Ancienne fonction de compatibilité (garde pour les anciens liens)
+        function exportLocationsToFile() { 
+            exportUnifiedData(); // Rediriger vers la fonction unifiée
+        }
+        function importUnifiedData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-            const reader = new FileReader(); 
-            reader.onload = function(e) { 
-                try { 
-                    const importedData = JSON.parse(e.target.result); 
-
-                    if (importedData && Array.isArray(importedData.locations)) { 
-                        // Fusionner avec les données existantes ou remplacer
-                        const shouldReplace = confirm(
-                            `Le fichier contient ${importedData.locations.length} lieux.\n\n` +
-                            "Voulez-vous :\n" +
-                            "- OK : Remplacer tous les lieux existants\n" +
-                            "- Annuler : Fusionner avec les lieux existants"
-                        );
-
-                        if (shouldReplace) {
-                            // Remplacer tous les lieux
-                            locationsData = importedData;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Supporter les différents formats de fichiers
+                    let locationsArray = [];
+                    
+                    // Format unifié : { locations: [...] }
+                    if (importedData.locations && Array.isArray(importedData.locations)) {
+                        locationsArray = importedData.locations;
+                    }
+                    // Format ancien : { regions: [...] } - convertir les régions en locations
+                    else if (importedData.regions && Array.isArray(importedData.regions)) {
+                        locationsArray = importedData.regions.map(region => ({
+                            id: region.id,
+                            name: region.name,
+                            description: region.description || "",
+                            imageUrl: region.imageUrl || "",
+                            color: region.color,
+                            known: region.known !== undefined ? region.known : true,
+                            visited: region.visited !== undefined ? region.visited : false,
+                            type: "region",
+                            coordinates: {
+                                points: region.points || []
+                            },
+                            ...(region.Rumeur && { Rumeur: region.Rumeur }),
+                            ...(region.Tradition_Ancienne && { Tradition_Ancienne: region.Tradition_Ancienne })
+                        }));
+                    }
+                    // Format très ancien : tableau direct de locations à la racine
+                    else if (Array.isArray(importedData)) {
+                        locationsArray = importedData;
+                    }
+                    else {
+                        alert("Fichier JSON invalide. Le fichier doit contenir une propriété 'locations' (tableau) ou 'regions' (tableau), ou être un tableau direct de locations.");
+                        return;
+                    }
+                    
+                    // Séparer les lieux normaux des régions basé sur la structure des coordonnées
+                    const normalLocations = [];
+                    const regionLocations = [];
+                    
+                    locationsArray.forEach(item => {
+                        // Déterminer si c'est une région ou un lieu normal
+                        const isRegion = item.type === "region" || 
+                                        (item.coordinates && item.coordinates.points && Array.isArray(item.coordinates.points));
+                        
+                        if (isRegion) {
+                            // Convertir la location-région vers le format région interne
+                            const region = {
+                                id: item.id,
+                                name: item.name,
+                                description: item.description || "",
+                                imageUrl: item.imageUrl || "",
+                                color: item.color,
+                                known: item.known !== undefined ? item.known : true,
+                                visited: item.visited !== undefined ? item.visited : false,
+                                points: item.coordinates?.points || []
+                            };
+                            
+                            // Ajouter les propriétés additionnelles si elles existent
+                            if (item.Rumeur) region.Rumeur = item.Rumeur;
+                            if (item.Tradition_Ancienne) region.Tradition_Ancienne = item.Tradition_Ancienne;
+                            
+                            regionLocations.push(region);
                         } else {
-                            // Fusionner : ajouter les nouveaux lieux en évitant les doublons
-                            let addedCount = 0;
-                            let duplicateCount = 0;
-
-                            importedData.locations.forEach(importedLocation => {
-                                // Vérifier si un lieu avec le même nom existe déjà
+                            // C'est un lieu normal - s'assurer qu'il a la bonne structure de coordonnées
+                            const location = {
+                                ...item,
+                                type: item.type || "custom"
+                            };
+                            
+                            // S'assurer que les coordonnées sont au bon format {x, y}
+                            if (item.coordinates && typeof item.coordinates.x === 'number' && typeof item.coordinates.y === 'number') {
+                                location.coordinates = {
+                                    x: item.coordinates.x,
+                                    y: item.coordinates.y
+                                };
+                            }
+                            
+                            normalLocations.push(location);
+                        }
+                    });
+                    
+                    // Compter les éléments à importer
+                    const locationCount = normalLocations.length;
+                    const regionCount = regionLocations.length;
+                    
+                    let message = `Le fichier contient ${locationsArray.length} éléments :\n`;
+                    if (locationCount > 0) message += `- ${locationCount} lieux\n`;
+                    if (regionCount > 0) message += `- ${regionCount} régions\n`;
+                    message += "\nVoulez-vous :\n- OK : Remplacer toutes les données existantes\n- Annuler : Fusionner avec les données existantes";
+                    
+                    const shouldReplace = confirm(message);
+                    
+                    let addedLocations = 0, updatedLocations = 0;
+                    let addedRegions = 0, updatedRegions = 0;
+                    
+                    // === TRAITEMENT DES LIEUX ===
+                    if (locationCount > 0) {
+                        if (shouldReplace) {
+                            locationsData = { locations: normalLocations };
+                            addedLocations = normalLocations.length;
+                        } else {
+                            // Fusionner les lieux
+                            normalLocations.forEach(importedLocation => {
                                 const existingLocation = locationsData.locations.find(
                                     loc => loc.name === importedLocation.name
                                 );
-
+                                
                                 if (existingLocation) {
-                                    duplicateCount++;
-                                    // Optionnel : mettre à jour le lieu existant
                                     Object.assign(existingLocation, importedLocation);
+                                    updatedLocations++;
                                 } else {
-                                    // Assigner un nouvel ID unique
-                                    importedLocation.id = Date.now() + Math.random();
+                                    // Générer un nouvel ID unique pour éviter les collisions
+                                    importedLocation.id = Date.now() + Math.floor(Math.random() * 1000);
+                                    // S'assurer que l'ID est vraiment unique
+                                    while (locationsData.locations.find(loc => loc.id === importedLocation.id)) {
+                                        importedLocation.id = Date.now() + Math.floor(Math.random() * 1000);
+                                    }
                                     locationsData.locations.push(importedLocation);
-                                    addedCount++;
+                                    addedLocations++;
                                 }
                             });
-
-                            alert(`Import terminé :\n- ${addedCount} nouveaux lieux ajoutés\n- ${duplicateCount} lieux existants mis à jour`);
                         }
-
-                        // Appliquer les changements
                         renderLocations();
                         saveLocationsToLocal();
-                        scheduleAutoSync();
-
+                    }
+                    
+                    // === TRAITEMENT DES RÉGIONS ===
+                    if (regionCount > 0) {
                         if (shouldReplace) {
-                            alert(`Import réussi ! ${importedData.locations.length} lieux ont été importés.`);
+                            regionsData = { regions: regionLocations };
+                            addedRegions = regionLocations.length;
+                        } else {
+                            // Fusionner les régions
+                            regionLocations.forEach(importedRegion => {
+                                const existingRegion = regionsData.regions.find(
+                                    reg => reg.name === importedRegion.name
+                                );
+                                
+                                if (existingRegion) {
+                                    Object.assign(existingRegion, importedRegion);
+                                    updatedRegions++;
+                                } else {
+                                    // Générer un nouvel ID unique pour éviter les collisions
+                                    importedRegion.id = Date.now() + Math.floor(Math.random() * 1000);
+                                    // S'assurer que l'ID est vraiment unique
+                                    while (regionsData.regions.find(reg => reg.id === importedRegion.id)) {
+                                        importedRegion.id = Date.now() + Math.floor(Math.random() * 1000);
+                                    }
+                                    regionsData.regions.push(importedRegion);
+                                    addedRegions++;
+                                }
+                            });
                         }
+                        renderRegions();
+                        saveRegionsToLocal();
+                    }
+                    
+                    scheduleAutoSync();
+                    
+                    // Message de confirmation
+                    if (shouldReplace) {
+                        let confirmMessage = "Import réussi !\n";
+                        if (addedLocations > 0) confirmMessage += `- ${addedLocations} lieux importés\n`;
+                        if (addedRegions > 0) confirmMessage += `- ${addedRegions} régions importées\n`;
+                        alert(confirmMessage);
+                    } else {
+                        let confirmMessage = "Import terminé :\n";
+                        if (addedLocations > 0 || updatedLocations > 0) {
+                            confirmMessage += `Lieux : ${addedLocations} ajoutés, ${updatedLocations} mis à jour\n`;
+                        }
+                        if (addedRegions > 0 || updatedRegions > 0) {
+                            confirmMessage += `Régions : ${addedRegions} ajoutées, ${updatedRegions} mises à jour\n`;
+                        }
+                        alert(confirmMessage);
+                    }
+                    
+                    console.log(`✅ Import unifié terminé - ${addedLocations + addedRegions} éléments traités`);
+                    
+                } catch (err) {
+                    alert("Erreur lors de la lecture du fichier JSON : " + err.message);
+                    console.error("Erreur d'import unifié:", err);
+                }
 
-                        console.log("✅ Lieux importés avec succès");
-                    } else { 
-                        alert("Fichier JSON invalide. Le fichier doit contenir un objet avec une propriété 'locations' qui est un tableau."); 
-                    } 
-                } catch (err) { 
-                    alert("Erreur lors de la lecture du fichier JSON : " + err.message); 
-                    console.error("Erreur d'import:", err); 
-                } 
-
-                // Réinitialiser l'input file pour permettre de réimporter le même fichier
+                // Réinitialiser l'input file
                 event.target.value = '';
-            }; 
+            };
 
-            reader.readAsText(file); 
+            reader.readAsText(file);
         }
+        
+        // Anciennes fonctions de compatibilité (gardées pour les anciens liens)
+        function importLocationsFromFile(event) {
+            importUnifiedData(event); // Rediriger vers la fonction unifiée
+        }
+
+        function exportRegionsToFile() { 
+            exportUnifiedData(); // Rediriger vers la fonction unifiée
+        }
+
+        function importRegionsFromFile(event) {
+            importUnifiedData(event); // Rediriger vers la fonction unifiée
+        }
+
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
             if (totalPathPixels === 0 || MAP_WIDTH === 0) {
