@@ -575,20 +575,18 @@ class VoyageManager {
             return;
         }
 
-        const currentDay = this.dayByDayData[this.currentDayIndex];
+        // Collecter les données pour toutes les journées
+        const allJourneyData = this.collectAllJourneyDataForPrompt();
         
-        // Collecter les données nécessaires
-        const journeyData = this.collectJourneyDataForPrompt(currentDay);
-        
-        // Créer le prompt pour Gemini
-        const prompt = this.createJourneyDescriptionPrompt(journeyData);
+        // Créer le prompt pour toutes les journées
+        const prompt = this.createCompleteJourneyDescriptionPrompt(allJourneyData);
         
         // Appeler Gemini via la fonction globale callGemini
         const button = this.dom.getElementById('describe-journey-btn');
         if (typeof callGemini === 'function') {
             try {
-                const description = await callGemini(prompt, button);
-                this.displayJourneyDescription(description);
+                const jsonResponse = await callGemini(prompt, button);
+                this.processAndDisplayJourneyDescriptions(jsonResponse);
             } catch (error) {
                 console.error('Erreur lors de la génération de la description:', error);
                 alert('Erreur lors de la génération de la description de voyage.');
@@ -598,7 +596,7 @@ class VoyageManager {
         }
     }
 
-    collectJourneyDataForPrompt(currentDay) {
+    collectAllJourneyDataForPrompt() {
         // Récupérer les données du groupe d'aventuriers et de la quête
         const adventurersGroup = localStorage.getItem('adventurersGroup') || '';
         const adventurersQuest = localStorage.getItem('adventurersQuest') || '';
@@ -621,36 +619,44 @@ class VoyageManager {
         };
         const seasonName = seasonNames[currentSeason] || currentSeason;
 
-        // Collecter les découvertes avec leurs descriptions
-        const discoveriesWithDescriptions = currentDay.discoveries.map(discovery => {
-            let description = '';
-            
-            if (discovery.type === 'location' && typeof locationsData !== 'undefined') {
-                const location = locationsData.locations.find(loc => loc.name === discovery.name);
-                if (location) {
-                    description = location.description || '';
+        // Collecter toutes les journées avec leurs découvertes
+        const allDays = this.dayByDayData.map((dayData, index) => {
+            const discoveriesWithDescriptions = dayData.discoveries.map(discovery => {
+                let description = '';
+                
+                if (discovery.type === 'location' && typeof locationsData !== 'undefined') {
+                    const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                    if (location) {
+                        description = location.description || '';
+                    }
+                } else if (discovery.type === 'region' && typeof regionsData !== 'undefined') {
+                    const region = regionsData.regions.find(reg => reg.name === discovery.name);
+                    if (region) {
+                        description = region.description || '';
+                    }
                 }
-            } else if (discovery.type === 'region' && typeof regionsData !== 'undefined') {
-                const region = regionsData.regions.find(reg => reg.name === discovery.name);
-                if (region) {
-                    description = region.description || '';
-                }
-            }
 
-            let actionText = '';
-            if (discovery.proximityType) {
-                actionText = discovery.proximityType === 'traversed' ? 'traversé' : 'passage à proximité';
-            } else if (discovery.type === 'region') {
-                actionText = 'traversé';
-            } else {
-                actionText = 'découvert';
-            }
+                let actionText = '';
+                if (discovery.proximityType) {
+                    actionText = discovery.proximityType === 'traversed' ? 'traversé' : 'passage à proximité';
+                } else if (discovery.type === 'region') {
+                    actionText = 'traversé';
+                } else {
+                    actionText = 'découvert';
+                }
+
+                return {
+                    name: discovery.name,
+                    type: discovery.type === 'region' ? 'Région' : 'Lieu',
+                    action: actionText,
+                    description: description
+                };
+            });
 
             return {
-                name: discovery.name,
-                type: discovery.type === 'region' ? 'Région' : 'Lieu',
-                action: actionText,
-                description: description
+                dayNumber: index + 1,
+                calendarDate: dayData.calendarDate,
+                discoveries: discoveriesWithDescriptions
             };
         });
 
@@ -658,58 +664,140 @@ class VoyageManager {
             adventurersGroup,
             adventurersQuest,
             season: seasonName,
-            dayNumber: this.currentDayIndex + 1,
-            calendarDate: currentDay.calendarDate,
-            discoveries: discoveriesWithDescriptions
+            totalDays: this.totalJourneyDays,
+            days: allDays
         };
     }
 
-    createJourneyDescriptionPrompt(journeyData) {
-        let prompt = `Rédige une description évocatrice d'une journée de voyage en Terre du Milieu, au présent de la deuxième personne du pluriel ("Vous traversez...").
+    createCompleteJourneyDescriptionPrompt(allJourneyData) {
+        let prompt = `Rédige des descriptions évocatrices pour un voyage complet en Terre du Milieu, au présent de la deuxième personne du pluriel ("Vous traversez...").
 
-Cette description est destinée à un meneur de jeu qui va la lire à ses joueurs pour les immerger dans l'ambiance du voyage.
+Ces descriptions sont destinées à un meneur de jeu qui va les lire à ses joueurs pour les immerger dans l'ambiance du voyage.
 
 **Contexte du groupe :**
-${journeyData.adventurersGroup || 'Groupe d\'aventuriers non défini'}
+${allJourneyData.adventurersGroup || 'Groupe d\'aventuriers non défini'}
 
 **Nature de la quête :**
-${journeyData.adventurersQuest || 'Quête non définie'}
+${allJourneyData.adventurersQuest || 'Quête non définie'}
 
-**Saison actuelle :** ${journeyData.season}
-**Jour de voyage :** ${journeyData.dayNumber} (${journeyData.calendarDate})
+**Saison actuelle :** ${allJourneyData.season}
+**Durée totale du voyage :** ${allJourneyData.totalDays} jours
+
+**Détail des journées :**
 `;
 
-        if (journeyData.discoveries.length > 0) {
-            prompt += `
-**Lieux et régions de cette journée (dans l'ordre) :**
-`;
-            journeyData.discoveries.forEach(discovery => {
-                prompt += `- ${discovery.type} : ${discovery.name} (${discovery.action})`;
-                if (discovery.description) {
-                    prompt += `\n  Description : ${discovery.description}`;
-                }
-                prompt += '\n';
-            });
-        } else {
-            prompt += `
-**Cette journée :** Voyage tranquille sans découverte particulière.
-`;
-        }
+        allJourneyData.days.forEach(day => {
+            prompt += `\n**Jour ${day.dayNumber} (${day.calendarDate}) :**\n`;
+            if (day.discoveries.length > 0) {
+                prompt += `Lieux et régions :\n`;
+                day.discoveries.forEach(discovery => {
+                    prompt += `- ${discovery.type} : ${discovery.name} (${discovery.action})`;
+                    if (discovery.description) {
+                        prompt += `\n  Description : ${discovery.description}`;
+                    }
+                    prompt += '\n';
+                });
+            } else {
+                prompt += `Voyage tranquille sans découverte particulière.\n`;
+            }
+        });
 
         prompt += `
-**Instructions :**
+**Instructions importantes :**
+- Répondez UNIQUEMENT par un objet JSON structuré
+- Variez les descriptions selon les jours :
+  * Tantôt des descriptions de paysages et d'environnement
+  * Tantôt le temps qu'il fait et les conditions météorologiques
+  * Tantôt les impressions de voyage et l'ambiance du groupe
+  * Tantôt l'accumulation de la fatigue physique et mentale
+  * Tantôt l'attitude et les interactions entre membres du groupe
+- Évitez les redondances entre les journées
 - Rédigez au présent de la 2ème personne du pluriel
-- Faites appel à plusieurs sens (vue, ouïe, odorat, toucher) pour une immersion totale
-- Évoquez l'état physique et mental des personnages en tenant compte du nombre de jours de voyage
+- Faites appel à plusieurs sens (vue, ouïe, odorat, toucher)
 - Adaptez l'ambiance à la saison
-- Restez concis mais évocateur (2-3 paragraphes maximum)
+- Chaque description doit faire 2-3 paragraphes maximum
 - Le ton doit être immersif et narratif, adapté à une lecture en jeu de rôle
+
+**Format de réponse attendu :**
+{
+  "voyage": {
+    "jour_1": {
+      "date": "${allJourneyData.days[0]?.calendarDate || 'Jour 1'}",
+      "description": "Description de la première journée..."
+    },
+    "jour_2": {
+      "date": "Date du jour 2",
+      "description": "Description de la deuxième journée..."
+    }
+    // ... etc pour tous les jours
+  }
+}
 `;
 
         return prompt;
     }
 
-    displayJourneyDescription(description) {
+    processAndDisplayJourneyDescriptions(jsonResponse) {
+        try {
+            // Nettoyer la réponse pour extraire le JSON
+            let cleanResponse = jsonResponse.trim();
+            
+            // Supprimer les balises markdown potentielles
+            if (cleanResponse.startsWith('```json')) {
+                cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanResponse.startsWith('```')) {
+                cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            // Parser le JSON
+            const descriptionsData = JSON.parse(cleanResponse);
+            
+            if (!descriptionsData.voyage) {
+                throw new Error('Format de réponse invalide: propriété "voyage" manquante');
+            }
+            
+            // Stocker les descriptions pour chaque jour
+            this.journeyDescriptions = {};
+            Object.keys(descriptionsData.voyage).forEach(dayKey => {
+                const dayInfo = descriptionsData.voyage[dayKey];
+                if (dayInfo && dayInfo.description) {
+                    // Extraire le numéro du jour
+                    const dayMatch = dayKey.match(/jour_(\d+)/);
+                    if (dayMatch) {
+                        const dayNumber = parseInt(dayMatch[1]);
+                        this.journeyDescriptions[dayNumber] = {
+                            date: dayInfo.date,
+                            description: dayInfo.description
+                        };
+                    }
+                }
+            });
+            
+            // Afficher la description du jour actuel
+            this.displayCurrentJourneyDescription();
+            
+        } catch (error) {
+            console.error('Erreur lors du parsing JSON:', error);
+            console.log('Réponse reçue:', jsonResponse);
+            
+            // Fallback: afficher la réponse brute comme avant
+            this.displayJourneyDescription(jsonResponse);
+        }
+    }
+
+    displayCurrentJourneyDescription() {
+        const currentDayNumber = this.currentDayIndex + 1;
+        const currentDescription = this.journeyDescriptions[currentDayNumber];
+        
+        if (!currentDescription) {
+            alert('Description non disponible pour cette journée.');
+            return;
+        }
+        
+        this.displayJourneyDescription(currentDescription.description, currentDescription.date);
+    }
+
+    displayJourneyDescription(description, dayDate = null) {
         // Créer ou réutiliser une modal pour afficher la description
         let descriptionModal = document.getElementById('journey-description-modal');
         
@@ -720,17 +808,28 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
             descriptionModal.className = 'hidden absolute inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4';
             
             descriptionModal.innerHTML = `
-                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col journey-description-modal-white">
+                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col journey-description-modal-white">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-white">Description de la journée</h3>
-                        <button id="close-journey-description" class="text-gray-400 hover:text-white">
-                            <i class="fas fa-times fa-lg"></i>
-                        </button>
+                        <h3 id="journey-description-title" class="text-xl font-bold text-white">Description de la journée</h3>
+                        <div class="flex space-x-2">
+                            <button id="prev-day-description" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button id="next-day-description" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button id="close-journey-description" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times fa-lg"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed"></div>
-                    <div class="mt-4 pt-4 border-t border-gray-600 flex justify-end">
-                        <button id="copy-journey-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
-                            <i class="fas fa-copy mr-2"></i>Copier
+                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed flex-1"></div>
+                    <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between">
+                        <button id="copy-all-descriptions" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copier tout le voyage
+                        </button>
+                        <button id="copy-current-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copier cette journée
                         </button>
                     </div>
                 </div>
@@ -738,26 +837,101 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
             
             document.body.appendChild(descriptionModal);
             
-            // Setup event listeners
-            document.getElementById('close-journey-description').addEventListener('click', () => {
-                descriptionModal.classList.add('hidden');
-            });
+            this.setupDescriptionModalEventListeners();
+        }
+        
+        // Mettre à jour le titre et le contenu
+        const title = document.getElementById('journey-description-title');
+        const content = document.getElementById('journey-description-content');
+        
+        if (dayDate) {
+            title.textContent = `Description - ${dayDate}`;
+        } else {
+            title.textContent = 'Description de la journée';
+        }
+        
+        content.innerHTML = description.replace(/\n/g, '<br>');
+        
+        // Mettre à jour les boutons de navigation
+        this.updateDescriptionNavigationButtons();
+        
+        descriptionModal.classList.remove('hidden');
+    }
+
+    setupDescriptionModalEventListeners() {
+        // Fermer la modal
+        document.getElementById('close-journey-description').addEventListener('click', () => {
+            document.getElementById('journey-description-modal').classList.add('hidden');
+        });
+
+        // Navigation entre les jours
+        document.getElementById('prev-day-description').addEventListener('click', () => {
+            if (this.currentDayIndex > 0) {
+                this.currentDayIndex--;
+                this.displayCurrentJourneyDescription();
+                this.updateDescriptionNavigationButtons();
+            }
+        });
+
+        document.getElementById('next-day-description').addEventListener('click', () => {
+            if (this.currentDayIndex < this.totalJourneyDays - 1) {
+                this.currentDayIndex++;
+                this.displayCurrentJourneyDescription();
+                this.updateDescriptionNavigationButtons();
+            }
+        });
+
+        // Copier la description actuelle
+        document.getElementById('copy-current-description').addEventListener('click', () => {
+            const currentDayNumber = this.currentDayIndex + 1;
+            const currentDescription = this.journeyDescriptions[currentDayNumber];
             
-            document.getElementById('copy-journey-description').addEventListener('click', () => {
-                navigator.clipboard.writeText(description).then(() => {
-                    const button = document.getElementById('copy-journey-description');
+            if (currentDescription) {
+                navigator.clipboard.writeText(currentDescription.description).then(() => {
+                    const button = document.getElementById('copy-current-description');
                     const originalText = button.innerHTML;
                     button.innerHTML = '<i class="fas fa-check mr-2"></i>Copié !';
                     setTimeout(() => {
                         button.innerHTML = originalText;
                     }, 2000);
                 });
+            }
+        });
+
+        // Copier toutes les descriptions
+        document.getElementById('copy-all-descriptions').addEventListener('click', () => {
+            let allDescriptions = '';
+            for (let day = 1; day <= this.totalJourneyDays; day++) {
+                const dayDesc = this.journeyDescriptions[day];
+                if (dayDesc) {
+                    allDescriptions += `=== ${dayDesc.date} ===\n\n${dayDesc.description}\n\n`;
+                }
+            }
+            
+            navigator.clipboard.writeText(allDescriptions).then(() => {
+                const button = document.getElementById('copy-all-descriptions');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check mr-2"></i>Tout copié !';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
             });
+        });
+    }
+
+    updateDescriptionNavigationButtons() {
+        const prevBtn = document.getElementById('prev-day-description');
+        const nextBtn = document.getElementById('next-day-description');
+
+        if (prevBtn) {
+            prevBtn.style.opacity = this.currentDayIndex > 0 ? '1' : '0.3';
+            prevBtn.style.cursor = this.currentDayIndex > 0 ? 'pointer' : 'not-allowed';
         }
-        
-        // Mettre à jour le contenu et afficher la modal
-        const content = document.getElementById('journey-description-content');
-        content.innerHTML = description.replace(/\n/g, '<br>');
-        descriptionModal.classList.remove('hidden');
+
+        if (nextBtn) {
+            const canGoNext = this.currentDayIndex < (this.totalJourneyDays - 1);
+            nextBtn.style.opacity = canGoNext ? '1' : '0.3';
+            nextBtn.style.cursor = canGoNext ? 'pointer' : 'not-allowed';
+        }
     }
 }
