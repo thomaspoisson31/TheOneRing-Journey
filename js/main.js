@@ -3016,7 +3016,38 @@
 
         function exportRegionsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(regionsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Regions.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); document.body.removeChild(downloadAnchorNode); }
 
-        function importRegionsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.regions)) { regionsData = importedData; renderRegions(); saveRegionsToLocal(); alert("Régions importées avec succès !"); } else { alert("Fichier JSON invalide. Le fichier doit contenir un objet avec une propriété 'regions' qui est un tableau."); } } catch (err) { alert("Erreur lors de la lecture du fichier JSON."); console.error(err); } }; reader.readAsText(file); }
+        function importRegionsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); let regionsToImport = null; 
+        
+        // Vérifier différents formats possibles
+        if (importedData && Array.isArray(importedData.regions)) {
+            // Format standard: { regions: [...] }
+            regionsToImport = importedData.regions;
+        } else if (Array.isArray(importedData)) {
+            // Format direct: [...]
+            regionsToImport = importedData;
+        } else if (importedData && importedData.locations && Array.isArray(importedData.locations)) {
+            // Si c'est un fichier de lieux, informer l'utilisateur
+            alert("Ce fichier semble contenir des lieux, pas des régions. Utilisez la fonction d'import des lieux à la place.");
+            return;
+        }
+        
+        if (regionsToImport && regionsToImport.length > 0) {
+            // Valider que les objets ont les propriétés nécessaires pour les régions
+            const validRegions = regionsToImport.filter(region => 
+                region && region.name && region.points && Array.isArray(region.points)
+            );
+            
+            if (validRegions.length > 0) {
+                regionsData = { regions: validRegions };
+                renderRegions();
+                saveRegionsToLocal();
+                alert(`Régions importées avec succès ! (${validRegions.length} régions trouvées)`);
+            } else {
+                alert("Aucune région valide trouvée dans le fichier. Les régions doivent avoir au minimum un nom et des points de coordonnées.");
+            }
+        } else {
+            alert("Fichier JSON invalide. Le fichier doit contenir un objet avec une propriété 'regions' qui est un tableau, ou directement un tableau de régions.");
+        } } catch (err) { alert("Erreur lors de la lecture du fichier JSON : " + err.message); console.error(err); } }; reader.readAsText(file); }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
             if (totalPathPixels === 0 || MAP_WIDTH === 0) {
