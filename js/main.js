@@ -2983,17 +2983,17 @@
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
         document.getElementById('import-file-input').addEventListener('change', importLocationsFromFile);
-        
+
         // Event listeners pour l'import des régions
         const importRegionsBtn = document.getElementById('import-regions');
         const importRegionsInput = document.getElementById('import-regions-input');
         const exportRegionsBtn = document.getElementById('export-regions');
-        
+
         if (importRegionsBtn && importRegionsInput) {
             importRegionsBtn.addEventListener('click', () => importRegionsInput.click());
             importRegionsInput.addEventListener('change', importRegionsFromFile);
         }
-        
+
         if (exportRegionsBtn) {
             exportRegionsBtn.addEventListener('click', exportRegionsToFile);
         }
@@ -3024,12 +3024,12 @@
         function importLocationsFromFile(event) { 
             const file = event.target.files[0]; 
             if (!file) return; 
-            
+
             const reader = new FileReader(); 
             reader.onload = function(e) { 
                 try { 
                     const importedData = JSON.parse(e.target.result); 
-                    
+
                     if (importedData && Array.isArray(importedData.locations)) { 
                         // Fusionner avec les données existantes ou remplacer
                         const shouldReplace = confirm(
@@ -3038,7 +3038,7 @@
                             "- OK : Remplacer tous les lieux existants\n" +
                             "- Annuler : Fusionner avec les lieux existants"
                         );
-                        
+
                         if (shouldReplace) {
                             // Remplacer tous les lieux
                             locationsData = importedData;
@@ -3046,13 +3046,13 @@
                             // Fusionner : ajouter les nouveaux lieux en évitant les doublons
                             let addedCount = 0;
                             let duplicateCount = 0;
-                            
+
                             importedData.locations.forEach(importedLocation => {
                                 // Vérifier si un lieu avec le même nom existe déjà
                                 const existingLocation = locationsData.locations.find(
                                     loc => loc.name === importedLocation.name
                                 );
-                                
+
                                 if (existingLocation) {
                                     duplicateCount++;
                                     // Optionnel : mettre à jour le lieu existant
@@ -3064,19 +3064,19 @@
                                     addedCount++;
                                 }
                             });
-                            
+
                             alert(`Import terminé :\n- ${addedCount} nouveaux lieux ajoutés\n- ${duplicateCount} lieux existants mis à jour`);
                         }
-                        
+
                         // Appliquer les changements
                         renderLocations();
                         saveLocationsToLocal();
                         scheduleAutoSync();
-                        
+
                         if (shouldReplace) {
                             alert(`Import réussi ! ${importedData.locations.length} lieux ont été importés.`);
                         }
-                        
+
                         console.log("✅ Lieux importés avec succès");
                     } else { 
                         alert("Fichier JSON invalide. Le fichier doit contenir un objet avec une propriété 'locations' qui est un tableau."); 
@@ -3085,11 +3085,11 @@
                     alert("Erreur lors de la lecture du fichier JSON : " + err.message); 
                     console.error("Erreur d'import:", err); 
                 } 
-                
+
                 // Réinitialiser l'input file pour permettre de réimporter le même fichier
                 event.target.value = '';
             }; 
-            
+
             reader.readAsText(file); 
         }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
@@ -3901,7 +3901,7 @@
                 startPoint: startPoint,
                 lastPoint: lastPoint,
                 journeyDiscoveries: journeyDiscoveries, // Included journey discoveries
-                currentSeason: currentSeason // Include season data
+                currentSeason: currentSeason // Included season data
             };
 
             try {
@@ -4505,7 +4505,7 @@
             const modalTitle = document.getElementById('voyage-modal-title');
 
             if (!isVoyageActive || voyageSegments.length === 0) {
-                console.log("❌ Pas de voyage actif ou pas de segments");
+                console.log("❌ Pas de voyage actif oupas de segments");
                 currentSegmentDiv.classList.add('hidden');
                 noVoyageMessage.classList.remove('hidden');
                 progressBar.classList.add('hidden');
