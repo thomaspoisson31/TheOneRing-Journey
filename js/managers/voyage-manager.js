@@ -4,6 +4,8 @@ class VoyageManager {
         this.currentDayIndex = 0;
         this.totalJourneyDays = 0;
         this.dayByDayData = [];
+        this.journeyDescriptions = {}; // Pour stocker les descriptions générées
+        this.currentDescriptionDay = 1; // Pour suivre le jour affiché dans la modal de description
     }
 
     init() {
@@ -54,7 +56,7 @@ class VoyageManager {
         const currentSegmentDisplay = this.dom.getElementById('current-segment-display');
 
         // Utiliser les variables globales existantes
-        if (journeyPath.length === 0) {
+        if (typeof journeyPath === 'undefined' || journeyPath.length === 0) {
             noVoyageMessage.classList.remove('hidden');
             currentSegmentDisplay.classList.add('hidden');
         } else {
@@ -94,7 +96,7 @@ class VoyageManager {
                     }
                 } else if (timelineItem.type === 'region') {
                     if (day >= timelineItem.absoluteStartDay && day <= timelineItem.absoluteEndDay) {
-                        const exists = dayData.discoveries.some(d => 
+                        const exists = dayData.discoveries.some(d =>
                             d.name === timelineItem.discovery.name && d.type === timelineItem.discovery.type
                         );
                         if (!exists) {
@@ -177,10 +179,10 @@ class VoyageManager {
         }
 
         // Si pas de date sauvée, utiliser la date courante et l'enregistrer
-        if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
-            typeof currentCalendarDate !== 'undefined' && currentCalendarDate && 
+        if (typeof isCalendarMode !== 'undefined' && isCalendarMode &&
+            typeof currentCalendarDate !== 'undefined' && currentCalendarDate &&
             typeof calendarData !== 'undefined' && calendarData) {
-            
+
             const startDate = {
                 month: currentCalendarDate.month,
                 day: currentCalendarDate.day,
@@ -197,24 +199,24 @@ class VoyageManager {
 
     getSavedJourneyData() {
         if (typeof journeyPath === 'undefined' || journeyPath.length === 0) return null;
-        
+
         // Créer une signature unique du voyage basée sur les points du tracé
         const pathSignature = this.createPathSignature(journeyPath);
         const savedData = localStorage.getItem(`journey_${pathSignature}`);
-        
+
         return savedData ? JSON.parse(savedData) : null;
     }
 
     saveJourneyStartDate(startDate) {
         if (typeof journeyPath === 'undefined' || journeyPath.length === 0) return;
-        
+
         const pathSignature = this.createPathSignature(journeyPath);
         const journeyData = {
             startDate: startDate,
             pathSignature: pathSignature,
             savedAt: new Date().toISOString()
         };
-        
+
         localStorage.setItem(`journey_${pathSignature}`, JSON.stringify(journeyData));
         console.log(`📅 Date de début du voyage sauvegardée : ${startDate.day} ${startDate.month}`);
     }
@@ -222,11 +224,11 @@ class VoyageManager {
     createPathSignature(path) {
         // Créer une signature basée sur les premiers et derniers points + longueur totale
         if (path.length === 0) return 'empty';
-        
+
         const start = path[0];
         const end = path[path.length - 1];
         const length = path.length;
-        
+
         return `${Math.round(start.x)}_${Math.round(start.y)}_${Math.round(end.x)}_${Math.round(end.y)}_${length}`;
     }
 
@@ -527,7 +529,7 @@ class VoyageManager {
         if (!lastDayData) return;
 
         // Mettre à jour la date du calendrier principal si on est en mode calendrier
-        if (typeof isCalendarMode !== 'undefined' && isCalendarMode && 
+        if (typeof isCalendarMode !== 'undefined' && isCalendarMode &&
             this.journeyStartDate && typeof calendarData !== 'undefined' && calendarData) {
 
             // Calculer la nouvelle date basée sur la date de début fixe du voyage
@@ -577,16 +579,16 @@ class VoyageManager {
 
         // Collecter les données pour toutes les journées
         const allJourneyData = this.collectAllJourneyDataForPrompt();
-        
-        // Créer le prompt pour toutes les journées
-        const prompt = this.createCompleteJourneyDescriptionPrompt(allJourneyData);
-        
+
+        // Créer le prompt pour Gemini
+        const prompt = this.createAllJourneyDescriptionPrompt(allJourneyData);
+
         // Appeler Gemini via la fonction globale callGemini
         const button = this.dom.getElementById('describe-journey-btn');
         if (typeof callGemini === 'function') {
             try {
-                const jsonResponse = await callGemini(prompt, button);
-                this.processAndDisplayJourneyDescriptions(jsonResponse);
+                const response = await callGemini(prompt, button);
+                this.parseAndDisplayAllJourneyDescriptions(response);
             } catch (error) {
                 console.error('Erreur lors de la génération de la description:', error);
                 alert('Erreur lors de la génération de la description de voyage.');
@@ -596,11 +598,11 @@ class VoyageManager {
         }
     }
 
-    collectAllJourneyDataForPrompt() {
+    collectJourneyDataForPrompt(currentDay) {
         // Récupérer les données du groupe d'aventuriers et de la quête
         const adventurersGroup = localStorage.getItem('adventurersGroup') || '';
         const adventurersQuest = localStorage.getItem('adventurersQuest') || '';
-        
+
         // Récupérer la saison actuelle
         const currentSeason = typeof window.currentSeason !== 'undefined' ? window.currentSeason : 'printemps-debut';
         const seasonNames = {
@@ -619,11 +621,77 @@ class VoyageManager {
         };
         const seasonName = seasonNames[currentSeason] || currentSeason;
 
-        // Collecter toutes les journées avec leurs découvertes
-        const allDays = this.dayByDayData.map((dayData, index) => {
+        // Collecter les découvertes avec leurs descriptions
+        const discoveriesWithDescriptions = currentDay.discoveries.map(discovery => {
+            let description = '';
+
+            if (discovery.type === 'location' && typeof locationsData !== 'undefined') {
+                const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                if (location) {
+                    description = location.description || '';
+                }
+            } else if (discovery.type === 'region' && typeof regionsData !== 'undefined') {
+                const region = regionsData.regions.find(reg => reg.name === discovery.name);
+                if (region) {
+                    description = region.description || '';
+                }
+            }
+
+            let actionText = '';
+            if (discovery.proximityType) {
+                actionText = discovery.proximityType === 'traversed' ? 'traversé' : 'passage à proximité';
+            } else if (discovery.type === 'region') {
+                actionText = 'traversé';
+            } else {
+                actionText = 'découvert';
+            }
+
+            return {
+                name: discovery.name,
+                type: discovery.type === 'region' ? 'Région' : 'Lieu',
+                action: actionText,
+                description: description
+            };
+        });
+
+        return {
+            adventurersGroup,
+            adventurersQuest,
+            season: seasonName,
+            dayNumber: this.currentDayIndex + 1,
+            calendarDate: currentDay.calendarDate,
+            discoveries: discoveriesWithDescriptions
+        };
+    }
+
+    collectAllJourneyDataForPrompt() {
+        // Récupérer les données du groupe d'aventuriers et de la quête
+        const adventurersGroup = localStorage.getItem('adventurersGroup') || '';
+        const adventurersQuest = localStorage.getItem('adventurersQuest') || '';
+
+        // Récupérer la saison actuelle
+        const currentSeason = typeof window.currentSeason !== 'undefined' ? window.currentSeason : 'printemps-debut';
+        const seasonNames = {
+            'printemps-debut': 'Printemps-début',
+            'printemps-milieu': 'Printemps-milieu',
+            'printemps-fin': 'Printemps-fin',
+            'ete-debut': 'Été-début',
+            'ete-milieu': 'Été-milieu',
+            'ete-fin': 'Été-fin',
+            'automne-debut': 'Automne-début',
+            'automne-milieu': 'Automne-milieu',
+            'automne-fin': 'Automne-fin',
+            'hiver-debut': 'Hiver-début',
+            'hiver-milieu': 'Hiver-milieu',
+            'hiver-fin': 'Hiver-fin'
+        };
+        const seasonName = seasonNames[currentSeason] || currentSeason;
+
+        // Collecter les données pour toutes les journées
+        const allDaysData = this.dayByDayData.map((dayData, index) => {
             const discoveriesWithDescriptions = dayData.discoveries.map(discovery => {
                 let description = '';
-                
+
                 if (discovery.type === 'location' && typeof locationsData !== 'undefined') {
                     const location = locationsData.locations.find(loc => loc.name === discovery.name);
                     if (location) {
@@ -665,273 +733,246 @@ class VoyageManager {
             adventurersQuest,
             season: seasonName,
             totalDays: this.totalJourneyDays,
-            days: allDays
+            allDays: allDaysData
         };
     }
 
-    createCompleteJourneyDescriptionPrompt(allJourneyData) {
-        let prompt = `Rédige des descriptions évocatrices pour un voyage complet en Terre du Milieu, au présent de la deuxième personne du pluriel ("Vous traversez...").
+    createAllJourneyDescriptionPrompt(journeyData) {
+        let prompt = `Rédige des descriptions évocatrices pour toutes les journées d'un voyage en Terre du Milieu, au présent de la deuxième personne du pluriel ("Vous traversez...").
 
 Ces descriptions sont destinées à un meneur de jeu qui va les lire à ses joueurs pour les immerger dans l'ambiance du voyage.
 
 **Contexte du groupe :**
-${allJourneyData.adventurersGroup || 'Groupe d\'aventuriers non défini'}
+${journeyData.adventurersGroup || 'Groupe d\'aventuriers non défini'}
 
 **Nature de la quête :**
-${allJourneyData.adventurersQuest || 'Quête non définie'}
+${journeyData.adventurersQuest || 'Quête non définie'}
 
-**Saison actuelle :** ${allJourneyData.season}
-**Durée totale du voyage :** ${allJourneyData.totalDays} jours
+**Saison actuelle :** ${journeyData.season}
+**Durée totale du voyage :** ${journeyData.totalDays} jours
 
 **Détail des journées :**
 `;
 
-        allJourneyData.days.forEach(day => {
-            prompt += `\n**Jour ${day.dayNumber} (${day.calendarDate}) :**\n`;
-            if (day.discoveries.length > 0) {
-                prompt += `Lieux et régions :\n`;
-                day.discoveries.forEach(discovery => {
-                    prompt += `- ${discovery.type} : ${discovery.name} (${discovery.action})`;
+        journeyData.allDays.forEach(dayData => {
+            prompt += `\n**Jour ${dayData.dayNumber} (${dayData.calendarDate}) :**`;
+
+            if (dayData.discoveries.length > 0) {
+                prompt += `\n- Lieux et régions (dans l'ordre) :`;
+                dayData.discoveries.forEach(discovery => {
+                    prompt += `\n  • ${discovery.type} : ${discovery.name} (${discovery.action})`;
                     if (discovery.description) {
-                        prompt += `\n  Description : ${discovery.description}`;
+                        prompt += `\n    Description : ${discovery.description}`;
                     }
-                    prompt += '\n';
                 });
             } else {
-                prompt += `Voyage tranquille sans découverte particulière.\n`;
+                prompt += `\n- Voyage tranquille sans découverte particulière`;
             }
+            prompt += '\n';
         });
 
         prompt += `
 **Instructions importantes :**
-- Répondez UNIQUEMENT par un objet JSON structuré
-- Variez les descriptions selon les jours :
-  * Tantôt des descriptions de paysages et d'environnement
-  * Tantôt le temps qu'il fait et les conditions météorologiques
-  * Tantôt les impressions de voyage et l'ambiance du groupe
-  * Tantôt l'accumulation de la fatigue physique et mentale
-  * Tantôt l'attitude et les interactions entre membres du groupe
-- Évitez les redondances entre les journées
-- Rédigez au présent de la 2ème personne du pluriel
-- Faites appel à plusieurs sens (vue, ouïe, odorat, toucher)
-- Adaptez l'ambiance à la saison
-- Chaque description doit faire 2-3 paragraphes maximum
-- Le ton doit être immersif et narratif, adapté à une lecture en jeu de rôle
-
-**Format de réponse attendu :**
+- Répondez UNIQUEMENT avec un objet JSON valide de cette structure :
 {
-  "voyage": {
-    "jour_1": {
-      "date": "${allJourneyData.days[0]?.calendarDate || 'Jour 1'}",
-      "description": "Description de la première journée..."
+  "descriptions": [
+    {
+      "day": 1,
+      "description": "Description de la journée 1..."
     },
-    "jour_2": {
-      "date": "Date du jour 2",
-      "description": "Description de la deuxième journée..."
+    {
+      "day": 2,
+      "description": "Description de la journée 2..."
     }
-    // ... etc pour tous les jours
-  }
+  ]
 }
-`;
+
+- Variez les descriptions selon les jours en mettant en avant :
+  • Tantôt des descriptions de paysages
+  • Tantôt le temps qu'il fait
+  • Tantôt les impressions de voyage
+  • Tantôt l'accumulation de la fatigue
+  • Tantôt l'attitude de certains membres du groupe
+
+- Rédigez au présent de la 2ème personne du pluriel
+- Faites appel à plusieurs sens (vue, ouïe, odorat, toucher) pour une immersion totale
+- Évoquez l'état physique et mental des personnages en tenant compte du nombre de jours de voyage accumulés
+- Adaptez l'ambiance à la saison
+- Restez concis mais évocateur (2-3 paragraphes maximum par journée)
+- Le ton doit être immersif et narratif, adapté à une lecture en jeu de rôle
+- Évitez les redondances entre les descriptions des différentes journées
+- Assurez-vous que chaque description soit unique et apporte sa propre atmosphère
+
+Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
 
         return prompt;
     }
 
-    processAndDisplayJourneyDescriptions(jsonResponse) {
+    parseAndDisplayAllJourneyDescriptions(response) {
         try {
             // Nettoyer la réponse pour extraire le JSON
-            let cleanResponse = jsonResponse.trim();
-            
-            // Supprimer les balises markdown potentielles
+            let cleanResponse = response.trim();
+
+            // Enlever les balises de code si présentes
             if (cleanResponse.startsWith('```json')) {
                 cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
             } else if (cleanResponse.startsWith('```')) {
                 cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
             }
-            
-            // Parser le JSON
-            const descriptionsData = JSON.parse(cleanResponse);
-            
-            if (!descriptionsData.voyage) {
-                throw new Error('Format de réponse invalide: propriété "voyage" manquante');
+
+            const jsonData = JSON.parse(cleanResponse);
+
+            if (!jsonData.descriptions || !Array.isArray(jsonData.descriptions)) {
+                throw new Error('Format de réponse invalide');
             }
-            
-            // Stocker les descriptions pour chaque jour
+
+            // Stocker les descriptions pour chaque journée
             this.journeyDescriptions = {};
-            Object.keys(descriptionsData.voyage).forEach(dayKey => {
-                const dayInfo = descriptionsData.voyage[dayKey];
-                if (dayInfo && dayInfo.description) {
-                    // Extraire le numéro du jour
-                    const dayMatch = dayKey.match(/jour_(\d+)/);
-                    if (dayMatch) {
-                        const dayNumber = parseInt(dayMatch[1]);
-                        this.journeyDescriptions[dayNumber] = {
-                            date: dayInfo.date,
-                            description: dayInfo.description
-                        };
-                    }
-                }
+            jsonData.descriptions.forEach(dayDesc => {
+                this.journeyDescriptions[dayDesc.day] = dayDesc.description;
             });
-            
-            // Afficher la description du jour actuel
-            this.displayCurrentJourneyDescription();
-            
+
+            // Afficher la description de la journée courante
+            const currentDayDescription = this.journeyDescriptions[this.currentDayIndex + 1];
+            if (currentDayDescription) {
+                this.displayJourneyDescription(currentDayDescription, true);
+            } else {
+                alert('Aucune description trouvée pour cette journée.');
+            }
+
         } catch (error) {
             console.error('Erreur lors du parsing JSON:', error);
-            console.log('Réponse reçue:', jsonResponse);
-            
-            // Fallback: afficher la réponse brute comme avant
-            this.displayJourneyDescription(jsonResponse);
+            console.log('Réponse reçue:', response);
+
+            // Fallback : afficher la réponse brute
+            this.displayJourneyDescription(response, false);
         }
     }
 
-    displayCurrentJourneyDescription() {
-        const currentDayNumber = this.currentDayIndex + 1;
-        const currentDescription = this.journeyDescriptions[currentDayNumber];
-        
-        if (!currentDescription) {
-            alert('Description non disponible pour cette journée.');
-            return;
-        }
-        
-        this.displayJourneyDescription(currentDescription.description, currentDescription.date);
-    }
-
-    displayJourneyDescription(description, dayDate = null) {
+    displayJourneyDescription(description, isFromMultipleGeneration = false) {
         // Créer ou réutiliser une modal pour afficher la description
         let descriptionModal = document.getElementById('journey-description-modal');
-        
+
         if (!descriptionModal) {
             // Créer la modal si elle n'existe pas
             descriptionModal = document.createElement('div');
             descriptionModal.id = 'journey-description-modal';
             descriptionModal.className = 'hidden absolute inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4';
-            
+
             descriptionModal.innerHTML = `
-                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col journey-description-modal-white">
+                <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col journey-description-modal-white">
                     <div class="flex justify-between items-center mb-4">
                         <h3 id="journey-description-title" class="text-xl font-bold text-white">Description de la journée</h3>
-                        <div class="flex space-x-2">
-                            <button id="prev-day-description" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors">
-                                <i class="fas fa-chevron-left"></i>
+                        <button id="close-journey-description" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-times fa-lg"></i>
+                        </button>
+                    </div>
+                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed"></div>
+                    <div id="journey-description-controls" class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
+                        <div id="day-navigation-controls" class="hidden flex space-x-2">
+                            <button id="prev-day-desc" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors">
+                                <i class="fas fa-chevron-left mr-1"></i>Précédent
                             </button>
-                            <button id="next-day-description" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                            <button id="close-journey-description" class="text-gray-400 hover:text-white">
-                                <i class="fas fa-times fa-lg"></i>
+                            <span id="current-day-indicator" class="px-3 py-2 text-gray-300 text-sm">Jour 1</span>
+                            <button id="next-day-desc" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors">
+                                Suivant<i class="fas fa-chevron-right ml-1"></i>
                             </button>
                         </div>
-                    </div>
-                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed flex-1"></div>
-                    <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between">
-                        <button id="copy-all-descriptions" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-colors">
-                            <i class="fas fa-copy mr-2"></i>Copier tout le voyage
-                        </button>
-                        <button id="copy-current-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
-                            <i class="fas fa-copy mr-2"></i>Copier cette journée
+                        <button id="copy-journey-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copier
                         </button>
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(descriptionModal);
-            
-            this.setupDescriptionModalEventListeners();
+
+            // Setup event listeners
+            document.getElementById('close-journey-description').addEventListener('click', () => {
+                descriptionModal.classList.add('hidden');
+            });
         }
-        
-        // Mettre à jour le titre et le contenu
-        const title = document.getElementById('journey-description-title');
-        const content = document.getElementById('journey-description-content');
-        
-        if (dayDate) {
-            title.textContent = `Description - ${dayDate}`;
-        } else {
-            title.textContent = 'Description de la journée';
-        }
-        
-        content.innerHTML = description.replace(/\n/g, '<br>');
-        
-        // Mettre à jour les boutons de navigation
-        this.updateDescriptionNavigationButtons();
-        
+
+        // Variables pour gérer la navigation
+        this.currentDescriptionDay = this.currentDayIndex + 1;
+        this.currentDescriptionText = description;
+
+        // Mettre à jour le contenu et afficher la modal
+        this.updateDescriptionModal(description, isFromMultipleGeneration);
         descriptionModal.classList.remove('hidden');
     }
 
-    setupDescriptionModalEventListeners() {
-        // Fermer la modal
-        document.getElementById('close-journey-description').addEventListener('click', () => {
-            document.getElementById('journey-description-modal').classList.add('hidden');
-        });
+    updateDescriptionModal(description, showNavigation = false) {
+        const title = document.getElementById('journey-description-title');
+        const content = document.getElementById('journey-description-content');
+        const navigationControls = document.getElementById('day-navigation-controls');
+        const copyButton = document.getElementById('copy-journey-description');
 
-        // Navigation entre les jours
-        document.getElementById('prev-day-description').addEventListener('click', () => {
-            if (this.currentDayIndex > 0) {
-                this.currentDayIndex--;
-                this.displayCurrentJourneyDescription();
-                this.updateDescriptionNavigationButtons();
-            }
-        });
-
-        document.getElementById('next-day-description').addEventListener('click', () => {
-            if (this.currentDayIndex < this.totalJourneyDays - 1) {
-                this.currentDayIndex++;
-                this.displayCurrentJourneyDescription();
-                this.updateDescriptionNavigationButtons();
-            }
-        });
-
-        // Copier la description actuelle
-        document.getElementById('copy-current-description').addEventListener('click', () => {
-            const currentDayNumber = this.currentDayIndex + 1;
-            const currentDescription = this.journeyDescriptions[currentDayNumber];
-            
-            if (currentDescription) {
-                navigator.clipboard.writeText(currentDescription.description).then(() => {
-                    const button = document.getElementById('copy-current-description');
-                    const originalText = button.innerHTML;
-                    button.innerHTML = '<i class="fas fa-check mr-2"></i>Copié !';
-                    setTimeout(() => {
-                        button.innerHTML = originalText;
-                    }, 2000);
-                });
-            }
-        });
-
-        // Copier toutes les descriptions
-        document.getElementById('copy-all-descriptions').addEventListener('click', () => {
-            let allDescriptions = '';
-            for (let day = 1; day <= this.totalJourneyDays; day++) {
-                const dayDesc = this.journeyDescriptions[day];
-                if (dayDesc) {
-                    allDescriptions += `=== ${dayDesc.date} ===\n\n${dayDesc.description}\n\n`;
-                }
-            }
-            
-            navigator.clipboard.writeText(allDescriptions).then(() => {
-                const button = document.getElementById('copy-all-descriptions');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check mr-2"></i>Tout copié !';
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                }, 2000);
-            });
-        });
-    }
-
-    updateDescriptionNavigationButtons() {
-        const prevBtn = document.getElementById('prev-day-description');
-        const nextBtn = document.getElementById('next-day-description');
-
-        if (prevBtn) {
-            prevBtn.style.opacity = this.currentDayIndex > 0 ? '1' : '0.3';
-            prevBtn.style.cursor = this.currentDayIndex > 0 ? 'pointer' : 'not-allowed';
+        // Mettre à jour le titre
+        const currentDay = this.dayByDayData[this.currentDescriptionDay - 1];
+        if (currentDay) {
+            title.textContent = `Description - ${currentDay.calendarDate}`;
         }
 
-        if (nextBtn) {
-            const canGoNext = this.currentDayIndex < (this.totalJourneyDays - 1);
-            nextBtn.style.opacity = canGoNext ? '1' : '0.3';
-            nextBtn.style.cursor = canGoNext ? 'pointer' : 'not-allowed';
+        // Mettre à jour le contenu
+        content.innerHTML = description.replace(/\n/g, '<br>');
+
+        // Gérer la navigation si on a plusieurs descriptions
+        if (showNavigation && this.journeyDescriptions) {
+            navigationControls.classList.remove('hidden');
+            this.setupDescriptionNavigation();
+        } else {
+            navigationControls.classList.add('hidden');
+        }
+
+        // Mettre à jour le bouton copier
+        copyButton.onclick = () => {
+            navigator.clipboard.writeText(description).then(() => {
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fas fa-check mr-2"></i>Copié !';
+                setTimeout(() => {
+                    copyButton.innerHTML = originalText;
+                }, 2000);
+            });
+        };
+    }
+
+    setupDescriptionNavigation() {
+        const prevBtn = document.getElementById('prev-day-desc');
+        const nextBtn = document.getElementById('next-day-desc');
+        const indicator = document.getElementById('current-day-indicator');
+
+        // Mettre à jour l'indicateur
+        indicator.textContent = `Jour ${this.currentDescriptionDay}`;
+
+        // Gérer les boutons
+        prevBtn.style.opacity = this.currentDescriptionDay > 1 ? '1' : '0.5';
+        prevBtn.disabled = this.currentDescriptionDay <= 1;
+
+        nextBtn.style.opacity = this.currentDescriptionDay < this.totalJourneyDays ? '1' : '0.5';
+        nextBtn.disabled = this.currentDescriptionDay >= this.totalJourneyDays;
+
+        // Event listeners
+        prevBtn.onclick = () => {
+            if (this.currentDescriptionDay > 1) {
+                this.currentDescriptionDay--;
+                this.showDescriptionForDay(this.currentDescriptionDay);
+            }
+        };
+
+        nextBtn.onclick = () => {
+            if (this.currentDescriptionDay < this.totalJourneyDays) {
+                this.currentDescriptionDay++;
+                this.showDescriptionForDay(this.currentDescriptionDay);
+            }
+        };
+    }
+
+    showDescriptionForDay(dayNumber) {
+        if (this.journeyDescriptions && this.journeyDescriptions[dayNumber]) {
+            this.updateDescriptionModal(this.journeyDescriptions[dayNumber], true);
+        } else {
+            this.updateDescriptionModal(`Aucune description disponible pour le jour ${dayNumber}.`, true);
         }
     }
 }
