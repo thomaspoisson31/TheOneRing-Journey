@@ -2983,6 +2983,20 @@
         document.getElementById('export-locations').addEventListener('click', exportLocationsToFile);
         document.getElementById('import-locations').addEventListener('click', () => document.getElementById('import-file-input').click());
         document.getElementById('import-file-input').addEventListener('change', importLocationsFromFile);
+        
+        // Event listeners pour l'import des régions
+        const importRegionsBtn = document.getElementById('import-regions');
+        const importRegionsInput = document.getElementById('import-regions-input');
+        const exportRegionsBtn = document.getElementById('export-regions');
+        
+        if (importRegionsBtn && importRegionsInput) {
+            importRegionsBtn.addEventListener('click', () => importRegionsInput.click());
+            importRegionsInput.addEventListener('change', importRegionsFromFile);
+        }
+        
+        if (exportRegionsBtn) {
+            exportRegionsBtn.addEventListener('click', exportRegionsToFile);
+        }
         // document.getElementById('reset-locations').addEventListener('click', () => { if (confirm("Voulez-vous vraiment réinitialiser tous les lieux par défaut ?")) { locationsData = getDefaultLocations(); renderLocations(); saveLocationsToLocal(); } });
         mapSwitchBtn.addEventListener('click', () => {
             isPlayerView = !isPlayerView;
@@ -3007,7 +3021,77 @@
             scheduleAutoSync(); // Synchroniser après modification
         }
         function exportLocationsToFile() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(locationsData, null, 2)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "Landmarks.json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); document.body.removeChild(downloadAnchorNode); URL.revokeObjectURL(url); }
-        function importLocationsFromFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedData = JSON.parse(e.target.result); if (importedData && Array.isArray(importedData.locations)) { locationsData = importedData; renderLocations(); saveLocationsToLocal(); } else { alert("Fichier JSON invalide."); } } catch (err) { alert("Erreur lors de la lecture du fichier."); console.error(err); } }; reader.readAsText(file); }
+        function importLocationsFromFile(event) { 
+            const file = event.target.files[0]; 
+            if (!file) return; 
+            
+            const reader = new FileReader(); 
+            reader.onload = function(e) { 
+                try { 
+                    const importedData = JSON.parse(e.target.result); 
+                    
+                    if (importedData && Array.isArray(importedData.locations)) { 
+                        // Fusionner avec les données existantes ou remplacer
+                        const shouldReplace = confirm(
+                            `Le fichier contient ${importedData.locations.length} lieux.\n\n` +
+                            "Voulez-vous :\n" +
+                            "- OK : Remplacer tous les lieux existants\n" +
+                            "- Annuler : Fusionner avec les lieux existants"
+                        );
+                        
+                        if (shouldReplace) {
+                            // Remplacer tous les lieux
+                            locationsData = importedData;
+                        } else {
+                            // Fusionner : ajouter les nouveaux lieux en évitant les doublons
+                            let addedCount = 0;
+                            let duplicateCount = 0;
+                            
+                            importedData.locations.forEach(importedLocation => {
+                                // Vérifier si un lieu avec le même nom existe déjà
+                                const existingLocation = locationsData.locations.find(
+                                    loc => loc.name === importedLocation.name
+                                );
+                                
+                                if (existingLocation) {
+                                    duplicateCount++;
+                                    // Optionnel : mettre à jour le lieu existant
+                                    Object.assign(existingLocation, importedLocation);
+                                } else {
+                                    // Assigner un nouvel ID unique
+                                    importedLocation.id = Date.now() + Math.random();
+                                    locationsData.locations.push(importedLocation);
+                                    addedCount++;
+                                }
+                            });
+                            
+                            alert(`Import terminé :\n- ${addedCount} nouveaux lieux ajoutés\n- ${duplicateCount} lieux existants mis à jour`);
+                        }
+                        
+                        // Appliquer les changements
+                        renderLocations();
+                        saveLocationsToLocal();
+                        scheduleAutoSync();
+                        
+                        if (shouldReplace) {
+                            alert(`Import réussi ! ${importedData.locations.length} lieux ont été importés.`);
+                        }
+                        
+                        console.log("✅ Lieux importés avec succès");
+                    } else { 
+                        alert("Fichier JSON invalide. Le fichier doit contenir un objet avec une propriété 'locations' qui est un tableau."); 
+                    } 
+                } catch (err) { 
+                    alert("Erreur lors de la lecture du fichier JSON : " + err.message); 
+                    console.error("Erreur d'import:", err); 
+                } 
+                
+                // Réinitialiser l'input file pour permettre de réimporter le même fichier
+                event.target.value = '';
+            }; 
+            
+            reader.readAsText(file); 
+        }
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
             if (totalPathPixels === 0 || MAP_WIDTH === 0) {
