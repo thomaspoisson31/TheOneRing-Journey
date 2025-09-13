@@ -376,70 +376,49 @@
         <!-- Voyage Segments Modal -->
         <div id="voyage-segments-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center p-4">
             <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex flex-col ml-20" style="font-family: 'Merriweather', serif; width: 90%; height: 90%;">
-                <div class="flex justify-end items-center p-2">
+                <!-- Header avec date et bouton fermer -->
+                <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                    <div class="flex items-center space-x-4">
+                        <h3 id="segment-title" class="text-xl font-bold text-white">17 Ninui</h3>
+                        <span id="day-counter" class="text-sm text-gray-400">(Jour 1 sur 9)</span>
+                    </div>
                     <button id="close-voyage-segments" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
 
                 <div class="flex-grow overflow-hidden flex flex-col">
                     <!-- Message d'accueil ou contenu du segment -->
-                    <div class="flex-1 overflow-hidden flex flex-col">
-                        <div id="no-voyage-message" class="flex items-center justify-center text-center text-gray-500 text-sm h-full p-4">
-                            Tracez un chemin sur la carte pour créer votre périple.
+                    <div id="no-voyage-message" class="hidden p-8 text-center text-gray-400">
+                        <h3 class="text-xl mb-4">Aucun voyage en cours</h3>
+                        <p>Tracez un chemin sur la carte pour commencer un voyage et voir les détails jour par jour.</p>
+                    </div>
+
+                    <!-- Contenu principal du segment -->
+                    <div id="current-segment-display" class="flex-grow flex flex-col">
+                        <!-- Barre de progression avec navigation -->
+                        <div class="p-4">
+                            <div id="voyage-progress-bar" class="hidden">
+                                <div class="flex items-center justify-between mb-2">
+                                    <button id="prev-segment-btn" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white transition-colors">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+
+                                    <div class="flex-1 mx-4">
+                                        <div class="bg-gray-700 h-2 rounded-full relative">
+                                            <div id="progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300"></div>
+                                            <div id="progress-marker" class="absolute top-0 w-4 h-4 bg-blue-400 rounded-full border-2 border-white transform -translate-y-1"></div>
+                                        </div>
+                                    </div>
+
+                                    <button id="next-segment-btn" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white transition-colors">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Segment actuel -->
-                        <div id="current-segment-display" class="hidden flex-1 flex flex-col p-4">
-                            <!-- Barre de progression -->
-                            <div id="voyage-progress-bar" class="hidden mb-4">
-                                <div class="relative w-full bg-gray-700 rounded-full h-2">
-                                    <div id="progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 50%"></div>
-                                    <div id="progress-marker" class="absolute top-0 w-6 h-6 bg-blue-600 rounded-full border-2 border-white transform -translate-y-2 transition-all duration-300 cursor-pointer" style="left: calc(50% - 12px);" title="Progression du voyage">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Titre avec navigation -->
-                            <div class="flex items-center justify-between mb-4">
-                                <button id="prev-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Jour précédent">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <h4 id="segment-title" class="text-lg font-semibold text-center flex-1" style="font-family: 'Merriweather', serif;">
-                                1 Gwaeron
-                            </h4>
-                                <button id="next-segment-btn" class="text-white hover:text-blue-400 text-lg" title="Jour suivant">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-
-                            <!-- Contenu du segment organisé par jour -->
-                            <div id="segment-content" class="flex-1 overflow-y-auto">
-                                <div class="space-y-3">
-                                    <div class="day-section">
-                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 1 : Bree</h5>
-                                        <div class="ml-4 text-sm text-gray-300">
-                                            <p>📍 Départ de Bree</p>
-                                        </div>
-                                    </div>
-                                    <div class="day-section">
-                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 2 : Grande route de l'Est</h5>
-                                        <div class="ml-4 text-sm text-gray-300">
-                                            <p>🛤️ Voyage sur la Grande route de l'Est</p>
-                                        </div>
-                                    </div>
-                                    <div class="day-section">
-                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 3 : Grande route de l'Est</h5>
-                                        <div class="ml-4 text-sm text-gray-300">
-                                            <p>🛤️ Poursuite du voyage</p>
-                                        </div>
-                                    </div>
-                                    <div class="day-section">
-                                        <h5 class="font-semibold text-blue-300 mb-2">Jour 4 : Mont Venteux</h5>
-                                        <div class="ml-4 text-sm text-gray-300">
-                                            <p>🏔️ Arrivée au Mont Venteux</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- Contenu scrollable du segment -->
+                        <div id="segment-content" class="flex-grow overflow-y-auto px-6 pb-6">
+                            <!-- Le contenu sera généré dynamiquement -->
                         </div>
                     </div>
 

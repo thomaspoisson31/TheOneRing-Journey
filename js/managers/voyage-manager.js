@@ -273,8 +273,14 @@ class VoyageManager {
 
     updateDayTitle(dayData) {
         const segmentTitle = this.dom.getElementById('segment-title');
+        const dayCounter = this.dom.getElementById('day-counter');
+        
         if (segmentTitle) {
             segmentTitle.textContent = dayData.calendarDate;
+        }
+        
+        if (dayCounter) {
+            dayCounter.textContent = `(Jour ${this.currentDayIndex + 1} sur ${this.totalJourneyDays})`;
         }
     }
 
@@ -322,7 +328,7 @@ class VoyageManager {
 
         // Ajouter les boutons en bas
         let buttonsHtml = `
-            <div class="mt-6 pt-4 border-t border-gray-600 space-y-3">
+            <div class="mt-3 pt-3 border-t border-gray-600 space-y-3">
                 <div id="current-day-description" class="hidden bg-gray-800 rounded-lg p-4 mb-3">
                     <div class="text-sm text-gray-400 mb-2">Description de la journée :</div>
                     <div id="current-day-description-text" class="text-gray-200 leading-relaxed text-sm"></div>
@@ -895,23 +901,39 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
 
             descriptionModal.innerHTML = `
                 <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col journey-description-modal-white">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-2">
                         <h3 id="journey-description-title" class="text-xl font-bold text-white">Description de la journée</h3>
                         <button id="close-journey-description" class="text-gray-400 hover:text-white">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
-                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed"></div>
-                    <div id="journey-description-controls" class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
-                        <div id="day-navigation-controls" class="hidden flex space-x-2">
-                            <button id="prev-day-desc" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors">
-                                <i class="fas fa-chevron-left mr-1"></i>Précédent
+                    
+                    <!-- Barre de progression avec navigation -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <button id="prev-day-desc" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white text-sm transition-colors">
+                                <i class="fas fa-chevron-left"></i>
                             </button>
-                            <span id="current-day-indicator" class="px-3 py-2 text-gray-300 text-sm">Jour 1</span>
-                            <button id="next-day-desc" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors">
-                                Suivant<i class="fas fa-chevron-right ml-1"></i>
+                            
+                            <div class="flex-1 mx-4">
+                                <div class="bg-gray-700 h-2 rounded-full relative">
+                                    <div id="journey-progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300"></div>
+                                    <div id="journey-progress-marker" class="absolute top-0 w-4 h-4 bg-blue-400 rounded-full border-2 border-white transform -translate-y-1"></div>
+                                </div>
+                            </div>
+                            
+                            <button id="next-day-desc" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white text-sm transition-colors">
+                                <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
+                        
+                        <div class="text-center">
+                            <span id="current-day-indicator" class="text-gray-300 text-sm">Jour 1</span>
+                        </div>
+                    </div>
+                    
+                    <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed flex-1"></div>
+                    <div id="journey-description-controls" class="mt-4 pt-4 border-t border-gray-600 flex justify-end">
                         <button id="copy-journey-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
                             <i class="fas fa-copy mr-2"></i>Copier
                         </button>
@@ -975,9 +997,18 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
         const prevBtn = document.getElementById('prev-day-desc');
         const nextBtn = document.getElementById('next-day-desc');
         const indicator = document.getElementById('current-day-indicator');
+        const progressFill = document.getElementById('journey-progress-fill');
+        const progressMarker = document.getElementById('journey-progress-marker');
 
         // Mettre à jour l'indicateur
         indicator.textContent = `Jour ${this.currentDescriptionDay}`;
+
+        // Mettre à jour la barre de progression
+        if (progressFill && progressMarker) {
+            const progressPercentage = (this.currentDescriptionDay / this.totalJourneyDays) * 100;
+            progressFill.style.width = `${progressPercentage}%`;
+            progressMarker.style.left = `calc(${progressPercentage}% - 8px)`;
+        }
 
         // Gérer les boutons
         prevBtn.style.opacity = this.currentDescriptionDay > 1 ? '1' : '0.5';
