@@ -288,7 +288,6 @@ class VoyageManager {
             contentHtml = '<p class="text-gray-500 text-sm italic text-center p-4">Voyage tranquille...</p>';
         } else {
             const discoveriesHtml = dayData.discoveries.map(discovery => {
-                const icon = discovery.type === 'region' ? '🗺️' : '📍';
                 const typeText = discovery.type === 'region' ? 'Région' : 'Lieu';
                 let actionText = '';
 
@@ -300,19 +299,22 @@ class VoyageManager {
                     actionText = 'découvert';
                 }
 
+                // Obtenir l'image pour la miniature
+                const imageUrl = this.getDiscoveryImage(discovery);
+
                 return `
-                    <div class="flex items-center space-x-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}">
-                        <span class="text-2xl">${icon}</span>
-                        <div class="flex-1">
-                            <div class="font-medium text-white">${discovery.name}</div>
-                            <div class="text-sm text-gray-400">${typeText} - ${actionText}</div>
+                    <div class="inline-block m-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item text-center" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}" style="width: 180px; vertical-align: top;">
+                        <div class="w-[150px] h-[150px] mx-auto mb-2 bg-gray-600 rounded-lg overflow-hidden">
+                            ${imageUrl ? `<img src="${imageUrl}" alt="${discovery.name}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">Aucune image</div>'}
                         </div>
+                        <div class="font-medium text-white text-sm mb-1">${discovery.name}</div>
+                        <div class="text-xs text-gray-400">${typeText} - ${actionText}</div>
                     </div>
                 `;
             }).join('');
 
             contentHtml = `
-                <div class="space-y-3">
+                <div class="text-left">
                     ${discoveriesHtml}
                 </div>
             `;
@@ -1006,5 +1008,45 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
         } else {
             this.updateDescriptionModal(`Aucune description disponible pour le jour ${dayNumber}.`, true);
         }
+    }
+
+    getDiscoveryImage(discovery) {
+        if (discovery.type === 'location') {
+            // Chercher dans les données de lieux
+            if (typeof locationsData !== 'undefined' && locationsData.locations) {
+                const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                if (location) {
+                    // Support du nouveau format avec array d'images
+                    if (location.images && Array.isArray(location.images) && location.images.length > 0) {
+                        // Prendre la première image ou l'image par défaut
+                        const defaultImg = location.images.find(img => img.isDefault);
+                        return defaultImg ? defaultImg.url : location.images[0].url;
+                    }
+                    // Support de l'ancien format avec imageUrl
+                    else if (location.imageUrl) {
+                        return location.imageUrl;
+                    }
+                }
+            }
+        } else if (discovery.type === 'region') {
+            // Chercher dans les données de régions
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discovery.name);
+                if (region) {
+                    // Support du nouveau format avec array d'images
+                    if (region.images && Array.isArray(region.images) && region.images.length > 0) {
+                        // Prendre la première image ou l'image par défaut
+                        const defaultImg = region.images.find(img => img.isDefault);
+                        return defaultImg ? defaultImg.url : region.images[0].url;
+                    }
+                    // Support de l'ancien format avec imageUrl (si applicable)
+                    else if (region.imageUrl) {
+                        return region.imageUrl;
+                    }
+                }
+            }
+        }
+        
+        return null;
     }
 }
