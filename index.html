@@ -11,16 +11,8 @@
 </head>
 <body class="bg-gray-800 text-white flex flex-col h-screen">
 
-    <header class="bg-gray-900 text-center p-2 shadow-lg z-20 relative">
-        <h1 class="text-xl font-bold tracking-wider">Voyages en Terre du Milieu</h1>
-        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center">
-            <div id="calendar-date-indicator" class="text-sm text-gray-300 mr-3 hidden cursor-pointer hover:text-white transition-colors" title="Cliquez pour ouvrir les paramètres de saison">1 Gwaeron</div>
-            <div id="season-indicator" class="text-2xl cursor-pointer hover:scale-110 transition-transform" title="Cliquez pour ouvrir les paramètres de saison">🌱</div>
-        </div>
-    </header>
-
     <!-- Main container -->
-    <div class="flex-grow relative">
+    <div class="h-screen relative">
         <!-- Toolbar -->
         <div id="toolbar" class="absolute top-4 left-4 z-10 bg-gray-900 bg-opacity-80 p-2 rounded-lg shadow-xl flex flex-col space-y-2 border border-gray-700">
             <!-- Authentication Button en premier -->
@@ -88,25 +80,37 @@
             </div>
         </div>
 
-        <!-- Distance Display -->
-        <div id="distance-container" class="hidden absolute top-4 right-4 z-10 bg-gray-900 bg-opacity-80 p-3 rounded-lg shadow-xl border border-gray-700 text-sm max-w-xs">
-            <div class="flex items-center space-x-2 mb-2">
-                <div id="distance-display" class="text-lg"></div>
-                <button id="generate-journey-log" title="Générer une chronique de voyage" class="bg-purple-600 hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
-                    <span class="gemini-icon">✨</span>
-                </button>
-                <button id="voyage-segments-btn" title="Gérer les segments de voyage" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
-                    <i class="fas fa-route"></i>
-                </button>
-            </div>
-            <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2">
-                <div id="traversed-regions-info" class="hidden">
-                    <div class="font-semibold text-blue-400 mb-1">Découvertes du voyage :</div>
-                    <div id="traversed-regions-list" class="text-gray-300"></div>
+        <!-- Voyage Display -->
+        <div id="voyage-container" class="absolute top-4 right-4 z-10 bg-gray-900 bg-opacity-80 p-3 rounded-lg shadow-xl border border-gray-700 text-sm max-w-xs">
+            <!-- Date et saison -->
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <div id="calendar-date-indicator" class="text-lg text-white cursor-pointer hover:text-blue-300 transition-colors" title="Cliquez pour ouvrir les paramètres de saison">1 Gwaeron</div>
+                    <div id="season-indicator" class="text-lg cursor-pointer hover:scale-110 transition-transform" title="Cliquez pour ouvrir les paramètres de saison">🌱</div>
                 </div>
-                <div id="nearby-locations-info" class="hidden">
-                    <div class="font-semibold text-blue-400 mb-1">Lieux à proximité :</div>
-                    <div id="nearby-locations-list" class="text-gray-300"></div>
+            </div>
+            
+            <!-- Informations de voyage (affichées uniquement si tracé actif) -->
+            <div id="distance-info" class="hidden">
+                <div class="flex items-center space-x-2 mb-2 border-t border-gray-600 pt-2">
+                    <div id="distance-display" class="text-lg"></div>
+                    <button id="generate-journey-log" title="Générer une chronique de voyage" class="bg-purple-600 hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
+                        <span class="gemini-icon">✨</span>
+                    </button>
+                    <button id="voyage-segments-btn" title="Gérer les segments de voyage" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white">
+                        <i class="fas fa-route"></i>
+                    </button>
+                </div>
+                <!-- Masquage du détail du voyage -->
+                <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2 hidden">
+                    <div id="traversed-regions-info" class="hidden">
+                        <div class="font-semibold text-blue-400 mb-1">Découvertes du voyage :</div>
+                        <div id="traversed-regions-list" class="text-gray-300"></div>
+                    </div>
+                    <div id="nearby-locations-info" class="hidden">
+                        <div class="font-semibold text-blue-400 mb-1">Lieux à proximité :</div>
+                        <div id="nearby-locations-list" class="text-gray-300"></div>
+                    </div>
                 </div>
             </div>
         </div>

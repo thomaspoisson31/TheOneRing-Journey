@@ -4,6 +4,18 @@ body {
     overflow: hidden;
 }
 
+/* Voyage container styles */
+#voyage-container {
+    min-width: 200px;
+}
+
+#voyage-container #calendar-date-indicator,
+#voyage-container #season-indicator,
+#voyage-container #distance-display {
+    font-size: 1.125rem; /* text-lg harmonized */
+    font-weight: 600;
+}
+
 #viewport {
     cursor: grab;
 }
