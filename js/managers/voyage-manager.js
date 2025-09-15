@@ -350,7 +350,7 @@ class VoyageManager {
                     <div class="text-sm text-gray-400 mb-2">Description de la journée :</div>
                     <div id="current-day-description-text" class="text-gray-200 leading-relaxed text-sm"></div>
                 </div>
-                <button id="describe-journey-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium flex items-center justify-center space-x-2 transition-colors">
+                <button id="describe-journey-btn" class="w-full py-3 rounded-lg text-white font-medium flex items-center justify-center space-x-2 transition-colors" style="background-color: #940000; border: 1px solid #940000;">
                     <span class="gemini-icon">✨</span>
                     <span>Décrire le voyage${styleText}</span>
                 </button>
@@ -963,7 +963,7 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
             descriptionModal.innerHTML = `
                 <div class="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col journey-description-modal-white">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 id="journey-description-title" class="text-xl font-bold text-white">Description de la journée</h3>
+                        <h3 id="journey-description-title" class="text-xl font-bold" style="color: #940000;">Description de la journée</h3>
                         <button id="close-journey-description" class="text-gray-400 hover:text-white">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
@@ -972,30 +972,30 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                     <!-- Barre de progression avec navigation -->
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-2">
-                            <button id="prev-day-desc" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white text-sm transition-colors">
+                            <button id="prev-day-desc" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm transition-colors" style="background-color: #940000; border: 2px solid #940000;">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             
                             <div class="flex-1 mx-4">
-                                <div class="bg-gray-700 h-2 rounded-full relative">
-                                    <div id="journey-progress-fill" class="bg-blue-500 h-2 rounded-full transition-all duration-300"></div>
-                                    <div id="journey-progress-marker" class="absolute top-0 w-4 h-4 bg-blue-400 rounded-full border-2 border-white transform -translate-y-1"></div>
+                                <div class="bg-gray-300 h-2 rounded-full relative">
+                                    <div id="journey-progress-fill" class="h-2 rounded-full transition-all duration-300" style="background-color: #940000;"></div>
+                                    <div id="journey-progress-marker" class="absolute top-0 w-4 h-4 rounded-full border-2 border-white transform -translate-y-1" style="background-color: #940000;"></div>
                                 </div>
                             </div>
                             
-                            <button id="next-day-desc" class="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white text-sm transition-colors">
+                            <button id="next-day-desc" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm transition-colors" style="background-color: #940000; border: 2px solid #940000;">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
                         
                         <div class="text-center">
-                            <span id="current-day-indicator" class="text-gray-300 text-sm">Jour 1</span>
+                            <span id="current-day-indicator" class="text-sm font-medium" style="color: #940000;">Jour 1</span>
                         </div>
                     </div>
                     
                     <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed flex-1"></div>
                     <div id="journey-description-controls" class="mt-4 pt-4 border-t border-gray-600 flex justify-end">
-                        <button id="copy-journey-description" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors">
+                        <button id="copy-journey-description" class="px-4 py-2 rounded-lg text-white font-medium transition-colors" style="background-color: #940000; border: 1px solid #940000;">
                             <i class="fas fa-copy mr-2"></i>Copier
                         </button>
                     </div>
@@ -1072,11 +1072,25 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
         }
 
         // Gérer les boutons
-        prevBtn.style.opacity = this.currentDescriptionDay > 1 ? '1' : '0.5';
-        prevBtn.disabled = this.currentDescriptionDay <= 1;
+        if (this.currentDescriptionDay > 1) {
+            prevBtn.style.opacity = '1';
+            prevBtn.style.backgroundColor = '#940000';
+            prevBtn.disabled = false;
+        } else {
+            prevBtn.style.opacity = '0.5';
+            prevBtn.style.backgroundColor = '#940000';
+            prevBtn.disabled = true;
+        }
 
-        nextBtn.style.opacity = this.currentDescriptionDay < this.totalJourneyDays ? '1' : '0.5';
-        nextBtn.disabled = this.currentDescriptionDay >= this.totalJourneyDays;
+        if (this.currentDescriptionDay < this.totalJourneyDays) {
+            nextBtn.style.opacity = '1';
+            nextBtn.style.backgroundColor = '#940000';
+            nextBtn.disabled = false;
+        } else {
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.backgroundColor = '#940000';
+            nextBtn.disabled = true;
+        }
 
         // Event listeners
         prevBtn.onclick = () => {
