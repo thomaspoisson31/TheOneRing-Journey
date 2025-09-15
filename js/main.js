@@ -3778,8 +3778,12 @@
                 });
             }
         }
-        document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
+        // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
+        // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
+        
+        // Mettre à jour le titre du bouton après qu'il soit créé
+        updateJourneyButtonTitle();
 
         // --- Gemini API Functions ---
         async function callGemini(prompt, button) {
@@ -3963,7 +3967,8 @@
                 journeyDetails = `\n\nVoici les étapes de ce voyage :\n${discoveryList}`;
             }
 
-            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage a débuté à ${startLocation.name} et s'est terminé près de ${endLocation.name}, couvrant une distance d'environ ${miles} miles, soit environ ${days} jours de marche. ${journeyDetails}. Organise le récit par étapes journalières, en décrivant brièvement l'ambiance et les paysages rencontrés.`;
+            const narrationAddition = getNarrationPromptAddition();
+            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage a débuté à ${startLocation.name} et s'est terminé près de ${endLocation.name}, couvrant une distance d'environ ${miles} miles, soit environ ${days} jours de marche. ${journeyDetails}.${narrationAddition}`;
 
 
             const journeyLogContent = document.getElementById('journey-log-content');
@@ -5129,6 +5134,9 @@
                 });
             });
 
+            // Event listeners pour les styles de narration
+            setupNarrationStyleListeners();
+
             // Event listener pour le bouton Wizard
             waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
                 wizardBtn.addEventListener('click', handleGenerateAdventurers);
@@ -5280,6 +5288,9 @@
             // Charger les données sauvegardées des aventuriers et quête
             const adventurersGroup = localStorage.getItem('adventurersGroup');
             const adventurersQuest = localStorage.getItem('adventurersQuest');
+            
+            // Charger le style de narration (par défaut: brief)
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
 
             // Update textareas
             const groupTextarea = document.getElementById('adventurers-group');
@@ -5296,6 +5307,15 @@
             // Update markdown content displays
             updateMarkdownContent('adventurers-content', adventurersGroup);
             updateMarkdownContent('quest-content', adventurersQuest);
+            
+            // Charger le style de narration sélectionné
+            const narrationRadio = document.querySelector(`input[name="narration-style"][value="${narrationStyle}"]`);
+            if (narrationRadio) {
+                narrationRadio.checked = true;
+            }
+            
+            // Mettre à jour le titre du bouton de génération de voyage
+            updateJourneyButtonTitle();
 
             // Load season settings
             loadSavedSeason();
@@ -5342,6 +5362,94 @@
             html = html.replace(/<p>(<blockquote>)/g, '$1').replace(/(<\/blockquote>)<\/p>/g, '$1');
 
             element.innerHTML = html;
+        }
+        
+        // === FONCTIONS POUR LE STYLE DE NARRATION ===
+        
+        function setupNarrationStyleListeners() {
+            console.log('📖 Configuration des listeners de narration...');
+            
+            // Utiliser waitForElement pour s'assurer que les éléments existent
+            waitForElement('input[name="narration-style"]', () => {
+                const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
+                console.log('📖 Radio buttons de narration trouvés:', narrationRadios.length);
+                
+                narrationRadios.forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        if (radio.checked) {
+                            console.log('📖 Style de narration changé:', radio.value);
+                            localStorage.setItem('narrationStyle', radio.value);
+                            updateJourneyButtonTitle();
+                        }
+                    });
+                });
+            });
+        }
+        
+        function updateJourneyButtonTitle() {
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            const journeyButton = document.getElementById('generate-journey-log');
+            const styleLabel = document.getElementById('journey-style-label');
+            
+            console.log('📖 Mise à jour du titre du bouton:', narrationStyle, journeyButton ? 'Bouton trouvé' : 'Bouton non trouvé');
+            
+            if (!journeyButton) return;
+            
+            let styleText = '';
+            let shortStyleText = '';
+            switch (narrationStyle) {
+                case 'detailed':
+                    styleText = '(Narration détaillée)';
+                    shortStyleText = 'Voyage – Détaillée';
+                    break;
+                case 'brief':
+                    styleText = '(Narration brève)';
+                    shortStyleText = 'Voyage – Brève';
+                    break;
+                case 'keywords':
+                    styleText = '(Points clés seulement)';
+                    shortStyleText = 'Voyage – Points clés';
+                    break;
+                default:
+                    styleText = '(Narration brève)';
+                    shortStyleText = 'Voyage – Brève';
+            }
+            
+            // Mettre à jour l'infobulle (title) et aria-label
+            journeyButton.title = `Générer une chronique de voyage ${styleText}`;
+            journeyButton.setAttribute('aria-label', `Générer une chronique de voyage ${styleText}`);
+            
+            // Mettre à jour le texte visible du bouton
+            if (styleLabel) {
+                styleLabel.textContent = shortStyleText;
+            }
+            
+            console.log('📖 Nouveau titre du bouton:', journeyButton.title);
+            console.log('📖 Nouveau texte du bouton:', shortStyleText);
+        }
+        
+        function getNarrationPromptAddition() {
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            console.log('📖 Style de narration pour le prompt:', narrationStyle);
+            
+            let addition = '';
+            switch (narrationStyle) {
+                case 'detailed':
+                    addition = ' Organise le récit jour par jour. Pour chaque journée, rédige plusieurs paragraphes dans un style littéraire évocateur et riche. Décris l\'atmosphère, les sensations, les conversations entre les personnages, les détails du paysage et les émotions ressenties avec un style narratif immersif et poétique.';
+                    break;
+                    
+                case 'keywords':
+                    addition = ' Organise le récit jour par jour. Pour chaque journée, plutôt que des phrases complètes, présente une liste structurée de mots-clés et expressions évocateurs organisés par thèmes (Météo/Climat, Ambiance du groupe, Paysages traversés, Événements marquants, Sensations/Émotions). Utilise un vocabulaire riche et évocateur que le Meneur de Jeu pourra utiliser pour créer ses propres descriptions.';
+                    break;
+                    
+                case 'brief':
+                default:
+                    addition = ' Organise le récit par étapes journalières, en décrivant brièvement l\'ambiance et les paysages rencontrés dans un style concis mais évocateur, avec un paragraphe par jour.';
+                    break;
+            }
+            
+            console.log('📖 Addition au prompt:', addition.substring(0, 100) + '...');
+            return addition;
         }
 
         async function handleGenerateAdventurers(event) {
