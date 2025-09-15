@@ -491,18 +491,31 @@ body {
 /* Distance container padding uniforme */
 #distance-container {
     padding: 12px !important;
+    box-sizing: border-box;
 }
 
 #distance-container > * {
-    margin: 0;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 #distance-container > *:not(:last-child) {
-    margin-bottom: 8px;
+    margin-bottom: 8px !important;
 }
 
 #distance-container > *:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0 !important;
+}
+
+/* Force la suppression des marges et paddings internes */
+#distance-container .flex {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#distance-container .flex > * {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Discovery tooltip styles */
