@@ -1070,95 +1070,6 @@
             });
         }
 
-        function generateImageEditHTML(images) {
-            if (images.length === 0) {
-                return '<div class="text-gray-400 text-sm">Aucune image</div>';
-            }
-
-            return images.map((img, index) => `
-                <div class="image-edit-item bg-gray-600 p-2 rounded mb-2" data-image-index="${index}">
-                    <div class="flex items-center space-x-2 mb-1">
-                        <input type="url" value="${img.url}" placeholder="URL de l'image" class="flex-1 bg-gray-800 border border-gray-600 rounded py-1 px-2 text-white text-sm image-url-input">
-                        <button class="remove-image-btn px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">×</button>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" ${img.isDefault ? 'checked' : ''} class="mr-2 default-image-checkbox">
-                        <label class="text-sm text-gray-300">Image par défaut</label>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function setupImageEditListeners() {
-            const container = document.getElementById('edit-images-container');
-            const addBtn = document.getElementById('add-image-btn');
-
-            addBtn.addEventListener('click', () => {
-                const imageItems = container.querySelectorAll('.image-edit-item');
-                if (imageItems.length >= 5) {
-                    alert('Maximum 5 images par lieu/région');
-                    return;
-                }
-
-                const newIndex = imageItems.length;
-                const newImageHTML = `
-                    <div class="image-edit-item bg-gray-600 p-2 rounded mb-2" data-image-index="${newIndex}">
-                        <div class="flex items-center space-x-2 mb-1">
-                            <input type="url" value="" placeholder="URL de l'image" class="flex-1 bg-gray-800 border border-gray-600 rounded py-1 px-2 text-white text-sm image-url-input">
-                            <button class="remove-image-btn px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">×</button>
-                        </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" ${newIndex === 0 ? 'checked' : ''} class="mr-2 default-image-checkbox">
-                            <label class="text-sm text-gray-300">Image par défaut</label>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', newImageHTML);
-                setupImageItemListeners();
-            });
-
-            setupImageItemListeners();
-        }
-
-        function setupImageItemListeners() {
-            const container = document.getElementById('edit-images-container');
-
-            // Remove image listeners
-            container.querySelectorAll('.remove-image-btn').forEach(btn => {
-                btn.replaceWith(btn.cloneNode(true)); // Remove existing listeners
-            });
-            container.querySelectorAll('.remove-image-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    btn.closest('.image-edit-item').remove();
-                    // Ensure at least one default is checked if images remain
-                    const remaining = container.querySelectorAll('.image-edit-item');
-                    if (remaining.length > 0) {
-                        const hasDefault = Array.from(remaining).some(item =>
-                            item.querySelector('.default-image-checkbox').checked
-                        );
-                        if (!hasDefault) {
-                            remaining[0].querySelector('.default-image-checkbox').checked = true;
-                        }
-                    }
-                });
-            });
-
-            // Default image radio-like behavior
-            container.querySelectorAll('.default-image-checkbox').forEach(checkbox => {
-                checkbox.replaceWith(checkbox.cloneNode(true)); // Remove existing listeners
-            });
-            container.querySelectorAll('.default-image-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) {
-                        // Uncheck all others
-                        container.querySelectorAll('.default-image-checkbox').forEach(other => {
-                            if (other !== checkbox) other.checked = false;
-                        });
-                    }
-                });
-            });
-        }
-
         function collectImagesFromEdit() {
             const container = document.getElementById('edit-images-container');
             const images = [];
@@ -3025,11 +2936,11 @@
             scheduleAutoSync(); // Synchroniser après modification
         }
         // === FONCTIONS UNIFIÉES D'IMPORT/EXPORT ===
-        
+
         function exportUnifiedData() {
             // Fusionner les lieux et les régions dans un seul tableau locations
             const allLocations = [];
-            
+
             // Ajouter tous les lieux normaux
             if (locationsData.locations) {
                 locationsData.locations.forEach(location => {
@@ -3039,7 +2950,7 @@
                     });
                 });
             }
-            
+
             // Ajouter toutes les régions (converties en format location avec type="region")
             if (regionsData.regions) {
                 regionsData.regions.forEach(region => {
@@ -3057,19 +2968,19 @@
                             points: region.points || [] // Les points du polygone de la région
                         }
                     };
-                    
+
                     // Ajouter les propriétés additionnelles si elles existent
                     if (region.Rumeur) regionAsLocation.Rumeur = region.Rumeur;
                     if (region.Tradition_Ancienne) regionAsLocation.Tradition_Ancienne = region.Tradition_Ancienne;
-                    
+
                     allLocations.push(regionAsLocation);
                 });
             }
-            
+
             const unifiedData = {
                 locations: allLocations
             };
-            
+
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(unifiedData, null, 2));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
@@ -3079,9 +2990,9 @@
             document.body.removeChild(downloadAnchorNode);
             console.log(`✅ Export unifié terminé - ${allLocations.length} éléments sauvegardés (lieux et régions)`);
         }
-        
+
         // Ancienne fonction de compatibilité (garde pour les anciens liens)
-        function exportLocationsToFile() { 
+        function exportLocationsToFile() {
             exportUnifiedData(); // Rediriger vers la fonction unifiée
         }
         function importUnifiedData(event) {
@@ -3092,10 +3003,10 @@
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    
+
                     // Supporter les différents formats de fichiers
                     let locationsArray = [];
-                    
+
                     // Format unifié : { locations: [...] }
                     if (importedData.locations && Array.isArray(importedData.locations)) {
                         locationsArray = importedData.locations;
@@ -3126,16 +3037,16 @@
                         alert("Fichier JSON invalide. Le fichier doit contenir une propriété 'locations' (tableau) ou 'regions' (tableau), ou être un tableau direct de locations.");
                         return;
                     }
-                    
+
                     // Séparer les lieux normaux des régions basé sur la structure des coordonnées
                     const normalLocations = [];
                     const regionLocations = [];
-                    
+
                     locationsArray.forEach(item => {
                         // Déterminer si c'est une région ou un lieu normal
-                        const isRegion = item.type === "region" || 
+                        const isRegion = item.type === "region" ||
                                         (item.coordinates && item.coordinates.points && Array.isArray(item.coordinates.points));
-                        
+
                         if (isRegion) {
                             // Convertir la location-région vers le format région interne
                             const region = {
@@ -3148,11 +3059,11 @@
                                 visited: item.visited !== undefined ? item.visited : false,
                                 points: item.coordinates?.points || []
                             };
-                            
+
                             // Ajouter les propriétés additionnelles si elles existent
                             if (item.Rumeur) region.Rumeur = item.Rumeur;
                             if (item.Tradition_Ancienne) region.Tradition_Ancienne = item.Tradition_Ancienne;
-                            
+
                             regionLocations.push(region);
                         } else {
                             // C'est un lieu normal - s'assurer qu'il a la bonne structure de coordonnées
@@ -3160,7 +3071,7 @@
                                 ...item,
                                 type: item.type || "custom"
                             };
-                            
+
                             // S'assurer que les coordonnées sont au bon format {x, y}
                             if (item.coordinates && typeof item.coordinates.x === 'number' && typeof item.coordinates.y === 'number') {
                                 location.coordinates = {
@@ -3168,25 +3079,25 @@
                                     y: item.coordinates.y
                                 };
                             }
-                            
+
                             normalLocations.push(location);
                         }
                     });
-                    
+
                     // Compter les éléments à importer
                     const locationCount = normalLocations.length;
                     const regionCount = regionLocations.length;
-                    
+
                     let message = `Le fichier contient ${locationsArray.length} éléments :\n`;
                     if (locationCount > 0) message += `- ${locationCount} lieux\n`;
                     if (regionCount > 0) message += `- ${regionCount} régions\n`;
                     message += "\nVoulez-vous :\n- OK : Remplacer toutes les données existantes\n- Annuler : Fusionner avec les données existantes";
-                    
+
                     const shouldReplace = confirm(message);
-                    
+
                     let addedLocations = 0, updatedLocations = 0;
                     let addedRegions = 0, updatedRegions = 0;
-                    
+
                     // === TRAITEMENT DES LIEUX ===
                     if (locationCount > 0) {
                         if (shouldReplace) {
@@ -3198,7 +3109,7 @@
                                 const existingLocation = locationsData.locations.find(
                                     loc => loc.name === importedLocation.name
                                 );
-                                
+
                                 if (existingLocation) {
                                     Object.assign(existingLocation, importedLocation);
                                     updatedLocations++;
@@ -3217,7 +3128,7 @@
                         renderLocations();
                         saveLocationsToLocal();
                     }
-                    
+
                     // === TRAITEMENT DES RÉGIONS ===
                     if (regionCount > 0) {
                         if (shouldReplace) {
@@ -3229,7 +3140,7 @@
                                 const existingRegion = regionsData.regions.find(
                                     reg => reg.name === importedRegion.name
                                 );
-                                
+
                                 if (existingRegion) {
                                     Object.assign(existingRegion, importedRegion);
                                     updatedRegions++;
@@ -3248,9 +3159,9 @@
                         renderRegions();
                         saveRegionsToLocal();
                     }
-                    
+
                     scheduleAutoSync();
-                    
+
                     // Message de confirmation
                     if (shouldReplace) {
                         let confirmMessage = "Import réussi !\n";
@@ -3267,9 +3178,9 @@
                         }
                         alert(confirmMessage);
                     }
-                    
+
                     console.log(`✅ Import unifié terminé - ${addedLocations + addedRegions} éléments traités`);
-                    
+
                 } catch (err) {
                     alert("Erreur lors de la lecture du fichier JSON : " + err.message);
                     console.error("Erreur d'import unifié:", err);
@@ -3281,13 +3192,13 @@
 
             reader.readAsText(file);
         }
-        
+
         // Anciennes fonctions de compatibilité (gardées pour les anciens liens)
         function importLocationsFromFile(event) {
             importUnifiedData(event); // Rediriger vers la fonction unifiée
         }
 
-        function exportRegionsToFile() { 
+        function exportRegionsToFile() {
             exportUnifiedData(); // Rediriger vers la fonction unifiée
         }
 
@@ -3298,7 +3209,7 @@
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
             const voyageBtn = document.getElementById('voyage-segments-btn');
-            
+
             if (totalPathPixels === 0 || MAP_WIDTH === 0) {
                 distanceContainer.classList.add('hidden');
                 if (voyageBtn) voyageBtn.classList.add('hidden');
@@ -3306,7 +3217,7 @@
             }
             distanceContainer.classList.remove('hidden');
             if (voyageBtn) voyageBtn.classList.remove('hidden');
-            
+
             const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
             const days = miles / 20;
             const roundedDays = Math.ceil(days * 2) / 2;
@@ -3320,10 +3231,6 @@
         }
 
         function updateDiscoveriesChronologically() {
-            // Reset tracking
-            traversedRegions.clear();
-            nearbyLocations.clear();
-
             // Track region segments for duration calculation
             let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
             let currentRegions = new Set(); // regions currently being traversed
@@ -3790,7 +3697,7 @@
         // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
         // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
-        
+
         // Mettre à jour le titre du bouton après qu'il soit créé
         updateJourneyButtonTitle();
 
@@ -4503,10 +4410,7 @@
             locationsData.locations.forEach(location => {
                 if (!location.coordinates) return;
 
-                const distance = Math.sqrt(
-                    Math.pow(location.coordinates.x - targetPoint.x, 2) +
-                    Math.pow(location.coordinates.y - targetPoint.y, 2)
-                );
+                const distance = Math.sqrt(Math.pow(location.coordinates.x - targetPoint.x, 2) + Math.pow(location.coordinates.y - targetPoint.y, 2));
 
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -5113,358 +5017,358 @@
         function openSettingsOnSeasonTab() {
             try {
                 settingsModal.classList.remove('hidden');
-                loadSettings();
-                setupSettingsTabSwitching();
-
-                // Ouvrir directement l'onglet "Saisons"
-                setTimeout(() => {
-                    const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
-                    if (seasonTabButton) {
-                        seasonTabButton.click();
-                    }
-                }, 100);
-            } catch (error) {
-                console.error('Erreur lors de l\'ouverture des paramètres:', error);
-            }
-        }
-
-        function setupSettingsEventListeners() {
-            waitForElement('#settings-btn', (settingsBtn) => {
-                settingsBtn.addEventListener('click', () => {
-                    settingsModal.classList.remove('hidden');
                     loadSettings();
                     setupSettingsTabSwitching();
-                });
-            });
 
-            waitForElement('#close-settings-modal', (closeSettingsModalBtn) => {
-                closeSettingsModalBtn.addEventListener('click', () => {
-                    settingsModal.classList.add('hidden');
-                });
-            });
-
-            // Event listeners pour les styles de narration
-            setupNarrationStyleListeners();
-
-            // Event listener pour le bouton Wizard
-            waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
-                wizardBtn.addEventListener('click', handleGenerateAdventurers);
-            });
-
-            // Event listeners pour les indicateurs de saison dans le header
-            waitForElement('#season-indicator', (seasonIndicator) => {
-                seasonIndicator.addEventListener('click', openSettingsOnSeasonTab);
-            });
-
-            waitForElement('#calendar-date-indicator', (calendarIndicator) => {
-                calendarIndicator.addEventListener('click', openSettingsOnSeasonTab);
-            });
-
-            // Initialiser les événements des cartes
-            setupMapsEventListeners();
-        }
-
-        function setupSettingsTabSwitching() {
-            // Attendre que le DOM soit complètement chargé
-            setTimeout(() => {
-                const tabButtons = document.querySelectorAll('.settings-tab-button');
-                const tabContents = document.querySelectorAll('.settings-tab-content');
-
-                console.log('🔧 Setup tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
-
-                tabButtons.forEach((button, index) => {
-                    // Supprimer les anciens event listeners en clonant
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
-
-                    // Ajouter le nouvel event listener
-                    newButton.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const targetTab = newButton.dataset.tab;
-                        console.log('🔧 Tab clicked:', targetTab);
-
-                        // Mettre à jour les références après le clonage
-                        const currentTabButtons = document.querySelectorAll('.settings-tab-button');
-                        const currentTabContents = document.querySelectorAll('.settings-tab-content');
-
-                        // Update active tab button
-                        currentTabButtons.forEach(btn => {
-                            btn.classList.remove('active', 'border-blue-500', 'text-white');
-                            btn.classList.add('border-transparent', 'text-gray-400');
-                        });
-                        newButton.classList.add('active', 'border-blue-500', 'text-white');
-                        newButton.classList.remove('border-transparent', 'text-gray-400');
-
-                        // Update active tab content
-                        currentTabContents.forEach(content => {
-                            content.classList.remove('active');
-                            content.classList.add('hidden');
-                        });
-
-                        const targetContent = document.getElementById(`${targetTab}-tab`);
-                        console.log('🔧 Target content:', targetContent);
-                        if (targetContent) {
-                            targetContent.classList.add('active');
-                            targetContent.classList.remove('hidden');
+                    // Ouvrir directement l'onglet "Saisons"
+                    setTimeout(() => {
+                        const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
+                        if (seasonTabButton) {
+                            seasonTabButton.click();
                         }
-                    });
-                });
-
-                // Setup edit mode listeners
-                setupEditModeListeners();
-            }, 100);
-        }
-
-        function setupEditModeListeners() {
-            // Adventurers edit listeners
-            const editAdventurersBtn = document.getElementById('edit-adventurers-btn');
-            const cancelAdventurersEdit = document.getElementById('cancel-adventurers-edit');
-            const saveAdventurersEdit = document.getElementById('save-adventurers-edit');
-            const adventurersReadMode = document.getElementById('adventurers-read-mode');
-            const adventurersEditMode = document.getElementById('adventurers-edit-mode');
-            const adventurersTextarea = document.getElementById('adventurers-group');
-
-            if (editAdventurersBtn) {
-                editAdventurersBtn.addEventListener('click', () => {
-                    adventurersReadMode.classList.add('hidden');
-                    adventurersEditMode.classList.remove('hidden');
-                });
-            }
-
-            if (cancelAdventurersEdit) {
-                cancelAdventurersEdit.addEventListener('click', () => {
-                    adventurersEditMode.classList.add('hidden');
-                    adventurersReadMode.classList.remove('hidden');
-                    // Reload original content
-                    const saved = localStorage.getItem('adventurersGroup');
-                    if (adventurersTextarea) {
-                        adventurersTextarea.value = saved || '';
-                    }
-                });
-            }
-
-            if (saveAdventurersEdit) {
-                saveAdventurersEdit.addEventListener('click', () => {
-                    const content = adventurersTextarea.value;
-                    localStorage.setItem('adventurersGroup', content);
-                    updateMarkdownContent('adventurers-content', content);
-                    adventurersEditMode.classList.add('hidden');
-                    adventurersReadMode.classList.remove('hidden');
-                    scheduleAutoSync();
-                });
-            }
-
-            // Quest edit listeners
-            const editQuestBtn = document.getElementById('edit-quest-btn');
-            const cancelQuestEdit = document.getElementById('cancel-quest-edit');
-            const saveQuestEdit = document.getElementById('save-quest-edit');
-            const questReadMode = document.getElementById('quest-read-mode');
-            const questEditMode = document.getElementById('quest-edit-mode');
-            const questTextarea = document.getElementById('adventurers-quest');
-
-            if (editQuestBtn) {
-                editQuestBtn.addEventListener('click', () => {
-                    questReadMode.classList.add('hidden');
-                    questEditMode.classList.remove('hidden');
-                });
-            }
-
-            if (cancelQuestEdit) {
-                cancelQuestEdit.addEventListener('click', () => {
-                    questEditMode.classList.add('hidden');
-                    questReadMode.classList.remove('hidden');
-                    // Reload original content
-                    const saved = localStorage.getItem('adventurersQuest');
-                    if (questTextarea) {
-                        questTextarea.value = saved || '';
-                    }
-                });
-            }
-
-            if (saveQuestEdit) {
-                saveQuestEdit.addEventListener('click', () => {
-                    const content = questTextarea.value;
-                    localStorage.setItem('adventurersQuest', content);
-                    updateMarkdownContent('quest-content', content);
-                    questEditMode.classList.add('hidden');
-                    questReadMode.classList.remove('hidden');
-                    scheduleAutoSync();
-                });
-            }
-        }
-
-        function loadSettings() {
-            // Charger les données sauvegardées des aventuriers et quête
-            const adventurersGroup = localStorage.getItem('adventurersGroup');
-            const adventurersQuest = localStorage.getItem('adventurersQuest');
-            
-            // Charger le style de narration (par défaut: brief)
-            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
-
-            // Update textareas
-            const groupTextarea = document.getElementById('adventurers-group');
-            const questTextarea = document.getElementById('adventurers-quest');
-
-            if (groupTextarea && adventurersGroup) {
-                groupTextarea.value = adventurersGroup;
-            }
-
-            if (questTextarea && adventurersQuest) {
-                questTextarea.value = adventurersQuest;
-            }
-
-            // Update markdown content displays
-            updateMarkdownContent('adventurers-content', adventurersGroup);
-            updateMarkdownContent('quest-content', adventurersQuest);
-            
-            // Charger le style de narration sélectionné
-            const narrationRadio = document.querySelector(`input[name="narration-style"][value="${narrationStyle}"]`);
-            if (narrationRadio) {
-                narrationRadio.checked = true;
-            }
-            
-            // Mettre à jour le titre du bouton de génération de voyage
-            updateJourneyButtonTitle();
-
-            // Load season settings
-            loadSavedSeason();
-            setupSeasonListeners();
-
-            // Load and render maps
-            renderMapsGrid();
-        }
-
-        function updateMarkdownContent(elementId, content) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-
-            if (!content || content.trim() === '') {
-                if (elementId === 'adventurers-content') {
-                    element.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
-                } else {
-                    element.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    }, 100);
+                } catch (error) {
+                    console.error('Erreur lors de l\'ouverture des paramètres:', error);
                 }
-                return;
             }
 
-            // Simple Markdown parsing
-            let html = content
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-                .replace(/`(.*?)`/g, '<code>$1</code>')
-                .replace(/^- (.*$)/gim, '<li>$1</li>')
-                .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>');
-
-            // Wrap with paragraph tags and handle lists
-            html = '<p>' + html + '</p>';
-            html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
-            html = html.replace(/<\/ul><ul>/g, '');
-            html = html.replace(/<p><\/p>/g, '');
-            html = html.replace(/<p>(<h[123]>)/g, '$1').replace(/(<\/h[123]>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<ul>)/g, '$1').replace(/(<\/ul>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<blockquote>)/g, '$1').replace(/(<\/blockquote>)<\/p>/g, '$1');
-
-            element.innerHTML = html;
-        }
-        
-        // === FONCTIONS POUR LE STYLE DE NARRATION ===
-        
-        function setupNarrationStyleListeners() {
-            console.log('📖 Configuration des listeners de narration...');
-            
-            // Utiliser waitForElement pour s'assurer que les éléments existent
-            waitForElement('input[name="narration-style"]', () => {
-                const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
-                console.log('📖 Radio buttons de narration trouvés:', narrationRadios.length);
-                
-                narrationRadios.forEach(radio => {
-                    radio.addEventListener('change', () => {
-                        if (radio.checked) {
-                            console.log('📖 Style de narration changé:', radio.value);
-                            localStorage.setItem('narrationStyle', radio.value);
-                            updateJourneyButtonTitle();
-                        }
+            function setupSettingsEventListeners() {
+                waitForElement('#settings-btn', (settingsBtn) => {
+                    settingsBtn.addEventListener('click', () => {
+                        settingsModal.classList.remove('hidden');
+                        loadSettings();
+                        setupSettingsTabSwitching();
                     });
                 });
-            });
-        }
-        
-        function updateJourneyButtonTitle() {
-            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
-            const journeyButton = document.getElementById('generate-journey-log');
-            const styleLabel = document.getElementById('journey-style-label');
-            
-            console.log('📖 Mise à jour du titre du bouton:', narrationStyle, journeyButton ? 'Bouton trouvé' : 'Bouton non trouvé');
-            
-            if (!journeyButton) return;
-            
-            let styleText = '';
-            let shortStyleText = '';
-            switch (narrationStyle) {
-                case 'detailed':
-                    styleText = '(Narration détaillée)';
-                    shortStyleText = 'Voyage – Détaillée';
-                    break;
-                case 'brief':
-                    styleText = '(Narration brève)';
-                    shortStyleText = 'Voyage – Brève';
-                    break;
-                case 'keywords':
-                    styleText = '(Points clés seulement)';
-                    shortStyleText = 'Voyage – Points clés';
-                    break;
-                default:
-                    styleText = '(Narration brève)';
-                    shortStyleText = 'Voyage – Brève';
-            }
-            
-            // Mettre à jour l'infobulle (title) et aria-label
-            journeyButton.title = `Générer une chronique de voyage ${styleText}`;
-            journeyButton.setAttribute('aria-label', `Générer une chronique de voyage ${styleText}`);
-            
-            // Mettre à jour le texte visible du bouton
-            if (styleLabel) {
-                styleLabel.textContent = shortStyleText;
-            }
-            
-            console.log('📖 Nouveau titre du bouton:', journeyButton.title);
-            console.log('📖 Nouveau texte du bouton:', shortStyleText);
-        }
-        
-        function getNarrationPromptAddition() {
-            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
-            console.log('📖 Style de narration pour le prompt:', narrationStyle);
-            
-            let addition = '';
-            switch (narrationStyle) {
-                case 'detailed':
-                    addition = ' Organise le récit jour par jour. Pour chaque journée, rédige plusieurs paragraphes dans un style littéraire évocateur et riche. Décris l\'atmosphère, les sensations, les conversations entre les personnages, les détails du paysage et les émotions ressenties avec un style narratif immersif et poétique.';
-                    break;
-                    
-                case 'keywords':
-                    addition = ' Organise le récit jour par jour. Pour chaque journée, plutôt que des phrases complètes, présente une liste structurée de mots-clés et expressions évocateurs organisés par thèmes (Météo/Climat, Ambiance du groupe, Paysages traversés, Événements marquants, Sensations/Émotions). Utilise un vocabulaire riche et évocateur que le Meneur de Jeu pourra utiliser pour créer ses propres descriptions.';
-                    break;
-                    
-                case 'brief':
-                default:
-                    addition = ' Organise le récit par étapes journalières, en décrivant brièvement l\'ambiance et les paysages rencontrés dans un style concis mais évocateur, avec un paragraphe par jour.';
-                    break;
-            }
-            
-            console.log('📖 Addition au prompt:', addition.substring(0, 100) + '...');
-            return addition;
-        }
 
-        async function handleGenerateAdventurers(event) {
-            const button = event.currentTarget;
+                waitForElement('#close-settings-modal', (closeSettingsModalBtn) => {
+                    closeSettingsModalBtn.addEventListener('click', () => {
+                        settingsModal.classList.add('hidden');
+                    });
+                });
 
-            const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
+                // Event listeners pour les styles de narration
+                setupNarrationStyleListeners();
+
+                // Event listener pour le bouton Wizard
+                waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
+                    wizardBtn.addEventListener('click', handleGenerateAdventurers);
+                });
+
+                // Event listeners pour les indicateurs de saison dans le header
+                waitForElement('#season-indicator', (seasonIndicator) => {
+                    seasonIndicator.addEventListener('click', openSettingsOnSeasonTab);
+                });
+
+                waitForElement('#calendar-date-indicator', (calendarIndicator) => {
+                    calendarIndicator.addEventListener('click', openSettingsOnSeasonTab);
+                });
+
+                // Initialiser les événements des cartes
+                setupMapsEventListeners();
+            }
+
+            function setupSettingsTabSwitching() {
+                // Attendre que le DOM soit complètement chargé
+                setTimeout(() => {
+                    const tabButtons = document.querySelectorAll('.settings-tab-button');
+                    const tabContents = document.querySelectorAll('.settings-tab-content');
+
+                    console.log('🔧 Setup tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
+
+                    tabButtons.forEach((button, index) => {
+                        // Supprimer les anciens event listeners en clonant
+                        const newButton = button.cloneNode(true);
+                        button.parentNode.replaceChild(newButton, button);
+
+                        // Ajouter le nouvel event listener
+                        newButton.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const targetTab = newButton.dataset.tab;
+                            console.log('🔧 Tab clicked:', targetTab);
+
+                            // Mettre à jour les références après le clonage
+                            const currentTabButtons = document.querySelectorAll('.settings-tab-button');
+                            const currentTabContents = document.querySelectorAll('.settings-tab-content');
+
+                            // Update active tab button
+                            currentTabButtons.forEach(btn => {
+                                btn.classList.remove('active', 'border-blue-500', 'text-white');
+                                btn.classList.add('border-transparent', 'text-gray-400');
+                            });
+                            newButton.classList.add('active', 'border-blue-500', 'text-white');
+                            newButton.classList.remove('border-transparent', 'text-gray-400');
+
+                            // Update active tab content
+                            currentTabContents.forEach(content => {
+                                content.classList.remove('active');
+                                content.classList.add('hidden');
+                            });
+
+                            const targetContent = document.getElementById(`${targetTab}-tab`);
+                            console.log('🔧 Target content:', targetContent);
+                            if (targetContent) {
+                                targetContent.classList.add('active');
+                                targetContent.classList.remove('hidden');
+                            }
+                        });
+                    });
+
+                    // Setup edit mode listeners
+                    setupEditModeListeners();
+                }, 100);
+            }
+
+            function setupEditModeListeners() {
+                // Adventurers edit listeners
+                const editAdventurersBtn = document.getElementById('edit-adventurers-btn');
+                const cancelAdventurersEdit = document.getElementById('cancel-adventurers-edit');
+                const saveAdventurersEdit = document.getElementById('save-adventurers-edit');
+                const adventurersReadMode = document.getElementById('adventurers-read-mode');
+                const adventurersEditMode = document.getElementById('adventurers-edit-mode');
+                const adventurersTextarea = document.getElementById('adventurers-group');
+
+                if (editAdventurersBtn) {
+                    editAdventurersBtn.addEventListener('click', () => {
+                        adventurersReadMode.classList.add('hidden');
+                        adventurersEditMode.classList.remove('hidden');
+                    });
+                }
+
+                if (cancelAdventurersEdit) {
+                    cancelAdventurersEdit.addEventListener('click', () => {
+                        adventurersEditMode.classList.add('hidden');
+                        adventurersReadMode.classList.remove('hidden');
+                        // Reload original content
+                        const saved = localStorage.getItem('adventurersGroup');
+                        if (adventurersTextarea) {
+                            adventurersTextarea.value = saved || '';
+                        }
+                    });
+                }
+
+                if (saveAdventurersEdit) {
+                    saveAdventurersEdit.addEventListener('click', () => {
+                        const content = adventurersTextarea.value;
+                        localStorage.setItem('adventurersGroup', content);
+                        updateMarkdownContent('adventurers-content', content);
+                        adventurersEditMode.classList.add('hidden');
+                        adventurersReadMode.classList.remove('hidden');
+                        scheduleAutoSync();
+                    });
+                }
+
+                // Quest edit listeners
+                const editQuestBtn = document.getElementById('edit-quest-btn');
+                const cancelQuestEdit = document.getElementById('cancel-quest-edit');
+                const saveQuestEdit = document.getElementById('save-quest-edit');
+                const questReadMode = document.getElementById('quest-read-mode');
+                const questEditMode = document.getElementById('quest-edit-mode');
+                const questTextarea = document.getElementById('adventurers-quest');
+
+                if (editQuestBtn) {
+                    editQuestBtn.addEventListener('click', () => {
+                        questReadMode.classList.add('hidden');
+                        questEditMode.classList.remove('hidden');
+                    });
+                }
+
+                if (cancelQuestEdit) {
+                    cancelQuestEdit.addEventListener('click', () => {
+                        questEditMode.classList.add('hidden');
+                        questReadMode.classList.remove('hidden');
+                        // Reload original content
+                        const saved = localStorage.getItem('adventurersQuest');
+                        if (questTextarea) {
+                            questTextarea.value = saved || '';
+                        }
+                    });
+                }
+
+                if (saveQuestEdit) {
+                    saveQuestEdit.addEventListener('click', () => {
+                        const content = questTextarea.value;
+                        localStorage.setItem('adventurersQuest', content);
+                        updateMarkdownContent('quest-content', content);
+                        questEditMode.classList.add('hidden');
+                        questReadMode.classList.remove('hidden');
+                        scheduleAutoSync();
+                    });
+                }
+            }
+
+            function loadSettings() {
+                // Charger les données sauvegardées des aventuriers et quête
+                const adventurersGroup = localStorage.getItem('adventurersGroup');
+                const adventurersQuest = localStorage.getItem('adventurersQuest');
+
+                // Charger le style de narration (par défaut: brief)
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+
+                // Update textareas
+                const groupTextarea = document.getElementById('adventurers-group');
+                const questTextarea = document.getElementById('adventurers-quest');
+
+                if (groupTextarea && adventurersGroup) {
+                    groupTextarea.value = adventurersGroup;
+                }
+
+                if (questTextarea && adventurersQuest) {
+                    questTextarea.value = adventurersQuest;
+                }
+
+                // Update markdown content displays
+                updateMarkdownContent('adventurers-content', adventurersGroup);
+                updateMarkdownContent('quest-content', adventurersQuest);
+
+                // Charger le style de narration sélectionné
+                const narrationRadio = document.querySelector(`input[name="narration-style"][value="${narrationStyle}"]`);
+                if (narrationRadio) {
+                    narrationRadio.checked = true;
+                }
+
+                // Mettre à jour le titre du bouton de génération de voyage
+                updateJourneyButtonTitle();
+
+                // Load season settings
+                loadSavedSeason();
+                setupSeasonListeners();
+
+                // Load and render maps
+                renderMapsGrid();
+            }
+
+            function updateMarkdownContent(elementId, content) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                if (!content || content.trim() === '') {
+                    if (elementId === 'adventurers-content') {
+                        element.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                    } else {
+                        element.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    }
+                    return;
+                }
+
+                // Simple Markdown parsing
+                let html = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                    .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                    .replace(/`(.*?)`/g, '<code>$1</code>')
+                    .replace(/^- (.*$)/gim, '<li>$1</li>')
+                    .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+
+                // Wrap with paragraph tags and handle lists
+                html = '<p>' + html + '</p>';
+                html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+                html = html.replace(/<\/ul><ul>/g, '');
+                html = html.replace(/<p><\/p>/g, '');
+                html = html.replace(/<p>(<h[123]>)/g, '$1').replace(/(<\/h[123]>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<ul>)/g, '$1').replace(/(<\/ul>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<blockquote>)/g, '$1').replace(/(<\/blockquote>)<\/p>/g, '$1');
+
+                element.innerHTML = html;
+            }
+
+            // === FONCTIONS POUR LE STYLE DE NARRATION ===
+
+            function setupNarrationStyleListeners() {
+                console.log('📖 Configuration des listeners de narration...');
+
+                // Utiliser waitForElement pour s'assurer que les éléments existent
+                waitForElement('input[name="narration-style"]', () => {
+                    const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
+                    console.log('📖 Radio buttons de narration trouvés:', narrationRadios.length);
+
+                    narrationRadios.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            if (radio.checked) {
+                                console.log('📖 Style de narration changé:', radio.value);
+                                localStorage.setItem('narrationStyle', radio.value);
+                                updateJourneyButtonTitle();
+                            }
+                        });
+                    });
+                });
+            }
+
+            function updateJourneyButtonTitle() {
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+                const journeyButton = document.getElementById('generate-journey-log');
+                const styleLabel = document.getElementById('journey-style-label');
+
+                console.log('📖 Mise à jour du titre du bouton:', narrationStyle, journeyButton ? 'Bouton trouvé' : 'Bouton non trouvé');
+
+                if (!journeyButton) return;
+
+                let styleText = '';
+                let shortStyleText = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        styleText = '(Narration détaillée)';
+                        shortStyleText = 'Voyage – Détaillée';
+                        break;
+                    case 'brief':
+                        styleText = '(Narration brève)';
+                        shortStyleText = 'Voyage – Brève';
+                        break;
+                    case 'keywords':
+                        styleText = '(Points clés seulement)';
+                        shortStyleText = 'Voyage – Points clés';
+                        break;
+                    default:
+                        styleText = '(Narration brève)';
+                        shortStyleText = 'Voyage – Brève';
+                }
+
+                // Mettre à jour l'infobulle (title) et aria-label
+                journeyButton.title = `Générer une chronique de voyage ${styleText}`;
+                journeyButton.setAttribute('aria-label', `Générer une chronique de voyage ${styleText}`);
+
+                // Mettre à jour le texte visible du bouton
+                if (styleLabel) {
+                    styleLabel.textContent = shortStyleText;
+                }
+
+                console.log('📖 Nouveau titre du bouton:', journeyButton.title);
+                console.log('📖 Nouveau texte du bouton:', shortStyleText);
+            }
+
+            function getNarrationPromptAddition() {
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+                console.log('📖 Style de narration pour le prompt:', narrationStyle);
+
+                let addition = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        addition = ' Organise le récit jour par jour. Pour chaque journée, rédige plusieurs paragraphes dans un style littéraire évocateur et riche. Décris l\'atmosphère, les sensations, les conversations entre les personnages, les détails du paysage et les émotions ressenties avec un style narratif immersif et poétique.';
+                        break;
+
+                    case 'keywords':
+                        addition = ' Organise le récit jour par jour. Pour chaque journée, plutôt que des phrases complètes, présente une liste structurée de mots-clés et expressions évocateurs organisés par thèmes (Météo/Climat, Ambiance du groupe, Paysages traversés, Événements marquants, Sensations/Émotions). Utilise un vocabulaire riche et évocateur que le Meneur de Jeu pourra utiliser pour créer ses propres descriptions.';
+                        break;
+
+                    case 'brief':
+                    default:
+                        addition = ' Organise le récit par étapes journalières, en décrivant brièvement l\'ambiance et les paysages rencontrés dans un style concis mais évocateur, avec un paragraphe par jour.';
+                        break;
+                }
+
+                console.log('📖 Addition au prompt:', addition.substring(0, 100) + '...');
+                return addition;
+            }
+
+            async function handleGenerateAdventurers(event) {
+                const button = event.currentTarget;
+
+                const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
 
 Voici la procédure à suivre :
 
@@ -5486,57 +5390,57 @@ Format de réponse en Markdown:
 
 Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eriador.`;
 
-            // Appeler Gemini pour générer le contenu
-            const result = await callGemini(prompt, button);
+                // Appeler Gemini pour générer le contenu
+                const result = await callGemini(prompt, button);
 
-            // Analyser le résultat pour séparer groupe et quête
-            const parts = result.split('## Quête');
-            if (parts.length === 2) {
-                const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
-                const questPart = parts[1].trim();
+                // Analyser le résultat pour séparer groupe et quête
+                const parts = result.split('## Quête');
+                if (parts.length === 2) {
+                    const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
+                    const questPart = parts[1].trim();
 
-                // Update textareas
-                const groupTextarea = document.getElementById('adventurers-group');
-                const questTextarea = document.getElementById('adventurers-quest');
+                    // Update textareas
+                    const groupTextarea = document.getElementById('adventurers-group');
+                    const questTextarea = document.getElementById('adventurers-quest');
 
-                if (groupTextarea) groupTextarea.value = groupPart;
-                if (questTextarea) questTextarea.value = questPart;
+                    if (groupTextarea) groupTextarea.value = groupPart;
+                    if (questTextarea) questTextarea.value = questPart;
 
-                // Update displays
-                updateMarkdownContent('adventurers-content', groupPart);
-                updateMarkdownContent('quest-content', questPart);
+                    // Update displays
+                    updateMarkdownContent('adventurers-content', groupPart);
+                    updateMarkdownContent('quest-content', questPart);
 
-                // Sauvegarder
-                localStorage.setItem('adventurersGroup', groupPart);
-                localStorage.setItem('adventurersQuest', questPart);
-                scheduleAutoSync();
+                    // Sauvegarder
+                    localStorage.setItem('adventurersGroup', groupPart);
+                    localStorage.setItem('adventurersQuest', questPart);
+                    scheduleAutoSync();
+                } else {
+                    // Si le format n'est pas comme attendu, mettre tout dans le groupe
+                    const groupTextarea = document.getElementById('adventurers-group');
+                    if (groupTextarea) groupTextarea.value = result;
+                    updateMarkdownContent('adventurers-content', result);
+                    localStorage.setItem('adventurersGroup', result);
+                    scheduleAutoSync();
+                }
+            }
+
+            // --- Sync Status Display Function ---
+            function updateSyncStatus(message) {
+                console.log(`🔄 Sync Status: ${message}`);
+                // You can also display this message in the UI if there's a status element
+                const statusElement = document.getElementById('sync-status');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                    statusElement.style.opacity = '1';
+                    setTimeout(() => {
+                        statusElement.style.opacity = '0';
+                    }, 3000); // Hide after 3 seconds
+                }
+            }
+
+            // Démarrer l'application quand le DOM est prêt
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeApp);
             } else {
-                // Si le format n'est pas comme attendu, mettre tout dans le groupe
-                const groupTextarea = document.getElementById('adventurers-group');
-                if (groupTextarea) groupTextarea.value = result;
-                updateMarkdownContent('adventurers-content', result);
-                localStorage.setItem('adventurersGroup', result);
-                scheduleAutoSync();
+                initializeApp();
             }
-        }
-
-        // --- Sync Status Display Function ---
-        function updateSyncStatus(message) {
-            console.log(`🔄 Sync Status: ${message}`);
-            // You can also display this message in the UI if there's a status element
-            const statusElement = document.getElementById('sync-status');
-            if (statusElement) {
-                statusElement.textContent = message;
-                statusElement.style.opacity = '1';
-                setTimeout(() => {
-                    statusElement.style.opacity = '0';
-                }, 3000); // Hide after 3 seconds
-            }
-        }
-
-        // Démarrer l'application quand le DOM est prêt
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
