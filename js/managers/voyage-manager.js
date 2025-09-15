@@ -272,16 +272,17 @@ class VoyageManager {
     }
 
     updateDayTitle(dayData) {
-        const segmentTitle = this.dom.getElementById('segment-title');
-        const dayCounter = this.dom.getElementById('day-counter');
-        
+        const segmentTitle = document.getElementById('segment-title');
+        const dayCounter = document.getElementById('day-counter');
+
         if (segmentTitle) {
             segmentTitle.textContent = dayData.calendarDate;
             segmentTitle.style.color = '#940000';
         }
-        
+
         if (dayCounter) {
             dayCounter.textContent = `(Jour ${this.currentDayIndex + 1} sur ${this.totalJourneyDays})`;
+            dayCounter.style.color = '#9CA3AF'; // Couleur grise (gray-400)
         }
     }
 
@@ -343,7 +344,7 @@ class VoyageManager {
             default:
                 styleText = ' (Brève)';
         }
-        
+
         // Ajouter les boutons en bas
         let buttonsHtml = `
             <div class="mt-3 pt-3 border-t border-gray-600 space-y-3">
@@ -410,7 +411,7 @@ class VoyageManager {
     updateCurrentDayDescription() {
         const descriptionContainer = document.getElementById('current-day-description');
         const descriptionText = document.getElementById('current-day-description-text');
-        
+
         if (!descriptionContainer || !descriptionText) return;
 
         const currentDayNumber = this.currentDayIndex + 1;
@@ -439,7 +440,7 @@ class VoyageManager {
             prevBtn.style.display = 'flex';
             prevBtn.style.alignItems = 'center';
             prevBtn.style.justifyContent = 'center';
-            
+
             prevBtn.style.opacity = this.currentDayIndex > 0 ? '1' : '0.3';
             prevBtn.style.cursor = this.currentDayIndex > 0 ? 'pointer' : 'not-allowed';
             prevBtn.title = this.currentDayIndex > 0 ? 'Jour précédent' : 'Premier jour';
@@ -456,7 +457,7 @@ class VoyageManager {
             nextBtn.style.display = 'flex';
             nextBtn.style.alignItems = 'center';
             nextBtn.style.justifyContent = 'center';
-            
+
             const canGoNext = this.currentDayIndex < (this.totalJourneyDays - 1);
             nextBtn.style.opacity = canGoNext ? '1' : '0.3';
             nextBtn.style.cursor = canGoNext ? 'pointer' : 'not-allowed';
@@ -815,7 +816,7 @@ class VoyageManager {
         // Récupérer le style de narration
         const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
         console.log('📖 Style de narration pour le voyage complet:', narrationStyle);
-        
+
         let prompt = `Rédige des descriptions évocatrices pour toutes les journées d'un voyage en Terre du Milieu dont le détail est présenté ci-après. 
 
 Ces descriptions sont destinées à un meneur de jeu qui va les lire à ses joueurs pour les immerger dans l'ambiance du voyage.
@@ -960,7 +961,7 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                 if (buttonText) {
                     buttonText.textContent = 'Descriptions générées ✓';
                 }
-                
+
                 // Désactiver le bouton pour indiquer que l'action est terminée
                 describeBtn.style.opacity = '0.7';
                 describeBtn.style.cursor = 'default';
@@ -993,31 +994,31 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
-                    
+
                     <!-- Barre de progression avec navigation -->
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-2">
                             <button id="prev-day-desc" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm transition-colors" style="background-color: #940000; border: 2px solid #940000;">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            
+
                             <div class="flex-1 mx-4">
                                 <div class="bg-gray-300 h-2 rounded-full relative">
                                     <div id="journey-progress-fill" class="h-2 rounded-full transition-all duration-300" style="background-color: #940000;"></div>
                                     <div id="journey-progress-marker" class="absolute top-0 w-4 h-4 rounded-full border-2 border-white transform -translate-y-1" style="background-color: #940000;"></div>
                                 </div>
                             </div>
-                            
+
                             <button id="next-day-desc" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm transition-colors" style="background-color: #940000; border: 2px solid #940000;">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
-                        
+
                         <div class="text-center">
                             <span id="current-day-indicator" class="text-sm font-medium" style="color: #940000;">Jour 1</span>
                         </div>
                     </div>
-                    
+
                     <div id="journey-description-content" class="prose prose-invert overflow-y-auto text-gray-300 leading-relaxed flex-1"></div>
                     <div id="journey-description-controls" class="mt-4 pt-4 border-t border-gray-600 flex justify-end">
                         <button id="copy-journey-description" class="px-4 py-2 rounded-lg text-white font-medium transition-colors" style="background-color: #940000; border: 1px solid #940000;">
@@ -1177,7 +1178,7 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                 }
             }
         }
-        
+
         return null;
     }
 }
