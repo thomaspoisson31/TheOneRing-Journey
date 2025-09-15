@@ -488,6 +488,23 @@ body {
     background-color: rgba(59, 130, 246, 0.2);
 }
 
+/* Distance container padding uniforme */
+#distance-container {
+    padding: 12px !important;
+}
+
+#distance-container > * {
+    margin: 0;
+}
+
+#distance-container > *:not(:last-child) {
+    margin-bottom: 8px;
+}
+
+#distance-container > *:last-child {
+    margin-bottom: 0;
+}
+
 /* Discovery tooltip styles */
 .discovery-tooltip {
     pointer-events: none;
