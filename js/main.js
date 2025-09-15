@@ -3723,7 +3723,16 @@
                     return "Erreur: Clé API Gemini non configurée sur le serveur.";
                 }
 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.api_key}`;
+                const apiModel = 'gemini-2.0-flash-exp';
+                const apiVersion = 'v1beta';
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${config.api_key}`;
+
+                // Logs pour debug
+                console.log("🤖 [GEMINI API] Version:", apiVersion);
+                console.log("🤖 [GEMINI API] Modèle:", apiModel);
+                console.log("🤖 [GEMINI API] Prompt envoyé:");
+                console.log("📝", prompt);
+                console.log("🤖 [GEMINI API] URL complète:", apiUrl.replace(config.api_key, '[API_KEY_HIDDEN]'));
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -3731,11 +3740,14 @@
                     body: JSON.stringify(payload)
                 });
 
+                console.log("🤖 [GEMINI API] Statut de réponse:", response.status);
+
                 if (!response.ok) {
                     // Try to get more details from the response body if available
                     let errorMsg = `API request failed with status ${response.status}`;
                     try {
                         const errorData = await response.json();
+                        console.error("🤖 [GEMINI API] Erreur détaillée:", errorData);
                         errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
                     } catch (jsonError) {
                         // Ignore JSON parsing errors
@@ -3744,15 +3756,19 @@
                 }
 
                 const result = await response.json();
+                console.log("🤖 [GEMINI API] Réponse reçue:", result);
+                
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                    return result.candidates[0].content.parts[0].text;
+                    const responseText = result.candidates[0].content.parts[0].text;
+                    console.log("✅ [GEMINI API] Texte généré (longueur: " + responseText.length + " caractères)");
+                    return responseText;
                 } else {
                     // Handle cases where the response might be empty or malformed
-                    console.warn("Received empty or malformed response from Gemini API:", result);
+                    console.warn("🤖 [GEMINI API] Réponse vide ou malformée:", result);
                     throw new Error("Invalid response structure from API");
                 }
             } catch (error) {
-                console.error("Gemini API call failed:", error);
+                console.error("❌ [GEMINI API] Échec de l'appel:", error);
                 return `Désolé, une erreur est survenue lors de la génération du texte: ${error.message}`;
             } finally {
                 buttonIcon.innerHTML = originalContent;
