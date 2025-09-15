@@ -2976,6 +2976,10 @@
             // Réinitialiser les informations de voyage
             resetVoyageSegments();
 
+            // Masquer le bouton de voyage
+            const voyageBtn = document.getElementById('voyage-segments-btn');
+            if (voyageBtn) voyageBtn.classList.add('hidden');
+
             updateDistanceDisplay();
             console.log("🔄 Synchronisation après effacement du tracé");
             scheduleAutoSync(); // Synchroniser après effacement du tracé
@@ -3293,11 +3297,16 @@
 
         function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
         function updateDistanceDisplay() {
+            const voyageBtn = document.getElementById('voyage-segments-btn');
+            
             if (totalPathPixels === 0 || MAP_WIDTH === 0) {
                 distanceContainer.classList.add('hidden');
+                if (voyageBtn) voyageBtn.classList.add('hidden');
                 return;
             }
             distanceContainer.classList.remove('hidden');
+            if (voyageBtn) voyageBtn.classList.remove('hidden');
+            
             const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
             const days = miles / 20;
             const roundedDays = Math.ceil(days * 2) / 2;
