@@ -791,7 +791,7 @@ class VoyageManager {
         const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
         console.log('📖 Style de narration pour le voyage complet:', narrationStyle);
         
-        let prompt = `Rédige des descriptions évocatrices pour toutes les journées d'un voyage en Terre du Milieu, au présent de la deuxième personne du pluriel ("Vous traversez...").
+        let prompt = `Rédige des descriptions évocatrices pour toutes les journées d'un voyage en Terre du Milieu dont le détail est présenté ci-après. 
 
 Ces descriptions sont destinées à un meneur de jeu qui va les lire à ses joueurs pour les immerger dans l'ambiance du voyage.
 
@@ -832,6 +832,7 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
 
 **STYLE DE NARRATION : DÉTAILLÉE**
 - Rédigez des descriptions riches et immersives de plusieurs paragraphes par journée
+- Rédigez au présent de la deuxième personne du pluriel ("Vous traversez...")
 - Développez l'atmosphère avec des détails sensoriels précis
 - Explorez les émotions et réflexions intimes des personnages
 - Utilisez un style littéraire évocateur et poétique
@@ -843,6 +844,7 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
 
 **STYLE DE NARRATION : BRÈVE**
 - Rédigez des descriptions concises mais évocatrices (1-2 paragraphes par journée)
+- Rédigez au présent de la deuxième personne du pluriel ("Vous traversez...")
 - Concentrez-vous sur l'essentiel : ambiance, découvertes importantes, ressenti général
 - Style narratif fluide et accessible, idéal pour une lecture rapide en jeu
 - Capturez l'essence de chaque journée sans s'attarder sur les détails`;
@@ -852,9 +854,10 @@ ${journeyData.adventurersQuest || 'Quête non définie'}
 
 **STYLE DE NARRATION : POINTS CLÉS**
 - Organisez l'information sous forme de listes structurées de mots-clés thématiques
+- Ne faites pas de phrases complètes, mais des listes de mots-clés et expressions évocatrices
 - Utilisez des puces et des catégories claires (Paysage, Météo, Ambiance, Événements, etc.)
 - Présentez les informations de manière synthétique et facilement exploitable
-- Parfait pour une consultation rapide et une improvisation en jeu
+- Optimisé pour une consultation rapide et une improvisation en jeu
 - Format : utilisez des tirets et des catégories courtes pour structurer l'information`;
                 break;
         }
