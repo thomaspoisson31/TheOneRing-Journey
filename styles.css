@@ -585,6 +585,11 @@ body {
     color: black !important;
 }
 
+/* Exception pour le titre du jour qui doit rester rouge */
+.voyage-modal-white #segment-title {
+    color: #940000 !important;
+}
+
 .voyage-modal-white .text-white {
     color: black !important;
 }
