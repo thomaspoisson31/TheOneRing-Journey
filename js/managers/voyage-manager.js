@@ -277,6 +277,7 @@ class VoyageManager {
         
         if (segmentTitle) {
             segmentTitle.textContent = dayData.calendarDate;
+            segmentTitle.style.color = '#940000';
         }
         
         if (dayCounter) {
@@ -350,7 +351,7 @@ class VoyageManager {
                     <div class="text-sm text-gray-400 mb-2">Description de la journée :</div>
                     <div id="current-day-description-text" class="text-gray-200 leading-relaxed text-sm"></div>
                 </div>
-                <button id="describe-journey-btn" class="w-full py-3 rounded-lg text-white font-medium flex items-center justify-center space-x-2 transition-colors" style="background-color: #940000; border: 1px solid #940000;">
+                <button id="describe-journey-btn" class="w-full py-3 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors" style="background-color: white; color: #940000; border: 1px solid #940000;">
                     <span class="gemini-icon">✨</span>
                     <span>Décrire le voyage${styleText}</span>
                 </button>
@@ -428,12 +429,34 @@ class VoyageManager {
         const nextBtn = this.dom.getElementById('next-segment-btn');
 
         if (prevBtn) {
+            // Style du bouton rond
+            prevBtn.style.width = '32px';
+            prevBtn.style.height = '32px';
+            prevBtn.style.borderRadius = '50%';
+            prevBtn.style.border = '2px solid #940000';
+            prevBtn.style.backgroundColor = 'white';
+            prevBtn.style.color = '#940000';
+            prevBtn.style.display = 'flex';
+            prevBtn.style.alignItems = 'center';
+            prevBtn.style.justifyContent = 'center';
+            
             prevBtn.style.opacity = this.currentDayIndex > 0 ? '1' : '0.3';
             prevBtn.style.cursor = this.currentDayIndex > 0 ? 'pointer' : 'not-allowed';
             prevBtn.title = this.currentDayIndex > 0 ? 'Jour précédent' : 'Premier jour';
         }
 
         if (nextBtn) {
+            // Style du bouton rond
+            nextBtn.style.width = '32px';
+            nextBtn.style.height = '32px';
+            nextBtn.style.borderRadius = '50%';
+            nextBtn.style.border = '2px solid #940000';
+            nextBtn.style.backgroundColor = 'white';
+            nextBtn.style.color = '#940000';
+            nextBtn.style.display = 'flex';
+            nextBtn.style.alignItems = 'center';
+            nextBtn.style.justifyContent = 'center';
+            
             const canGoNext = this.currentDayIndex < (this.totalJourneyDays - 1);
             nextBtn.style.opacity = canGoNext ? '1' : '0.3';
             nextBtn.style.cursor = canGoNext ? 'pointer' : 'not-allowed';
@@ -453,7 +476,9 @@ class VoyageManager {
         if (progressFill && progressMarker) {
             const progressPercentage = ((this.currentDayIndex + 1) / this.totalJourneyDays) * 100;
             progressFill.style.width = `${progressPercentage}%`;
+            progressFill.style.backgroundColor = '#940000';
             progressMarker.style.left = `calc(${progressPercentage}% - 12px)`;
+            progressMarker.style.backgroundColor = '#940000';
 
             // Update tooltip
             progressMarker.title = `Progression : ${this.currentDayIndex + 1} / ${this.totalJourneyDays} jours`;
