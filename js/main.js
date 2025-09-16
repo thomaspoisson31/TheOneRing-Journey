@@ -722,6 +722,67 @@
                 </div>
             `;
 
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getLocationTables(location);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultLocationTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
+
             // Update header title
             updateInfoBoxHeaderTitle(location.name);
 
@@ -1298,6 +1359,67 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getLocationTables(location);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultLocationTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         // --- Info box sizing/positioning ---
@@ -2225,6 +2347,67 @@
                 </div>
             `;
 
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getRegionTables(region);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultRegionTable(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
+
             // Update header title
             updateInfoBoxHeaderTitle(region.name);
 
@@ -2277,7 +2460,7 @@
             updateRumeursTabForRegionEdit(region);
 
             // Update tradition tab to show tradition editing interface
-            updateTraditionTabForRegionEdit(region);
+            updateTraditionTabForEdit(region);
 
             // Add edit controls at the bottom
             addRegionEditControls();
@@ -2552,6 +2735,67 @@
                     <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getRegionTables(region);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultRegionTable(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         function deleteLocation(locationId) {
@@ -4945,34 +5189,6 @@
             // Mettre à jour la barre de progression basée sur le segment
             updateSegmentProgressBar();
             progressBar.classList.remove('hidden');
-        }
-
-        function updateSegmentProgressBar() {
-            if (!voyageSegments[currentSegmentIndex]) return;
-
-            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
-            let cumulativeDays = 0;
-            for (let i = 0; i <= currentSegmentIndex; i++) {
-                cumulativeDays += voyageSegments[i].duration;
-            }
-
-            // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
-            const totalVoyageDays = getTotalJourneyDays();
-
-            // Calculer le pourcentage de progression
-            const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
-
-            const progressFill = document.getElementById('progress-fill');
-            const progressMarker = document.getElementById('progress-marker');
-            const progressIndicator = document.getElementById('progress-indicator');
-            const totalDaysSpan = document.getElementById('total-days');
-
-            progressFill.style.width = `${progressPercent}%`;
-            progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
-            progressMarker.querySelector('span').textContent = cumulativeDays;
-
-            progressIndicator.textContent = `Progression : ${cumulativeDays} / ${totalVoyageDays} jours`;
-            totalDaysSpan.textContent = totalVoyageDays;
         }
 
         function navigateToSegment(direction) {
