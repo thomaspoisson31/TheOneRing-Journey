@@ -670,12 +670,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (location.Rumeurs && location.Rumeurs.length > 0) {
+                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (location.Rumeur && location.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${location.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -1010,11 +1046,13 @@
 
         function updateRumeursTabForEdit(location) {
             const rumeursTab = document.getElementById('rumeurs-tab');
+            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
+            const rumeursString = Array.isArray(location.Rumeurs) ? location.Rumeurs.join('\n') : (location.Rumeur || '');
             rumeursTab.innerHTML = `
                 <div class="text-view space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${location.Rumeur || ''}</textarea>
+                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
                     </div>
                 </div>
             `;
@@ -1097,8 +1135,8 @@
 
             location.name = document.getElementById('edit-name').value;
             location.description = document.getElementById('edit-desc').value;
-            location.Rumeur = document.getElementById('edit-rumeur').value || 'A définir';
-            location.Tradition_Ancienne = document.getElementById('edit-tradition').value || 'A définir';
+            location.Rumeurs = document.getElementById('edit-rumeur').value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
+            location.Tradition_Ancienne = document.getElementById('edit-tradition').value;
             location.color = document.querySelector('#edit-color-picker .color-swatch.selected').dataset.color;
             location.known = document.getElementById('edit-known').checked;
             location.visited = document.getElementById('edit-visited').checked;
@@ -1123,7 +1161,6 @@
         function cancelEdit() {
             // Remove edit mode flag
             delete infoBox.dataset.editMode;
-
             // Remove edit controls
             const editControls = document.getElementById('edit-controls');
             if (editControls) {
@@ -1210,12 +1247,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (location.Rumeurs && location.Rumeurs.length > 0) {
+                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (location.Rumeur && location.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${location.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -2100,12 +2173,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (region.Rumeurs && region.Rumeurs.length > 0) {
+                const rumeursValides = region.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (region.Rumeur && region.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${region.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -2224,11 +2333,13 @@
 
         function updateRumeursTabForRegionEdit(region) {
             const rumeursTab = document.getElementById('rumeurs-tab');
+            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
+            const rumeursString = Array.isArray(region.Rumeurs) ? region.Rumeurs.join('\n') : (region.Rumeur || '');
             rumeursTab.innerHTML = `
                 <div class="text-view space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.Rumeur || ''}</textarea>
+                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
                     </div>
                 </div>
             `;
@@ -2282,8 +2393,8 @@
 
             region.name = document.getElementById('edit-region-name').value;
             region.description = document.getElementById('edit-region-desc').value;
-            region.Rumeur = document.getElementById('edit-region-rumeur').value || 'A définir';
-            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value || 'A définir';
+            region.Rumeurs = document.getElementById('edit-region-rumeur').value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
+            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value;
             region.color = document.querySelector('#edit-region-color-picker .color-swatch.selected').dataset.color;
 
             // Handle images
@@ -2390,12 +2501,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (region.Rumeurs && region.Rumeurs.length > 0) {
+                const rumeursValides = region.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (region.Rumeur && region.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${region.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -2538,7 +2685,7 @@
                     description: descInput.value,
                     color: selectedColor,
                     points: [...currentRegionPoints],
-                    Rumeur: "A définir",
+                    Rumeurs: [], // Initialize Rumeurs as an empty array
                     Tradition_Ancienne: "A définir"
                 };
 
@@ -2574,6 +2721,17 @@
             if (saved) {
                 try {
                     regionsData = JSON.parse(saved);
+                    // Ensure Rumeurs is an array for all regions
+                    regionsData.regions.forEach(region => {
+                        if (!Array.isArray(region.Rumeurs)) {
+                            if (region.Rumeur && region.Rumeur !== "A définir") {
+                                region.Rumeurs = [region.Rumeur];
+                            } else {
+                                region.Rumeurs = [];
+                            }
+                            delete region.Rumeur; // Remove the old Rumeur property
+                        }
+                    });
                 } catch (e) {
                     console.error('Failed to load regions from localStorage:', e);
                     regionsData = getDefaultRegions();
@@ -2928,7 +3086,7 @@
                 mapSwitchBtn.title = "Vue Joueurs";
             }
         });
-        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
+        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeurs: [], Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
         function saveLocationsToLocal() {
@@ -2938,42 +3096,77 @@
         // === FONCTIONS UNIFIÉES D'IMPORT/EXPORT ===
 
         function exportUnifiedData() {
-            // Fusionner les lieux et les régions dans un seul tableau locations
             const allLocations = [];
 
-            // Ajouter tous les lieux normaux
+            // Ajouter les lieux normaux
             if (locationsData.locations) {
                 locationsData.locations.forEach(location => {
-                    allLocations.push({
-                        ...location,
-                        type: location.type || "custom" // S'assurer qu'il y a un type
-                    });
+                    const exportLocation = {
+                        id: location.id,
+                        name: location.name,
+                        description: location.description || "",
+                        imageUrl: location.imageUrl || "",
+                        images: location.images || [],
+                        color: location.color,
+                        known: location.known !== undefined ? location.known : true,
+                        visited: location.visited !== undefined ? location.visited : false,
+                        type: location.type || "custom",
+                        coordinates: location.coordinates || { x: 0, y: 0 }
+                    };
+
+                    // Ajouter les rumeurs multiples si elles existent
+                    if (location.Rumeurs && location.Rumeurs.length > 0) {
+                        location.Rumeurs.forEach(rumeur => {
+                            exportLocation.Rumeur = rumeur;
+                        });
+                    }
+                    // Support de l'ancienne structure avec Rumeur simple
+                    else if (location.Rumeur) {
+                        exportLocation.Rumeur = location.Rumeur;
+                    }
+
+                    if (location.Tradition_Ancienne) {
+                        exportLocation.Tradition_Ancienne = location.Tradition_Ancienne;
+                    }
+
+                    allLocations.push(exportLocation);
                 });
             }
 
-            // Ajouter toutes les régions (converties en format location avec type="region")
+            // Ajouter les régions converties en format unifié
             if (regionsData.regions) {
                 regionsData.regions.forEach(region => {
-                    // Convertir la structure de région en format location unifié
-                    const regionAsLocation = {
+                    const exportRegion = {
                         id: region.id,
                         name: region.name,
                         description: region.description || "",
                         imageUrl: region.imageUrl || "",
+                        images: region.images || [],
                         color: region.color,
                         known: region.known !== undefined ? region.known : true,
                         visited: region.visited !== undefined ? region.visited : false,
                         type: "region",
                         coordinates: {
-                            points: region.points || [] // Les points du polygone de la région
+                            points: region.points || []
                         }
                     };
 
-                    // Ajouter les propriétés additionnelles si elles existent
-                    if (region.Rumeur) regionAsLocation.Rumeur = region.Rumeur;
-                    if (region.Tradition_Ancienne) regionAsLocation.Tradition_Ancienne = region.Tradition_Ancienne;
+                    // Ajouter les rumeurs multiples si elles existent
+                    if (region.Rumeurs && region.Rumeurs.length > 0) {
+                        region.Rumeurs.forEach(rumeur => {
+                            exportRegion.Rumeur = rumeur;
+                        });
+                    }
+                    // Support de l'ancienne structure avec Rumeur simple
+                    else if (region.Rumeur) {
+                        exportRegion.Rumeur = region.Rumeur;
+                    }
 
-                    allLocations.push(regionAsLocation);
+                    if (region.Tradition_Ancienne) {
+                        exportRegion.Tradition_Ancienne = region.Tradition_Ancienne;
+                    }
+
+                    allLocations.push(exportRegion);
                 });
             }
 
@@ -3025,7 +3218,7 @@
                             coordinates: {
                                 points: region.points || []
                             },
-                            ...(region.Rumeur && { Rumeur: region.Rumeur }),
+                            ...(region.Rumeur && { Rumeur: region.Rumeur }), // Ancienne structure Rumeur simple
                             ...(region.Tradition_Ancienne && { Tradition_Ancienne: region.Tradition_Ancienne })
                         }));
                     }
@@ -3054,14 +3247,27 @@
                                 name: item.name,
                                 description: item.description || "",
                                 imageUrl: item.imageUrl || "",
+                                images: item.images || [], // Conserver les images pour les régions aussi
                                 color: item.color,
                                 known: item.known !== undefined ? item.known : true,
                                 visited: item.visited !== undefined ? item.visited : false,
+                                type: item.type || "region",
                                 points: item.coordinates?.points || []
                             };
 
-                            // Ajouter les propriétés additionnelles si elles existent
-                            if (item.Rumeur) region.Rumeur = item.Rumeur;
+                            // Fonction pour extraire les rumeurs multiples
+                            const extractRumeurs = (item) => {
+                                const rumeurs = [];
+                                // Parcourir toutes les propriétés pour trouver les rumeurs
+                                for (const key in item) {
+                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
+                                        rumeurs.push(item[key]);
+                                    }
+                                }
+                                return rumeurs;
+                            };
+
+                            region.Rumeurs = extractRumeurs(item);
                             if (item.Tradition_Ancienne) region.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             regionLocations.push(region);
@@ -3078,7 +3284,24 @@
                                     x: item.coordinates.x,
                                     y: item.coordinates.y
                                 };
+                            } else {
+                                location.coordinates = { x: 0, y: 0 }; // Coordonnées par défaut si manquantes
                             }
+
+                            // Fonction pour extraire les rumeurs multiples
+                            const extractRumeurs = (item) => {
+                                const rumeurs = [];
+                                // Parcourir toutes les propriétés pour trouver les rumeurs
+                                for (const key in item) {
+                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
+                                        rumeurs.push(item[key]);
+                                    }
+                                }
+                                return rumeurs;
+                            };
+
+                            location.Rumeurs = extractRumeurs(item);
+                            if (item.Tradition_Ancienne) location.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             normalLocations.push(location);
                         }
@@ -3757,7 +3980,7 @@
 
                 const result = await response.json();
                 console.log("🤖 [GEMINI API] Réponse reçue:", result);
-                
+
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
                     const responseText = result.candidates[0].content.parts[0].text;
                     console.log("✅ [GEMINI API] Texte généré (longueur: " + responseText.length + " caractères)");
@@ -3814,7 +4037,7 @@
                 const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
 
-                    // Calculer le temps pour atteindre cette découverte
+                    // Calculate reach time for this discovery
                     let startIndex = 0;
                     if (index > 0) {
                         const prevDiscovery = chronologicalDiscoveries[index - 1];
@@ -3830,7 +4053,7 @@
                     const reachMiles = pixelsToMiles(reachDistance);
                     const reachDays = milesToDays(reachMiles);
 
-                    // Vérifier si c'est un point de départ
+                    // Check if this is a starting location (close to journey start)
                     let travelInfo;
                     if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
                         // Find the actual location to check distance from start point
@@ -3885,6 +4108,7 @@
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
 
+                            // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -4814,9 +5038,7 @@
                 updateCurrentSegmentDisplay();
                 scheduleAutoSync();
             }
-        }
-
-        function removeFollowingSegments() {
+        }        function removeFollowingSegments() {
             // Supprimer tous les segments après le segment actuel
             voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
 
