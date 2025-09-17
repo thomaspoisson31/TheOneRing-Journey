@@ -1072,6 +1072,9 @@
             // Update tradition tab to show tradition editing interface
             updateTraditionTabForEdit(location);
 
+            // Update tables tab to show tables editing interface
+            updateTablesTabForEdit(location);
+
             // Add edit controls at the bottom
             addEditControls();
         }
@@ -1159,6 +1162,129 @@
                     </div>
                 </div>
             `;
+        }
+
+        function updateTablesTabForEdit(location) {
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = location.tables || [];
+            const tablesHtml = generateTablesEditHTML(tables);
+
+            tablesTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
+                        <div id="edit-tables-container">${tablesHtml}</div>
+                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
+                    </div>
+                </div>
+            `;
+
+            setupTablesEditListeners();
+        }
+
+        function generateTablesEditHTML(tables) {
+            if (!tables || tables.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune table</div>';
+            }
+
+            return tables.map((table, index) => `
+                <div class="table-edit-item flex items-center space-x-2 p-2 rounded">
+                    <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${table.url || ''}" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
+                        <span class="text-gray-300">Défaut</span>
+                    </label>
+                    <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function setupTablesEditListeners() {
+            const container = document.getElementById('edit-tables-container');
+            const addButton = document.getElementById('add-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-table-btn')) {
+                        const button = e.target.closest('.remove-table-btn');
+                        const item = button.closest('.table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+            }
+        }
+
+        function addNewTableRow() {
+            const container = document.getElementById('edit-tables-container');
+            const currentTables = container.querySelectorAll('.table-edit-item');
+            
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'table-edit-item flex items-center space-x-2 p-2 rounded';
+            newRow.innerHTML = `
+                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            `;
+            
+            container.appendChild(newRow);
+            updateTableIndices();
+        }
+
+        function updateTableIndices() {
+            const container = document.getElementById('edit-tables-container');
+            container.querySelectorAll('.remove-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectTablesFromEdit() {
+            const container = document.getElementById('edit-tables-container');
+            const tables = [];
+
+            container.querySelectorAll('.table-edit-item').forEach(item => {
+                const url = item.querySelector('.table-url-input').value.trim();
+                const isDefault = item.querySelector('.default-table-checkbox').checked;
+
+                if (url) {
+                    tables.push({ url, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (tables.length > 0 && !tables.some(table => table.isDefault)) {
+                tables[0].isDefault = true;
+            }
+
+            return tables;
         }
 
         function addEditControls() {
@@ -1326,6 +1452,14 @@
                 // No images, remove both old and new format
                 delete location.images;
                 delete location.imageUrl;
+            }
+
+            // Handle tables
+            const tables = collectTablesFromEdit();
+            if (tables.length > 0) {
+                location.tables = tables;
+            } else {
+                delete location.tables;
             }
 
             saveLocationsToLocal();
@@ -2648,7 +2782,10 @@
             updateRumeursTabForRegionEdit(region);
 
             // Update tradition tab to show tradition editing interface
-            updateTraditionTabForEdit(region);
+            updateTraditionTabForRegionEdit(region);
+
+            // Update tables tab to show tables editing interface
+            updateTablesTabForRegionEdit(region);
 
             // Add edit controls at the bottom
             addRegionEditControls();
@@ -2728,6 +2865,24 @@
             `;
         }
 
+        function updateTablesTabForRegionEdit(region) {
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = region.tables || [];
+            const tablesHtml = generateTablesEditHTML(tables);
+
+            tablesTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
+                        <div id="edit-tables-container">${tablesHtml}</div>
+                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
+                    </div>
+                </div>
+            `;
+
+            setupTablesEditListeners();
+        }
+
         function addRegionEditControls() {
             // Add save/cancel buttons at the bottom of the scroll wrapper
             const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
@@ -2774,6 +2929,14 @@
                 region.images = images;
             } else {
                 delete region.images;
+            }
+
+            // Handle tables
+            const tables = collectTablesFromEdit();
+            if (tables.length > 0) {
+                region.tables = tables;
+            } else {
+                delete region.tables;
             }
 
             saveRegionsToLocal();
