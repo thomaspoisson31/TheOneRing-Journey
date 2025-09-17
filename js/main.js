@@ -1476,7 +1476,7 @@
                 editControls.remove();
             }
 
-            // Re-show the location info without edit mode
+            // Re-show the location info without edit mode - reload fresh content
             const location = locationsData.locations.find(loc => loc.id === activeLocationId);
             if (location) {
                 showLocationContent(location);
@@ -1608,7 +1608,7 @@
                 </div>
             `;
 
-            // Update tables tab content
+            // Update tables tab content - FIX: Utiliser la même logique que dans showInfoBox
             const tablesTab = document.getElementById('tables-tab');
             const tables = getLocationTables(location);
 
