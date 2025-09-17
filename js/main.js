@@ -975,6 +975,36 @@
             return '';
         }
 
+        function getLocationTables(location) {
+            if (location.tables && Array.isArray(location.tables)) {
+                return location.tables.map(table => table.url).filter(url => url);
+            }
+            return [];
+        }
+
+        function getDefaultLocationTable(location) {
+            if (location.tables && Array.isArray(location.tables)) {
+                const defaultTable = location.tables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.url : (location.tables[0] ? location.tables[0].url : '');
+            }
+            return '';
+        }
+
+        function getRegionTables(region) {
+            if (region.tables && Array.isArray(region.tables)) {
+                return region.tables.map(table => table.url).filter(url => url);
+            }
+            return [];
+        }
+
+        function getDefaultRegionTable(region) {
+            if (region.tables && Array.isArray(region.tables)) {
+                const defaultTable = region.tables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.url : (region.tables[0] ? region.tables[0].url : '');
+            }
+            return '';
+        }
+
         function startDrawingFromLocation(event, location) {
             console.log("🎯 Starting drawing from location:", location.name);
 
@@ -1158,6 +1188,90 @@
                     document.querySelector('#edit-color-picker .color-swatch.selected').classList.remove('selected');
                     swatch.classList.add('selected');
                 });
+            });
+        }
+
+        function generateImageEditHTML(images) {
+            if (!images || images.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune image</div>';
+            }
+
+            return images.map((image, index) => `
+                <div class="image-edit-item flex items-center space-x-2 p-2 rounded">
+                    <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${image.url || ''}" placeholder="URL de l'image">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-image-checkbox mr-1" ${image.isDefault ? 'checked' : ''}>
+                        <span class="text-gray-300">Défaut</span>
+                    </label>
+                    <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function setupImageEditListeners() {
+            const container = document.getElementById('edit-images-container');
+            const addButton = document.getElementById('add-image-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewImageRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-image-btn')) {
+                        const button = e.target.closest('.remove-image-btn');
+                        const item = button.closest('.image-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateImageIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-image-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-image-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+            }
+        }
+
+        function addNewImageRow() {
+            const container = document.getElementById('edit-images-container');
+            const currentImages = container.querySelectorAll('.image-edit-item');
+            
+            if (currentImages.length >= 5) {
+                alert('Maximum 5 images autorisées');
+                return;
+            }
+
+            const newIndex = currentImages.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'image-edit-item flex items-center space-x-2 p-2 rounded';
+            newRow.innerHTML = `
+                <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="URL de l'image">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-image-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            `;
+            
+            container.appendChild(newRow);
+            updateImageIndices();
+        }
+
+        function updateImageIndices() {
+            const container = document.getElementById('edit-images-container');
+            container.querySelectorAll('.remove-image-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
             });
         }
 
@@ -1747,6 +1861,77 @@
             URL.revokeObjectURL(url);
         }
 
+        // --- Narration Functions ---
+        function updateJourneyButtonTitle() {
+            const button = document.getElementById('describe-journey-btn');
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            
+            if (button) {
+                let styleText = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        styleText = ' (Détaillée)';
+                        break;
+                    case 'brief':
+                        styleText = ' (Brève)';
+                        break;
+                    case 'keywords':
+                        styleText = ' (Points clés)';
+                        break;
+                    default:
+                        styleText = ' (Brève)';
+                }
+                
+                const span = button.querySelector('span:last-child');
+                if (span) {
+                    span.textContent = `Décrire le voyage${styleText}`;
+                }
+                console.log("📖 Mise à jour du titre du bouton:", narrationStyle, "Titre mis à jour");
+            } else {
+                console.log("📖 Mise à jour du titre du bouton:", narrationStyle, "Bouton non trouvé");
+            }
+        }
+
+        function setupNarrationListeners() {
+            console.log("📖 Configuration des listeners de narration...");
+            
+            const radioButtons = document.querySelectorAll('input[name="narration-style"]');
+            console.log("📖 Radio buttons de narration trouvés:", radioButtons.length);
+            
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        localStorage.setItem('narrationStyle', e.target.value);
+                        updateJourneyButtonTitle();
+                        console.log("📖 Style de narration changé:", e.target.value);
+                        scheduleAutoSync();
+                    }
+                });
+            });
+
+            // Load saved narration style
+            const savedStyle = localStorage.getItem('narrationStyle') || 'brief';
+            const savedRadio = document.querySelector(`input[name="narration-style"][value="${savedStyle}"]`);
+            if (savedRadio) {
+                savedRadio.checked = true;
+            }
+        }
+
+        function getNarrationPromptAddition() {
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            
+            switch (narrationStyle) {
+                case 'detailed':
+                    return '\n\nRédige une narration détaillée avec plusieurs paragraphes, dans un style littéraire évocateur digne des grands récits de fantasy.';
+                case 'brief':
+                    return '\n\nSois concis, un seul paragraphe par jour de voyage.';
+                case 'keywords':
+                    return '\n\nFournis seulement des mots-clés évocateurs séparés par des virgules, pour inspiration du Meneur de Jeu.';
+                default:
+                    return '\n\nSois concis, un seul paragraphe par jour de voyage.';
+            }
+        }
+
         // --- Season Functions ---
         function updateSeasonDisplay() {
             const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
@@ -2131,6 +2316,9 @@
 
                 // Setup settings event listeners
                 setupSettingsEventListeners();
+                
+                // Setup narration listeners
+                setupNarrationListeners();
 
                 // Test DOM elements after a delay
                 setTimeout(() => {
@@ -4165,8 +4353,7 @@
         // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
-        // Mettre à jour le titre du bouton après qu'il soit créé
-        updateJourneyButtonTitle();
+        // The journey button will be updated when the voyage manager is initialized
 
         // --- Gemini API Functions ---
         async function callGemini(prompt, button) {
@@ -4553,6 +4740,188 @@
                 console.error('Erreur lors du chargement des contextes:', error.message || error);
                 savedContextsDiv.innerHTML = '<p class="text-red-500">Impossible de charger les contextes.</p>';
             }
+        }
+
+        function setupSettingsEventListeners() {
+            // Settings modal event listeners
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsBtn = document.getElementById('close-settings-modal');
+
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                });
+                console.log("🔐 [AUTH] Bouton paramètres trouvé et configuré");
+            }
+
+            if (closeSettingsBtn) {
+                closeSettingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            }
+
+            // Settings tabs
+            const settingsTabs = document.querySelectorAll('.settings-tab-button');
+            const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+                    
+                    // Update active tab
+                    settingsTabs.forEach(t => t.classList.remove('active', 'text-white', 'border-blue-500'));
+                    settingsTabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
+                    tab.classList.remove('text-gray-400', 'border-transparent');
+                    tab.classList.add('active', 'text-white', 'border-blue-500');
+                    
+                    // Update active content
+                    settingsTabContents.forEach(content => {
+                        content.classList.remove('active');
+                        content.style.display = 'none';
+                    });
+                    
+                    const targetContent = document.getElementById(`${targetTab}-tab`);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        targetContent.style.display = 'flex';
+                    }
+                });
+            });
+
+            // Maps management listeners
+            setupMapsEventListeners();
+            
+            // Season indicator click
+            const seasonIndicator = document.getElementById('season-indicator');
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            
+            if (seasonIndicator) {
+                seasonIndicator.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    // Switch to season tab
+                    const seasonTab = document.querySelector('[data-tab="season"]');
+                    if (seasonTab) {
+                        seasonTab.click();
+                    }
+                });
+            }
+            
+            if (calendarDateIndicator) {
+                calendarDateIndicator.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    // Switch to season tab
+                    const seasonTab = document.querySelector('[data-tab="season"]');
+                    if (seasonTab) {
+                        seasonTab.click();
+                    }
+                });
+            }
+
+            // Adventurers tab functionality
+            setupAdventurersTab();
+            
+            // Quest tab functionality
+            setupQuestTab();
+        }
+
+        function setupAdventurersTab() {
+            const editBtn = document.getElementById('edit-adventurers-btn');
+            const readMode = document.getElementById('adventurers-read-mode');
+            const editMode = document.getElementById('adventurers-edit-mode');
+            const textarea = document.getElementById('adventurers-group');
+            const content = document.getElementById('adventurers-content');
+            const saveBtn = document.getElementById('save-adventurers-edit');
+            const cancelBtn = document.getElementById('cancel-adventurers-edit');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    readMode.classList.add('hidden');
+                    editMode.classList.remove('hidden');
+                    textarea.focus();
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const adventurersData = textarea.value;
+                    localStorage.setItem('adventurersGroup', adventurersData);
+                    content.innerHTML = adventurersData ? marked(adventurersData) : '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                });
+            }
+
+            // Load saved data
+            const savedAdventurers = localStorage.getItem('adventurersGroup');
+            if (savedAdventurers && textarea) {
+                textarea.value = savedAdventurers;
+                content.innerHTML = marked(savedAdventurers);
+            }
+        }
+
+        function setupQuestTab() {
+            const editBtn = document.getElementById('edit-quest-btn');
+            const readMode = document.getElementById('quest-read-mode');
+            const editMode = document.getElementById('quest-edit-mode');
+            const textarea = document.getElementById('adventurers-quest');
+            const content = document.getElementById('quest-content');
+            const saveBtn = document.getElementById('save-quest-edit');
+            const cancelBtn = document.getElementById('cancel-quest-edit');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    readMode.classList.add('hidden');
+                    editMode.classList.remove('hidden');
+                    textarea.focus();
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const questData = textarea.value;
+                    localStorage.setItem('adventurersQuest', questData);
+                    content.innerHTML = questData ? marked(questData) : '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                });
+            }
+
+            // Load saved data
+            const savedQuest = localStorage.getItem('adventurersQuest');
+            if (savedQuest && textarea) {
+                textarea.value = savedQuest;
+                content.innerHTML = marked(savedQuest);
+            }
+        }
+
+        // Simple markdown parser for basic formatting
+        function marked(text) {
+            return text
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/g, '<em>$1</em>')
+                .replace(/^- (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                .replace(/\n/g, '<br>');
         }
 
         function displaySavedContexts(contexts) {
