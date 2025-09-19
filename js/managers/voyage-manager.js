@@ -173,8 +173,12 @@ class VoyageManager {
         if (!window.regionSegments || Object.keys(window.regionSegments).size === 0) {
             console.log(`🔧 [DEBUG] ⚠️ Segments de région vides, tentative de reconstruction...`);
             if (typeof updateDiscoveriesChronologically === 'function') {
+                console.log(`🔧 [DEBUG] Appel de updateDiscoveriesChronologically()...`);
                 updateDiscoveriesChronologically();
                 console.log(`🔧 [DEBUG] Segments de région après reconstruction:`, window.regionSegments);
+            } else {
+                console.log(`🔧 [DEBUG] updateDiscoveriesChronologically non disponible, reconstruction manuelle...`);
+                this.rebuildRegionSegments();
             }
         }
 
@@ -282,6 +286,100 @@ class VoyageManager {
         console.log('🔧 [DEBUG] Timeline absolue construite:', absoluteTimeline);
         console.log('🔧 [DEBUG] Construction de la timeline absolue - terminée');
         return absoluteTimeline;
+    }
+
+    rebuildRegionSegments() {
+        console.log(`🔧 [DEBUG] === DÉBUT rebuildRegionSegments ===`);
+        
+        if (!window.regionsData || !window.regionsData.regions) {
+            console.log(`🔧 [DEBUG] ❌ regionsData non disponible`);
+            return;
+        }
+
+        // Initialiser regionSegments si nécessaire
+        if (!window.regionSegments) {
+            window.regionSegments = new Map();
+        }
+
+        // Fonction pour vérifier si un point est dans un polygone
+        const isPointInPolygon = (point, polygon) => {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x, yi = polygon[i].y;
+                const xj = polygon[j].x, yj = polygon[j].y;
+
+                if (((yi > point.y) !== (yj > point.y)) && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        };
+
+        const currentRegions = new Set();
+        let regionSegments = new Map();
+
+        console.log(`🔧 [DEBUG] Traitement de ${journeyPath.length} points du trajet...`);
+
+        // Parcourir tous les points du trajet
+        for (let i = 0; i < journeyPath.length; i++) {
+            const currentPoint = journeyPath[i];
+            let pointRegions = new Set();
+
+            // Vérifier dans quelles régions se trouve ce point
+            window.regionsData.regions.forEach(region => {
+                if (region.points && region.points.length >= 3) {
+                    if (isPointInPolygon(currentPoint, region.points)) {
+                        pointRegions.add(region.name);
+
+                        // Si cette région n'était pas encore traversée
+                        if (!currentRegions.has(region.name)) {
+                            currentRegions.add(region.name);
+                            // Marquer le point d'entrée
+                            if (!regionSegments.has(region.name)) {
+                                regionSegments.set(region.name, {
+                                    entryIndex: i,
+                                    exitIndex: i // sera mis à jour
+                                });
+                                console.log(`🔧 [DEBUG] Région ${region.name} - entrée à l'index ${i}`);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Mettre à jour les points de sortie pour les régions qui ne sont plus traversées
+            for (let regionName of currentRegions) {
+                if (!pointRegions.has(regionName)) {
+                    // Cette région n'est plus traversée, marquer le point de sortie
+                    if (regionSegments.has(regionName)) {
+                        regionSegments.get(regionName).exitIndex = i - 1;
+                        console.log(`🔧 [DEBUG] Région ${regionName} - sortie à l'index ${i - 1}`);
+                    }
+                    currentRegions.delete(regionName);
+                }
+            }
+
+            // Mettre à jour les index de sortie pour toutes les régions encore traversées
+            for (let regionName of pointRegions) {
+                if (regionSegments.has(regionName)) {
+                    regionSegments.get(regionName).exitIndex = i;
+                }
+            }
+        }
+
+        // Finaliser les régions qui sont encore traversées à la fin
+        for (let regionName of currentRegions) {
+            if (regionSegments.has(regionName)) {
+                regionSegments.get(regionName).exitIndex = journeyPath.length - 1;
+                console.log(`🔧 [DEBUG] Région ${regionName} - sortie finale à l'index ${journeyPath.length - 1}`);
+            }
+        }
+
+        // Mettre à jour window.regionSegments
+        window.regionSegments = regionSegments;
+        
+        console.log(`🔧 [DEBUG] Segments de région reconstruits:`, regionSegments);
+        console.log(`🔧 [DEBUG] === FIN rebuildRegionSegments ===`);
     }
 
     getJourneyStartDate() {
