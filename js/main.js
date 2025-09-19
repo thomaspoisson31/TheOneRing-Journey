@@ -4353,10 +4353,8 @@
                 });
             });
 
-            return regionTraversalInfo;ationsList = document.getElementById('nearby-locations-list');
-
-            // Sort discoveries by discovery order, keeping them mixed
-            const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+            return regionTraversalInfo;
+        }
 
             if (chronologicalDiscoveries.length > 0) {
                 // Calculate travel times for each discovery
