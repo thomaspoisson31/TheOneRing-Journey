@@ -168,6 +168,15 @@ class VoyageManager {
         console.log(`🔧 [DEBUG] Découvertes brutes:`, discoveries);
         console.log(`🔧 [DEBUG] Points de trajet total: ${totalPathPoints}, voyage total: ${this.totalJourneyDays} jours`);
         console.log(`🔧 [DEBUG] Segments de région disponibles:`, window.regionSegments);
+        
+        // Forcer la mise à jour des segments de région si ils sont vides
+        if (!window.regionSegments || Object.keys(window.regionSegments).size === 0) {
+            console.log(`🔧 [DEBUG] ⚠️ Segments de région vides, tentative de reconstruction...`);
+            if (typeof updateDiscoveriesChronologically === 'function') {
+                updateDiscoveriesChronologically();
+                console.log(`🔧 [DEBUG] Segments de région après reconstruction:`, window.regionSegments);
+            }
+        }
 
         const absoluteTimeline = [];
         let currentAbsoluteDay = 1;
