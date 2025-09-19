@@ -68,20 +68,27 @@ class VoyageManager {
     }
 
     generateJourneyData() {
+        console.log('🔧 [DEBUG] Génération des données de voyage - début');
+        
         // Calculate total journey duration using global variables
         const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
         const days = Math.ceil(miles / 20); // 20 miles per day
         this.totalJourneyDays = Math.max(1, days);
+        
+        console.log(`🔧 [DEBUG] Total du voyage: ${this.totalJourneyDays} jours (${miles.toFixed(1)} miles)`);
 
         // Récupérer ou définir la date de début du voyage
         this.journeyStartDate = this.getJourneyStartDate();
 
         // Build absolute timeline
         const absoluteTimeline = this.buildAbsoluteTimeline();
+        console.log('🔧 [DEBUG] Timeline absolue:', absoluteTimeline);
 
         // Generate day by day data
         this.dayByDayData = [];
         for (let day = 1; day <= this.totalJourneyDays; day++) {
+            console.log(`🔧 [DEBUG] === Traitement du jour ${day} ===`);
+            
             const dayData = {
                 day: day,
                 discoveries: [],
@@ -89,14 +96,23 @@ class VoyageManager {
             };
 
             // Find discoveries for this day
-            absoluteTimeline.forEach(timelineItem => {
+            absoluteTimeline.forEach((timelineItem, index) => {
+                console.log(`🔧 [DEBUG] Examen de l'élément ${index}: ${timelineItem.type} - ${timelineItem.discovery?.name}`);
+                
                 if (timelineItem.type === 'location') {
                     if (timelineItem.absoluteDay === day) {
+                        console.log(`🔧 [DEBUG] ✅ Lieu ${timelineItem.discovery.name} ajouté au jour ${day}`);
                         dayData.discoveries.push(timelineItem.discovery);
+                    } else {
+                        console.log(`🔧 [DEBUG] ❌ Lieu ${timelineItem.discovery.name} pas pour ce jour (jour ${timelineItem.absoluteDay})`);
                     }
                 } else if (timelineItem.type === 'region') {
+                    console.log(`🔧 [DEBUG] Région ${timelineItem.discovery.name}: jour ${day}, période ${timelineItem.absoluteStartDay}-${timelineItem.absoluteEndDay}`);
+                    
                     // Pour les régions, les ajouter pour chaque jour où elles sont traversées
                     if (day >= timelineItem.absoluteStartDay && day <= timelineItem.absoluteEndDay) {
+                        console.log(`🔧 [DEBUG] ✅ Région ${timelineItem.discovery.name} est traversée le jour ${day}`);
+                        
                         // Créer une copie de la découverte pour ce jour spécifique
                         const regionForDay = {
                             ...timelineItem.discovery,
@@ -105,36 +121,56 @@ class VoyageManager {
                                           day === timelineItem.absoluteEndDay ? 'exited' : 'traversed'
                         };
                         
+                        console.log(`🔧 [DEBUG] Type de traversée: ${regionForDay.proximityType}`);
+                        
                         // Ajouter la région directement sans vérification d'existence
                         // car nous voulons qu'elle apparaisse chaque jour de traversée
                         dayData.discoveries.push(regionForDay);
+                        console.log(`🔧 [DEBUG] ✅ Région ${timelineItem.discovery.name} ajoutée au jour ${day}`);
+                    } else {
+                        console.log(`🔧 [DEBUG] ❌ Région ${timelineItem.discovery.name} pas traversée le jour ${day}`);
                     }
                 }
             });
 
+            console.log(`🔧 [DEBUG] Jour ${day} - total découvertes: ${dayData.discoveries.length}`, dayData.discoveries.map(d => `${d.name} (${d.type})`));
             this.dayByDayData.push(dayData);
         }
+
+        console.log('🔧 [DEBUG] Données complètes du voyage:', this.dayByDayData);
 
         // Initialize to first day if not set
         if (this.currentDayIndex >= this.totalJourneyDays) {
             this.currentDayIndex = 0;
         }
+        
+        console.log('🔧 [DEBUG] Génération des données de voyage - terminée');
     }
 
     buildAbsoluteTimeline() {
+        console.log('🔧 [DEBUG] Construction de la timeline absolue - début');
+        
         // Utiliser les variables globales journeyDiscoveries
         const discoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
         const totalMiles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
         const totalPathPoints = journeyPath.length;
+        
+        console.log(`🔧 [DEBUG] Découvertes brutes:`, discoveries);
+        console.log(`🔧 [DEBUG] Points de trajet total: ${totalPathPoints}, voyage total: ${this.totalJourneyDays} jours`);
+        console.log(`🔧 [DEBUG] Segments de région disponibles:`, window.regionSegments);
 
         const absoluteTimeline = [];
         let currentAbsoluteDay = 1;
 
-        discoveries.forEach(discovery => {
+        discoveries.forEach((discovery, index) => {
+            console.log(`🔧 [DEBUG] === Traitement découverte ${index}: ${discovery.name} (${discovery.type}) ===`);
+            
             if (discovery.type === 'location') {
                 // Calculer le jour où le lieu est atteint
                 const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
                 const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
+                
+                console.log(`🔧 [DEBUG] Lieu ${discovery.name}: index ${discovery.discoveryIndex}, ratio ${discoveryRatio.toFixed(3)}, jour ${discoveryDay}`);
 
                 absoluteTimeline.push({
                     discovery: discovery,
@@ -142,9 +178,12 @@ class VoyageManager {
                     type: 'location'
                 });
             } else if (discovery.type === 'region') {
+                console.log(`🔧 [DEBUG] Région ${discovery.name}: index découverte ${discovery.discoveryIndex}`);
+                
                 // Utiliser les segments de région s'ils existent
                 if (window.regionSegments && window.regionSegments.has(discovery.name)) {
                     const regionSegment = window.regionSegments.get(discovery.name);
+                    console.log(`🔧 [DEBUG] Segment trouvé pour ${discovery.name}:`, regionSegment);
 
                     // Calculer les jours basés sur les indices
                     const startRatio = regionSegment.entryIndex / totalPathPoints;
@@ -152,6 +191,8 @@ class VoyageManager {
 
                     const regionStartDay = Math.max(1, Math.ceil(startRatio * this.totalJourneyDays));
                     const regionEndDay = Math.max(regionStartDay, Math.ceil(endRatio * this.totalJourneyDays));
+                    
+                    console.log(`🔧 [DEBUG] Région ${discovery.name}: entrée index ${regionSegment.entryIndex} (ratio ${startRatio.toFixed(3)}, jour ${regionStartDay}), sortie index ${regionSegment.exitIndex} (ratio ${endRatio.toFixed(3)}, jour ${regionEndDay})`);
 
                     absoluteTimeline.push({
                         discovery: discovery,
@@ -160,9 +201,13 @@ class VoyageManager {
                         type: 'region'
                     });
                 } else {
+                    console.log(`🔧 [DEBUG] Pas de segment pour ${discovery.name}, utilisation fallback`);
+                    
                     // Fallback si pas de segment
                     const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
                     const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
+                    
+                    console.log(`🔧 [DEBUG] Région ${discovery.name} (fallback): ratio ${discoveryRatio.toFixed(3)}, jour ${discoveryDay}`);
 
                     absoluteTimeline.push({
                         discovery: discovery,
@@ -174,6 +219,8 @@ class VoyageManager {
             }
         });
 
+        console.log('🔧 [DEBUG] Timeline absolue construite:', absoluteTimeline);
+        console.log('🔧 [DEBUG] Construction de la timeline absolue - terminée');
         return absoluteTimeline;
     }
 
