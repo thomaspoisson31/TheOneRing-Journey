@@ -4437,18 +4437,20 @@
                     let displayText = `${icon} ${discovery.name} ${travelInfo}`;
 
                     // For regions, also calculate duration inside the region
-                    if (discovery.type === 'region' && window.regionSegments) {
-                        const segment = window.regionSegments.get(discovery.name);
-                        if (segment) {
-                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
-                            const regionMiles = pixelsToMiles(regionDistance);
-                            const regionDays = milesToDays(regionMiles);
+                    if (discovery.type === 'region') {
+                        // Utiliser les durées calculées par calculateRegionTraversalDurations
+                        const regionTraversalInfo = calculateRegionTraversalDurations();
+                        const traversalData = regionTraversalInfo.get(discovery.name);
+                        
+                        if (traversalData) {
+                            const regionDays = traversalData.duration;
+                            const regionMiles = traversalData.distance;
 
                             // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
-                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays.toFixed(1)} jour${regionDays > 1 ? 's' : ''})`;
                             } else {
-                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays.toFixed(1)} jour${regionDays > 1 ? 's' : ''})`;
                             }
                         }
                     }
