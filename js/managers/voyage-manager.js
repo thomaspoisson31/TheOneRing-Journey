@@ -310,12 +310,16 @@ class VoyageManager {
                 // Obtenir l'image pour la miniature
                 const imageUrl = this.getDiscoveryImage(discovery);
 
+                // Vérifier s'il y a des tables aléatoires pour ce lieu/région
+                const hasTables = this.discoveryHasTables(discovery);
+                const diceIcon = hasTables ? ' 🎲' : '';
+
                 return `
                     <div class="inline-block m-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item text-center" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}" style="width: 180px; vertical-align: top;">
                         <div class="w-[150px] h-[150px] mx-auto mb-2 bg-gray-600 rounded-lg overflow-hidden">
                             ${imageUrl ? `<img src="${imageUrl}" alt="${discovery.name}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">Aucune image</div>'}
                         </div>
-                        <div class="font-medium text-white text-sm mb-1">${discovery.name}</div>
+                        <div class="font-medium text-white text-sm mb-1">${discovery.name}${diceIcon}</div>
                         <div class="text-xs text-gray-400">${typeText} - ${actionText}</div>
                     </div>
                 `;
@@ -1180,5 +1184,29 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
         }
 
         return null;
+    }
+
+    discoveryHasTables(discovery) {
+        if (discovery.type === 'location') {
+            // Chercher dans les données de lieux
+            if (typeof locationsData !== 'undefined' && locationsData.locations) {
+                const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                if (location && location.tables && Array.isArray(location.tables)) {
+                    // Vérifier s'il y a au moins une table avec une URL valide
+                    return location.tables.some(table => table.url && table.url.trim() !== '');
+                }
+            }
+        } else if (discovery.type === 'region') {
+            // Chercher dans les données de régions
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discovery.name);
+                if (region && region.tables && Array.isArray(region.tables)) {
+                    // Vérifier s'il y a au moins une table avec une URL valide
+                    return region.tables.some(table => table.url && table.url.trim() !== '');
+                }
+            }
+        }
+
+        return false;
     }
 }
