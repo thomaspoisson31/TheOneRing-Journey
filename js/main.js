@@ -4232,6 +4232,129 @@
             const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
             const nearbyLocationsList = document.getElementById('nearby-locations-list');
 
+            if (!traversedRegionsInfo || !nearbyLocationsInfo) return;
+
+            // Calculer les durées de traversée des régions
+            const regionTraversalInfo = calculateRegionTraversalDurations();
+            
+            // Séparer les découvertes par type
+            const regions = [];
+            const locations = [];
+            
+            journeyDiscoveries.forEach(discovery => {
+                if (discovery.type === 'region') {
+                    const traversalData = regionTraversalInfo.get(discovery.name);
+                    if (traversalData) {
+                        regions.push({
+                            name: discovery.name,
+                            duration: traversalData.duration,
+                            distance: traversalData.distance
+                        });
+                    }
+                } else if (discovery.type === 'location') {
+                    locations.push(discovery);
+                }
+            });
+
+            // Affichage des régions avec durées
+            if (regions.length > 0) {
+                traversedRegionsInfo.classList.remove('hidden');
+                const regionsHtml = regions.map(region => {
+                    const durationText = region.duration >= 1 ? 
+                        `${region.duration.toFixed(1)} jour${region.duration > 1 ? 's' : ''}` : 
+                        `${Math.round(region.duration * 24)} heures`;
+                    const distanceText = `(${Math.round(region.distance)} miles)`;
+                    
+                    return `<div class="mb-1">
+                        <span class="font-medium">${region.name}</span>
+                        <span class="text-gray-400 text-xs ml-2">${durationText} ${distanceText}</span>
+                    </div>`;
+                }).join('');
+                traversedRegionsList.innerHTML = regionsHtml;
+            } else {
+                traversedRegionsInfo.classList.add('hidden');
+            }
+
+            // Affichage des lieux
+            if (locations.length > 0) {
+                nearbyLocationsInfo.classList.remove('hidden');
+                const locationsHtml = locations.map(location => {
+                    const proximityText = location.proximityType === 'traversed' ? '(traversé)' : '(à proximité)';
+                    return `<div class="mb-1">
+                        <span class="font-medium">${location.name}</span>
+                        <span class="text-gray-400 text-xs ml-2">${proximityText}</span>
+                    </div>`;
+                }).join('');
+                nearbyLocationsList.innerHTML = locationsHtml;
+            } else {
+                nearbyLocationsInfo.classList.add('hidden');
+            }
+        }
+
+        function calculateRegionTraversalDurations() {
+            const regionTraversalInfo = new Map();
+            
+            if (!window.regionSegments || !regionsData || !regionsData.regions) {
+                return regionTraversalInfo;
+            }
+
+            // Pour chaque région traversée
+            window.regionSegments.forEach((segment, regionName) => {
+                // Calculer la distance parcourue dans cette région
+                let totalDistance = 0;
+                let pointsInRegion = 0;
+                
+                // Trouver les données de la région
+                const regionData = regionsData.regions.find(r => r.name === regionName);
+                if (!regionData || !regionData.points || regionData.points.length < 3) {
+                    return;
+                }
+
+                // Parcourir tous les points du trajet dans le segment de la région
+                for (let i = segment.entryIndex; i <= Math.min(segment.exitIndex, journeyPath.length - 2); i++) {
+                    const currentPoint = journeyPath[i];
+                    const nextPoint = journeyPath[i + 1];
+                    
+                    // Vérifier si les deux points sont dans la région
+                    const currentInRegion = isPointInPolygon(currentPoint, regionData.points);
+                    const nextInRegion = isPointInPolygon(nextPoint, regionData.points);
+                    
+                    // Si au moins un des deux points est dans la région, compter la distance
+                    if (currentInRegion || nextInRegion) {
+                        const segmentDistance = Math.sqrt(
+                            Math.pow(nextPoint.x - currentPoint.x, 2) + 
+                            Math.pow(nextPoint.y - currentPoint.y, 2)
+                        );
+                        
+                        // Si seulement un point est dans la région, ne compter qu'une partie
+                        if (currentInRegion && nextInRegion) {
+                            // Les deux points sont dans la région
+                            totalDistance += segmentDistance;
+                        } else {
+                            // Un seul point dans la région, compter la moitié (approximation)
+                            totalDistance += segmentDistance * 0.5;
+                        }
+                        pointsInRegion++;
+                    }
+                }
+
+                // Convertir en miles et calculer la durée
+                const distanceInMiles = pixelsToMiles(totalDistance);
+                const durationInDays = milesToDays(distanceInMiles);
+                
+                // Durée minimale d'une demi-journée pour toute région traversée
+                const finalDuration = Math.max(0.5, durationInDays);
+                
+                regionTraversalInfo.set(regionName, {
+                    distance: distanceInMiles,
+                    duration: finalDuration,
+                    pixelDistance: totalDistance,
+                    pointsInRegion: pointsInRegion
+                });
+            });
+
+            return regionTraversalInfo;ationsList = document.getElementById('nearby-locations-list');
+
             // Sort discoveries by discovery order, keeping them mixed
             const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
 
