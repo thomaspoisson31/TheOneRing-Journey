@@ -179,6 +179,8 @@ class VoyageManager {
                 });
             } else if (discovery.type === 'region') {
                 console.log(`🔧 [DEBUG] Région ${discovery.name}: index découverte ${discovery.discoveryIndex}`);
+                console.log(`🔧 [DEBUG] window.regionSegments existe:`, !!window.regionSegments);
+                console.log(`🔧 [DEBUG] regionSegments contient ${discovery.name}:`, window.regionSegments ? window.regionSegments.has(discovery.name) : 'N/A');
                 
                 // Utiliser les segments de région s'ils existent
                 if (window.regionSegments && window.regionSegments.has(discovery.name)) {
