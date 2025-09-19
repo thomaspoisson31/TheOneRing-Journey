@@ -105,13 +105,9 @@ class VoyageManager {
                                           day === timelineItem.absoluteEndDay ? 'exited' : 'traversed'
                         };
                         
-                        // Vérifier si cette région n'est pas déjà ajoutée pour ce jour
-                        const exists = dayData.discoveries.some(d =>
-                            d.name === timelineItem.discovery.name && d.type === timelineItem.discovery.type
-                        );
-                        if (!exists) {
-                            dayData.discoveries.push(regionForDay);
-                        }
+                        // Ajouter la région directement sans vérification d'existence
+                        // car nous voulons qu'elle apparaisse chaque jour de traversée
+                        dayData.discoveries.push(regionForDay);
                     }
                 }
             });
