@@ -4359,6 +4359,9 @@
         function displayJourneyInfo() {
             const nearbyLocationsList = document.getElementById('nearby-locations-list');
 
+            // Sort discoveries by discovery order, keeping them mixed
+            const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+
             if (chronologicalDiscoveries.length > 0) {
                 // Calculate travel times for each discovery
                 const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
