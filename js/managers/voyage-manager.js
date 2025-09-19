@@ -312,7 +312,7 @@ class VoyageManager {
 
                 // Vérifier s'il y a des tables aléatoires pour ce lieu/région
                 const hasTables = this.discoveryHasTables(discovery);
-                const diceIcon = hasTables ? ' 🎲' : '';
+                const diceIcon = hasTables ? ' <span class="dice-icon cursor-pointer hover:scale-110 transition-transform" data-discovery-name="' + discovery.name + '" data-discovery-type="' + discovery.type + '" title="Voir les tables aléatoires">🎲</span>' : '';
 
                 return `
                     <div class="inline-block m-2 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors discovery-item text-center" data-discovery-name="${discovery.name}" data-discovery-type="${discovery.type}" style="width: 180px; vertical-align: top;">
@@ -526,8 +526,26 @@ class VoyageManager {
             });
 
             // Clic - ouvrir la modal
-            item.addEventListener('click', () => {
-                this.openDiscoveryModal(discoveryName, discoveryType);
+            item.addEventListener('click', (e) => {
+                // Vérifier si le clic provient de l'icône dé
+                if (e.target.classList.contains('dice-icon')) {
+                    e.stopPropagation();
+                    this.openDiscoveryModalOnTablesTab(discoveryName, discoveryType);
+                } else {
+                    this.openDiscoveryModal(discoveryName, discoveryType);
+                }
+            });
+        });
+
+        // Event listeners spécifiques pour les icônes dé
+        const diceIcons = document.querySelectorAll('.dice-icon');
+        diceIcons.forEach(icon => {
+            const discoveryName = icon.dataset.discoveryName;
+            const discoveryType = icon.dataset.discoveryType;
+
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openDiscoveryModalOnTablesTab(discoveryName, discoveryType);
             });
         });
     }
@@ -596,6 +614,76 @@ class VoyageManager {
                                 toggleInfoBoxExpand();
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    openDiscoveryModalOnTablesTab(discoveryName, discoveryType) {
+        // Fermer la modal des segments de voyage
+        this.dom.hideModal(this.dom.voyageSegmentsModal);
+
+        if (discoveryType === 'location') {
+            // Trouver le lieu et ouvrir sa modal
+            if (typeof locationsData !== 'undefined' && locationsData.locations) {
+                const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                if (location) {
+                    // Simuler un événement de clic sur le marqueur
+                    const fakeEvent = {
+                        currentTarget: { dataset: { id: location.id.toString() } },
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
+
+                    if (typeof showInfoBox === 'function') {
+                        showInfoBox(fakeEvent);
+
+                        // Forcer l'expansion de la info box et activer l'onglet Tables
+                        setTimeout(() => {
+                            const infoBox = document.getElementById('info-box');
+                            if (infoBox && !infoBox.classList.contains('expanded')) {
+                                if (typeof toggleInfoBoxExpand === 'function') {
+                                    toggleInfoBoxExpand();
+                                }
+                            }
+                            
+                            // Activer l'onglet Tables aléatoires
+                            if (typeof activateTab === 'function') {
+                                activateTab('tables');
+                            }
+                        }, 100);
+                    }
+                }
+            }
+        } else if (discoveryType === 'region') {
+            // Trouver la région et ouvrir sa modal
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                if (region) {
+                    // Simuler un événement de clic sur la région
+                    const fakeEvent = {
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
+
+                    if (typeof showRegionInfo === 'function') {
+                        showRegionInfo(fakeEvent, region);
+
+                        // Forcer l'expansion de la info box et activer l'onglet Tables
+                        setTimeout(() => {
+                            const infoBox = document.getElementById('info-box');
+                            if (infoBox && !infoBox.classList.contains('expanded')) {
+                                if (typeof toggleInfoBoxExpand === 'function') {
+                                    toggleInfoBoxExpand();
+                                }
+                            }
+                            
+                            // Activer l'onglet Tables aléatoires
+                            if (typeof activateTab === 'function') {
+                                activateTab('tables');
+                            }
+                        }, 100);
                     }
                 }
             }
