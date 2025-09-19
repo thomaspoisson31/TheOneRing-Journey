@@ -4357,7 +4357,12 @@
         }
 
         function displayJourneyInfo() {
+            const traversedRegionsInfo = document.getElementById('traversed-regions-info');
+            const traversedRegionsList = document.getElementById('traversed-regions-list');
+            const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
             const nearbyLocationsList = document.getElementById('nearby-locations-list');
+
+            if (!traversedRegionsInfo || !nearbyLocationsInfo) return;
 
             // Sort discoveries by discovery order, keeping them mixed
             const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
