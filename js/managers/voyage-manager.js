@@ -231,26 +231,37 @@ class VoyageManager {
                     console.log(`🔧 [DEBUG] Région ${discovery.name}: entrée index ${regionSegment.entryIndex} (ratio ${startRatio.toFixed(3)}, jour ${regionStartDay}), sortie index ${regionSegment.exitIndex} (ratio ${endRatio.toFixed(3)}, jour ${regionEndDay})`);
                     console.log(`🔧 [DEBUG] Région ${discovery.name}: différence d'indices ${indexDifference}, points par jour ${pathPointsPerDay.toFixed(2)}`);
                     
-                    // Calculer une durée minimale basée sur la différence d'indices
+                    // Calculer une durée minimale basée sur la différence d'indices et le ratio de traversée
                     let finalRegionEndDay = regionEndDay;
                     
-                    // Si la différence d'indices représente plus de 2 jours de voyage, forcer une durée plus longue
-                    if (indexDifference > pathPointsPerDay * 2) {
-                        const estimatedDaysSpanned = Math.ceil(indexDifference / pathPointsPerDay);
-                        finalRegionEndDay = Math.max(regionEndDay, regionStartDay + estimatedDaysSpanned - 1);
+                    // Calculer le pourcentage du trajet que représente cette région
+                    const regionTraversalRatio = indexDifference / totalPathPoints;
+                    console.log(`🔧 [DEBUG] Région ${discovery.name}: ratio de traversée ${(regionTraversalRatio * 100).toFixed(1)}% (${indexDifference} points sur ${totalPathPoints})`);
+                    
+                    // Forcer une durée minimale basée sur le ratio de traversée
+                    if (regionTraversalRatio > 0.05) { // Si plus de 5% du trajet
+                        // Calculer une durée proportionnelle au trajet total
+                        const proportionalDays = Math.max(2, Math.ceil(regionTraversalRatio * this.totalJourneyDays));
+                        finalRegionEndDay = Math.max(regionEndDay, regionStartDay + proportionalDays - 1);
                         
                         // S'assurer que ça ne dépasse pas la durée totale du voyage
                         finalRegionEndDay = Math.min(finalRegionEndDay, this.totalJourneyDays);
                         
-                        console.log(`🔧 [DEBUG] Région ${discovery.name}: grande traversée détectée, jours estimés ${estimatedDaysSpanned}, jour fin forcé à ${finalRegionEndDay}`);
+                        console.log(`🔧 [DEBUG] Région ${discovery.name}: traversée significative (${(regionTraversalRatio * 100).toFixed(1)}%), durée proportionnelle ${proportionalDays} jours, jour fin ajusté à ${finalRegionEndDay}`);
                     }
                     
-                    // Forcer au minimum 3 jours si la différence d'indices est très importante
-                    if (indexDifference > totalPathPoints * 0.1) { // Si plus de 10% du trajet
-                        const minEndDay = regionStartDay + 2; // Au moins 3 jours
-                        finalRegionEndDay = Math.max(finalRegionEndDay, minEndDay);
+                    // Règle spéciale pour les très longues traversées (plus de 20% du trajet)
+                    if (regionTraversalRatio > 0.2) {
+                        const longTraversalDays = Math.max(4, Math.ceil(regionTraversalRatio * this.totalJourneyDays * 1.2));
+                        finalRegionEndDay = Math.max(finalRegionEndDay, regionStartDay + longTraversalDays - 1);
                         finalRegionEndDay = Math.min(finalRegionEndDay, this.totalJourneyDays);
-                        console.log(`🔧 [DEBUG] Région ${discovery.name}: traversée majeure (${(indexDifference/totalPathPoints*100).toFixed(1)}% du trajet), durée minimale forcée à ${finalRegionEndDay - regionStartDay + 1} jours`);
+                        console.log(`🔧 [DEBUG] Région ${discovery.name}: très longue traversée (${(regionTraversalRatio * 100).toFixed(1)}%), durée étendue à ${longTraversalDays} jours, jour fin final ${finalRegionEndDay}`);
+                    }
+                    
+                    // Assurer une durée minimale de 2 jours pour toute région traversée (sauf si voyage très court)
+                    if (this.totalJourneyDays > 3 && finalRegionEndDay === regionStartDay) {
+                        finalRegionEndDay = Math.min(regionStartDay + 1, this.totalJourneyDays);
+                        console.log(`🔧 [DEBUG] Région ${discovery.name}: durée minimale forcée à 2 jours (${regionStartDay}-${finalRegionEndDay})`);
                     }
 
                     const timelineItem = {
