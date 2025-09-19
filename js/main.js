@@ -4356,6 +4356,9 @@
             return regionTraversalInfo;
         }
 
+        function displayJourneyInfo() {
+            const nearbyLocationsList = document.getElementById('nearby-locations-list');
+
             if (chronologicalDiscoveries.length > 0) {
                 // Calculate travel times for each discovery
                 const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
