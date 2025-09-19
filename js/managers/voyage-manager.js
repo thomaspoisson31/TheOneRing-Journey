@@ -223,12 +223,15 @@ class VoyageManager {
                         console.log(`🔧 [DEBUG] Région ${discovery.name}: traversée majeure (${(indexDifference/totalPathPoints*100).toFixed(1)}% du trajet), durée minimale forcée à ${finalRegionEndDay - regionStartDay + 1} jours`);
                     }
 
-                    absoluteTimeline.push({
+                    const timelineItem = {
                         discovery: discovery,
                         absoluteStartDay: regionStartDay,
                         absoluteEndDay: finalRegionEndDay,
                         type: 'region'
-                    });
+                    };
+                    
+                    absoluteTimeline.push(timelineItem);
+                    console.log(`🔧 [DEBUG] ✅ AJOUTÉ À LA TIMELINE - Région ${discovery.name}: période réelle ${timelineItem.absoluteStartDay}-${timelineItem.absoluteEndDay}`);
                 } else {
                     console.log(`🔧 [DEBUG] Pas de segment pour ${discovery.name}, utilisation fallback`);
                     
