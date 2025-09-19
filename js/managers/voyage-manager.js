@@ -190,14 +190,25 @@ class VoyageManager {
                     const endRatio = regionSegment.exitIndex / totalPathPoints;
 
                     const regionStartDay = Math.max(1, Math.ceil(startRatio * this.totalJourneyDays));
+                    // Utiliser Math.ceil pour endRatio aussi, mais s'assurer que ce soit au moins startDay + durée minimale si la région est traversée
                     const regionEndDay = Math.max(regionStartDay, Math.ceil(endRatio * this.totalJourneyDays));
                     
+                    // Si les indices d'entrée et de sortie sont significativement différents, 
+                    // s'assurer que la région apparaît sur plusieurs jours
+                    const indexDifference = regionSegment.exitIndex - regionSegment.entryIndex;
+                    const pathPointsPerDay = totalPathPoints / this.totalJourneyDays;
+                    const estimatedDaysSpanned = Math.ceil(indexDifference / pathPointsPerDay);
+                    
+                    // Ajuster regionEndDay si nécessaire
+                    const adjustedRegionEndDay = Math.max(regionEndDay, regionStartDay + estimatedDaysSpanned - 1);
+                    
                     console.log(`🔧 [DEBUG] Région ${discovery.name}: entrée index ${regionSegment.entryIndex} (ratio ${startRatio.toFixed(3)}, jour ${regionStartDay}), sortie index ${regionSegment.exitIndex} (ratio ${endRatio.toFixed(3)}, jour ${regionEndDay})`);
+                    console.log(`🔧 [DEBUG] Région ${discovery.name}: différence d'indices ${indexDifference}, jours estimés ${estimatedDaysSpanned}, jour fin ajusté ${adjustedRegionEndDay}`);
 
                     absoluteTimeline.push({
                         discovery: discovery,
                         absoluteStartDay: regionStartDay,
-                        absoluteEndDay: regionEndDay,
+                        absoluteEndDay: adjustedRegionEndDay,
                         type: 'region'
                     });
                 } else {
