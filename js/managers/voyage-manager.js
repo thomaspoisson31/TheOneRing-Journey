@@ -95,12 +95,22 @@ class VoyageManager {
                         dayData.discoveries.push(timelineItem.discovery);
                     }
                 } else if (timelineItem.type === 'region') {
+                    // Pour les régions, les ajouter pour chaque jour où elles sont traversées
                     if (day >= timelineItem.absoluteStartDay && day <= timelineItem.absoluteEndDay) {
+                        // Créer une copie de la découverte pour ce jour spécifique
+                        const regionForDay = {
+                            ...timelineItem.discovery,
+                            // Marquer le type de traversée selon le jour
+                            proximityType: day === timelineItem.absoluteStartDay ? 'entered' : 
+                                          day === timelineItem.absoluteEndDay ? 'exited' : 'traversed'
+                        };
+                        
+                        // Vérifier si cette région n'est pas déjà ajoutée pour ce jour
                         const exists = dayData.discoveries.some(d =>
                             d.name === timelineItem.discovery.name && d.type === timelineItem.discovery.type
                         );
                         if (!exists) {
-                            dayData.discoveries.push(timelineItem.discovery);
+                            dayData.discoveries.push(regionForDay);
                         }
                     }
                 }
