@@ -164,6 +164,8 @@ class VoyageManager {
 
         discoveries.forEach((discovery, index) => {
             console.log(`🔧 [DEBUG] === Traitement découverte ${index}: ${discovery.name} (${discovery.type}) ===`);
+            console.log(`🔧 [DEBUG] Objet découverte complet:`, discovery);
+            console.log(`🔧 [DEBUG] Type exact: "${discovery.type}", Longueur: ${discovery.type?.length}`);
             
             if (discovery.type === 'location') {
                 // Calculer le jour où le lieu est atteint
