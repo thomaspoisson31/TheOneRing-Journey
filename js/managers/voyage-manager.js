@@ -52,23 +52,33 @@ class VoyageManager {
     }
 
     updateDisplay() {
+        console.log('🔧 [DEBUG] === DÉBUT updateDisplay() ===');
+        console.log('🔧 [DEBUG] journeyPath défini?', typeof journeyPath !== 'undefined');
+        console.log('🔧 [DEBUG] journeyPath.length:', typeof journeyPath !== 'undefined' ? journeyPath.length : 'undefined');
+        
         const noVoyageMessage = this.dom.getElementById('no-voyage-message');
         const currentSegmentDisplay = this.dom.getElementById('current-segment-display');
 
         // Utiliser les variables globales existantes
         if (typeof journeyPath === 'undefined' || journeyPath.length === 0) {
+            console.log('🔧 [DEBUG] ❌ Pas de trajet - affichage du message "no voyage"');
             noVoyageMessage.classList.remove('hidden');
             currentSegmentDisplay.classList.add('hidden');
         } else {
+            console.log('🔧 [DEBUG] ✅ Trajet détecté - génération des données de voyage');
             noVoyageMessage.classList.add('hidden');
             currentSegmentDisplay.classList.remove('hidden');
             this.generateJourneyData();
             this.renderCurrentDay();
         }
+        console.log('🔧 [DEBUG] === FIN updateDisplay() ===');
     }
 
     generateJourneyData() {
-        console.log('🔧 [DEBUG] Génération des données de voyage - début');
+        console.log('🔧 [DEBUG] === DÉBUT generateJourneyData() ===');
+        console.log('🔧 [DEBUG] totalPathPixels:', typeof totalPathPixels !== 'undefined' ? totalPathPixels : 'undefined');
+        console.log('🔧 [DEBUG] MAP_DISTANCE_MILES:', typeof MAP_DISTANCE_MILES !== 'undefined' ? MAP_DISTANCE_MILES : 'undefined');
+        console.log('🔧 [DEBUG] MAP_WIDTH:', typeof MAP_WIDTH !== 'undefined' ? MAP_WIDTH : 'undefined');
         
         // Calculate total journey duration using global variables
         const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
