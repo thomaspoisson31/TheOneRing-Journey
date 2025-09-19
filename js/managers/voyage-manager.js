@@ -162,12 +162,14 @@ class VoyageManager {
         const absoluteTimeline = [];
         let currentAbsoluteDay = 1;
 
+        console.log(`🔧 [DEBUG] DÉBUT BOUCLE - Total découvertes à traiter: ${discoveries.length}`);
         discoveries.forEach((discovery, index) => {
             console.log(`🔧 [DEBUG] === Traitement découverte ${index}: ${discovery.name} (${discovery.type}) ===`);
             console.log(`🔧 [DEBUG] Objet découverte complet:`, discovery);
             console.log(`🔧 [DEBUG] Type exact: "${discovery.type}", Longueur: ${discovery.type?.length}`);
             
             if (discovery.type === 'location') {
+                console.log(`🔧 [DEBUG] 🎯 LOCATION DÉTECTÉE: ${discovery.name}`);
                 // Calculer le jour où le lieu est atteint
                 const discoveryRatio = discovery.discoveryIndex / totalPathPoints;
                 const discoveryDay = Math.max(1, Math.ceil(discoveryRatio * this.totalJourneyDays));
@@ -180,6 +182,7 @@ class VoyageManager {
                     type: 'location'
                 });
             } else if (discovery.type === 'region') {
+                console.log(`🔧 [DEBUG] 🎯 RÉGION DÉTECTÉE: ${discovery.name}`);
                 console.log(`🔧 [DEBUG] Région ${discovery.name}: index découverte ${discovery.discoveryIndex}`);
                 console.log(`🔧 [DEBUG] window.regionSegments existe:`, !!window.regionSegments);
                 console.log(`🔧 [DEBUG] regionSegments contient ${discovery.name}:`, window.regionSegments ? window.regionSegments.has(discovery.name) : 'N/A');
@@ -252,6 +255,8 @@ class VoyageManager {
                         type: 'region'
                     });
                 }
+            } else {
+                console.log(`🔧 [DEBUG] ⚠️ TYPE NON RECONNU: "${discovery.type}" pour ${discovery.name} - discovery:`, discovery);
             }
         });
 
