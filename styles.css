@@ -577,8 +577,6 @@ body {
 
 /* JSON Table Display Styles */
 .json-table-display {
-    max-height: 400px;
-    overflow-y: auto;
     border-radius: 8px;
 }
 
