@@ -575,6 +575,63 @@ body {
     display: flex;
 }
 
+/* JSON Table Display Styles */
+.json-table-display {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+.json-table-display table {
+    background-color: rgba(17, 24, 39, 0.8);
+}
+
+.json-table-display th {
+    background-color: rgba(55, 65, 81, 0.9);
+    color: #f3f4f6;
+    font-weight: 600;
+    text-align: left;
+}
+
+.json-table-display td {
+    color: #e5e7eb;
+}
+
+.json-table-display tr:nth-child(even) {
+    background-color: rgba(31, 41, 55, 0.5);
+}
+
+.json-table-display tr:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.json-table-edit-item {
+    transition: background-color 0.2s ease;
+}
+
+.json-table-edit-item:hover {
+    background-color: rgba(75, 85, 99, 0.3);
+}
+
+.json-table-content-input {
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+.json-table-container {
+    padding: 1rem;
+}
+
+.generate-random-event-btn {
+    transition: all 0.2s ease;
+}
+
+.generate-random-event-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 /* Styles pour les modales de voyage en fond blanc */
 .voyage-modal-white {
     background-color: white !important;

@@ -783,6 +783,85 @@
                 }
             }
 
+            // Update json-tables tab content
+            const jsonTablesTab = document.getElementById('json-tables-tab');
+            const jsonTables = getLocationJsonTables(location);
+
+            if (jsonTables.length > 0) {
+                if (infoBox.classList.contains('expanded') && jsonTables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple json tables
+                    const jsonTableTabs = jsonTables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table texte ${index + 1}</button>`
+                    ).join('');
+
+                    const jsonTableContents = jsonTables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="json-table-container">
+                                <div class="mb-3 flex justify-end">
+                                    <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="${index}">
+                                        <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                    </button>
+                                </div>
+                                <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                    <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                    <div class="event-content text-yellow-100"></div>
+                                </div>
+                                ${formatJsonTableForDisplay(table)}
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${jsonTableTabs}</div>
+                            <div class="image-contents">${jsonTableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupRandomEventButtons(location);
+                } else {
+                    // Single json table view (compact mode or single table)
+                    const defaultJsonTable = getDefaultLocationJsonTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                                </div>` : '';
+                    jsonTablesTab.innerHTML = `
+                        <div class="json-table-container">
+                            ${titleHtml}
+                            <div class="mb-3 flex justify-end">
+                                <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="0">
+                                    <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                </button>
+                            </div>
+                            <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                <div class="event-content text-yellow-100"></div>
+                            </div>
+                            ${formatJsonTableForDisplay(defaultJsonTable)}
+                        </div>
+                    `;
+                    setupRandomEventButtons(location);
+                }
+            } else {
+                // No json tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table texte disponible</div>
+                        </div>
+                    `;
+                }
+            }
+
             // Update header title
             updateInfoBoxHeaderTitle(location.name);
 
@@ -1005,6 +1084,148 @@
             return '';
         }
 
+        function getLocationJsonTables(location) {
+            if (location.jsonTables && Array.isArray(location.jsonTables)) {
+                return location.jsonTables.map(table => table.content).filter(content => content);
+            }
+            return [];
+        }
+
+        function getDefaultLocationJsonTable(location) {
+            if (location.jsonTables && Array.isArray(location.jsonTables)) {
+                const defaultTable = location.jsonTables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.content : (location.jsonTables[0] ? location.jsonTables[0].content : '');
+            }
+            return '';
+        }
+
+        function getRegionJsonTables(region) {
+            if (region.jsonTables && Array.isArray(region.jsonTables)) {
+                return region.jsonTables.map(table => table.content).filter(content => content);
+            }
+            return [];
+        }
+
+        function getDefaultRegionJsonTable(region) {
+            if (region.jsonTables && Array.isArray(region.jsonTables)) {
+                const defaultTable = region.jsonTables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.content : (region.jsonTables[0] ? region.jsonTables[0].content : '');
+            }
+            return '';
+        }
+
+        function validateJsonTable(content) {
+            try {
+                const parsed = JSON.parse(content);
+                if (!Array.isArray(parsed)) {
+                    return { valid: false, message: "Le JSON doit être un tableau d'objets" };
+                }
+                
+                for (let i = 0; i < parsed.length; i++) {
+                    const item = parsed[i];
+                    if (typeof item !== 'object' || item === null) {
+                        return { valid: false, message: `L'élément ${i + 1} doit être un objet` };
+                    }
+                    
+                    // Vérification optionnelle du format attendu
+                    const hasDestinyDie = item.hasOwnProperty('Dé du destin');
+                    const hasResult = item.hasOwnProperty('Résultat');
+                    const hasDescription = item.hasOwnProperty('Description');
+                    
+                    if (hasDestinyDie || hasResult || hasDescription) {
+                        if (!hasDestinyDie || !hasResult || !hasDescription) {
+                            return { 
+                                valid: false, 
+                                message: `L'élément ${i + 1} semble suivre le format standard mais il manque des propriétés (Dé du destin, Résultat, Description)`,
+                                warning: true
+                            };
+                        }
+                    }
+                }
+                
+                return { valid: true, message: "Format JSON valide" };
+            } catch (e) {
+                return { valid: false, message: `JSON invalide: ${e.message}` };
+            }
+        }
+
+        function formatJsonTableForDisplay(content) {
+            try {
+                const parsed = JSON.parse(content);
+                if (!Array.isArray(parsed)) return content;
+                
+                let html = '<div class="json-table-display">';
+                
+                // Vérifier si c'est le format standard avec "Dé du destin"
+                const isStandardFormat = parsed.length > 0 && parsed[0].hasOwnProperty('Dé du destin');
+                
+                if (isStandardFormat) {
+                    html += '<table class="w-full border-collapse border border-gray-600 text-sm">';
+                    html += '<thead><tr class="bg-gray-700">';
+                    html += '<th class="border border-gray-600 px-2 py-1">Dé du destin</th>';
+                    html += '<th class="border border-gray-600 px-2 py-1">Résultat</th>';
+                    html += '<th class="border border-gray-600 px-2 py-1">Description</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    parsed.forEach(item => {
+                        html += '<tr>';
+                        html += `<td class="border border-gray-600 px-2 py-1 font-bold text-center">${escapeHtml(item['Dé du destin'] || '')}</td>`;
+                        html += `<td class="border border-gray-600 px-2 py-1 font-semibold">${escapeHtml(item['Résultat'] || '')}</td>`;
+                        html += `<td class="border border-gray-600 px-2 py-1">${escapeHtml(item['Description'] || '')}</td>`;
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                } else {
+                    // Format libre - affichage en liste
+                    html += '<div class="space-y-2">';
+                    parsed.forEach((item, index) => {
+                        html += `<div class="bg-gray-800 rounded p-2 border border-gray-600">`;
+                        html += `<div class="font-semibold text-blue-400 mb-1">Entrée ${index + 1}</div>`;
+                        Object.entries(item).forEach(([key, value]) => {
+                            html += `<div><span class="font-medium">${escapeHtml(key)}:</span> ${escapeHtml(String(value))}</div>`;
+                        });
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                return html;
+            } catch (e) {
+                return `<div class="text-red-400">Erreur d'affichage: ${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        function generateRandomEvent(jsonContent) {
+            try {
+                const parsed = JSON.parse(jsonContent);
+                if (!Array.isArray(parsed) || parsed.length === 0) {
+                    throw new Error("Tableau vide ou invalide");
+                }
+                
+                const randomIndex = Math.floor(Math.random() * parsed.length);
+                const randomEntry = parsed[randomIndex];
+                
+                // Construire la description de l'événement
+                let eventDescription = '';
+                
+                if (randomEntry['Dé du destin'] && randomEntry['Résultat'] && randomEntry['Description']) {
+                    // Format standard
+                    eventDescription = `**${randomEntry['Résultat']}** (${randomEntry['Dé du destin']})\n\n${randomEntry['Description']}`;
+                } else {
+                    // Format libre
+                    eventDescription = Object.entries(randomEntry)
+                        .map(([key, value]) => `**${key}:** ${value}`)
+                        .join('\n\n');
+                }
+                
+                return eventDescription;
+            } catch (e) {
+                throw new Error(`Impossible de générer un événement: ${e.message}`);
+            }
+        }
+
         function startDrawingFromLocation(event, location) {
             console.log("🎯 Starting drawing from location:", location.name);
 
@@ -1074,6 +1295,9 @@
 
             // Update tables tab to show tables editing interface
             updateTablesTabForEdit(location);
+
+            // Update json-tables tab to show json-tables editing interface
+            updateJsonTablesTabForEdit(location);
 
             // Add edit controls at the bottom
             addEditControls();
@@ -1180,6 +1404,155 @@
             `;
 
             setupTablesEditListeners();
+        }
+
+        function updateJsonTablesTabForEdit(location) {
+            const jsonTablesTab = document.getElementById('json-tables-tab');
+            const jsonTables = location.jsonTables || [];
+            const jsonTablesHtml = generateJsonTablesEditHTML(jsonTables);
+
+            jsonTablesTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires - Texte (max 5)</label>
+                        <div id="edit-json-tables-container">${jsonTablesHtml}</div>
+                        <button id="add-json-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table texte</button>
+                    </div>
+                </div>
+            `;
+
+            setupJsonTablesEditListeners();
+        }
+
+        function generateJsonTablesEditHTML(jsonTables) {
+            if (!jsonTables || jsonTables.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune table texte</div>';
+            }
+
+            return jsonTables.map((table, index) => `
+                <div class="json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md">
+                    <div class="flex items-center space-x-2">
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" class="default-json-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
+                            <span class="text-gray-300">Table par défaut</span>
+                        </label>
+                        <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${index}">
+                            <i class="fas fa-trash text-xs"></i> Supprimer
+                        </button>
+                    </div>
+                    <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici...">${table.content || ''}</textarea>
+                    <div class="json-validation-message text-xs"></div>
+                </div>
+            `).join('');
+        }
+
+        function setupJsonTablesEditListeners() {
+            const container = document.getElementById('edit-json-tables-container');
+            const addButton = document.getElementById('add-json-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewJsonTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-json-table-btn')) {
+                        const button = e.target.closest('.remove-json-table-btn');
+                        const item = button.closest('.json-table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateJsonTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-json-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-json-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+
+                container.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('json-table-content-input')) {
+                        const validation = validateJsonTable(e.target.value);
+                        const messageDiv = e.target.closest('.json-table-edit-item').querySelector('.json-validation-message');
+                        
+                        if (e.target.value.trim() === '') {
+                            messageDiv.textContent = '';
+                            messageDiv.className = 'json-validation-message text-xs';
+                        } else if (validation.valid) {
+                            messageDiv.textContent = '✓ Format JSON valide';
+                            messageDiv.className = 'json-validation-message text-xs text-green-400';
+                        } else {
+                            messageDiv.textContent = `⚠ ${validation.message}`;
+                            messageDiv.className = validation.warning ? 
+                                'json-validation-message text-xs text-yellow-400' : 
+                                'json-validation-message text-xs text-red-400';
+                        }
+                    }
+                });
+            }
+        }
+
+        function addNewJsonTableRow() {
+            const container = document.getElementById('edit-json-tables-container');
+            const currentTables = container.querySelectorAll('.json-table-edit-item');
+            
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables texte autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md';
+            newRow.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                        <span class="text-gray-300">Table par défaut</span>
+                    </label>
+                    <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${newIndex}">
+                        <i class="fas fa-trash text-xs"></i> Supprimer
+                    </button>
+                </div>
+                <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici..."></textarea>
+                <div class="json-validation-message text-xs"></div>
+            `;
+            
+            container.appendChild(newRow);
+            updateJsonTableIndices();
+        }
+
+        function updateJsonTableIndices() {
+            const container = document.getElementById('edit-json-tables-container');
+            container.querySelectorAll('.remove-json-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectJsonTablesFromEdit() {
+            const container = document.getElementById('edit-json-tables-container');
+            const jsonTables = [];
+
+            container.querySelectorAll('.json-table-edit-item').forEach(item => {
+                const content = item.querySelector('.json-table-content-input').value.trim();
+                const isDefault = item.querySelector('.default-json-table-checkbox').checked;
+
+                if (content) {
+                    jsonTables.push({ content, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (jsonTables.length > 0 && !jsonTables.some(table => table.isDefault)) {
+                jsonTables[0].isDefault = true;
+            }
+
+            return jsonTables;
         }
 
         function generateTablesEditHTML(tables) {
@@ -1401,6 +1774,35 @@
             });
         }
 
+        function setupRandomEventButtons(location) {
+            const buttons = document.querySelectorAll('.generate-random-event-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tableIndex = parseInt(e.currentTarget.dataset.tableIndex);
+                    const jsonTables = getLocationJsonTables(location);
+                    
+                    if (jsonTables[tableIndex]) {
+                        try {
+                            const eventText = generateRandomEvent(jsonTables[tableIndex]);
+                            
+                            // Trouver le conteneur d'affichage d'événement approprié
+                            const container = e.currentTarget.closest('.image-content, .json-table-container');
+                            const eventDisplay = container.querySelector('.random-event-display');
+                            const eventContent = container.querySelector('.event-content');
+                            
+                            eventContent.innerHTML = eventText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+                            eventContent.innerHTML = '<p>' + eventContent.innerHTML + '</p>';
+                            eventContent.innerHTML = eventContent.innerHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                            
+                            eventDisplay.classList.remove('hidden');
+                        } catch (error) {
+                            alert(`Erreur lors de la génération de l'événement: ${error.message}`);
+                        }
+                    }
+                });
+            });
+        }
+
         function setupStatusCheckboxListeners() {
             document.getElementById('edit-visited').addEventListener('change', (e) => {
                 if (e.target.checked) {
@@ -1460,6 +1862,14 @@
                 location.tables = tables;
             } else {
                 delete location.tables;
+            }
+
+            // Handle json tables
+            const jsonTables = collectJsonTablesFromEdit();
+            if (jsonTables.length > 0) {
+                location.jsonTables = jsonTables;
+            } else {
+                delete location.jsonTables;
             }
 
             saveLocationsToLocal();
@@ -1664,6 +2074,85 @@
                     tablesTab.innerHTML = `
                         <div class="image-view">
                             <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Update json-tables tab content - same logic as in showInfoBox
+            const jsonTablesTab = document.getElementById('json-tables-tab');
+            const jsonTables = getLocationJsonTables(location);
+
+            if (jsonTables.length > 0) {
+                if (infoBox.classList.contains('expanded') && jsonTables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple json tables
+                    const jsonTableTabs = jsonTables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table texte ${index + 1}</button>`
+                    ).join('');
+
+                    const jsonTableContents = jsonTables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="json-table-container">
+                                <div class="mb-3 flex justify-end">
+                                    <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="${index}">
+                                        <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                    </button>
+                                </div>
+                                <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                    <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                    <div class="event-content text-yellow-100"></div>
+                                </div>
+                                ${formatJsonTableForDisplay(table)}
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${jsonTableTabs}</div>
+                            <div class="image-contents">${jsonTableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupRandomEventButtons(location);
+                } else {
+                    // Single json table view (compact mode or single table)
+                    const defaultJsonTable = getDefaultLocationJsonTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                                </div>` : '';
+                    jsonTablesTab.innerHTML = `
+                        <div class="json-table-container">
+                            ${titleHtml}
+                            <div class="mb-3 flex justify-end">
+                                <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="0">
+                                    <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                </button>
+                            </div>
+                            <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                <div class="event-content text-yellow-100"></div>
+                            </div>
+                            ${formatJsonTableForDisplay(defaultJsonTable)}
+                        </div>
+                    `;
+                    setupRandomEventButtons(location);
+                }
+            } else {
+                // No json tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table texte disponible</div>
                         </div>
                     `;
                 }
