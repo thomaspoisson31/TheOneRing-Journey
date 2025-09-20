@@ -722,66 +722,7 @@
                 </div>
             `;
 
-            // Update tables tab content
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = getLocationTables(location);
-
-            if (tables.length > 0) {
-                if (infoBox.classList.contains('expanded') && tables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple tables
-                    const tableTabs = tables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
-                    ).join('');
-
-                    const tableContents = tables.map((table, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
-                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    tablesTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${tableTabs}</div>
-                            <div class="image-contents">${tableContents}</div>
-                        </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupImageClickHandlers();
-                } else {
-                    // Single table view (compact mode or single table)
-                    const defaultTable = getDefaultLocationTable(location);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
-                                </div>` : '';
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            ${titleHtml}
-                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
-                        </div>
-                    `;
-                    setupImageClickHandlers();
-                }
-            } else {
-                // No tables - show placeholder
-                if (!infoBox.classList.contains('expanded')) {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune table disponible</div>
-                        </div>
-                    `;
-                }
-            }
+            // L'onglet "Tables aléatoires" a été supprimé - ne plus traiter les tables d'images
 
             // Update json-tables tab content
             const jsonTablesTab = document.getElementById('json-tables-tab');
@@ -1054,35 +995,7 @@
             return '';
         }
 
-        function getLocationTables(location) {
-            if (location.tables && Array.isArray(location.tables)) {
-                return location.tables.map(table => table.url).filter(url => url);
-            }
-            return [];
-        }
-
-        function getDefaultLocationTable(location) {
-            if (location.tables && Array.isArray(location.tables)) {
-                const defaultTable = location.tables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.url : (location.tables[0] ? location.tables[0].url : '');
-            }
-            return '';
-        }
-
-        function getRegionTables(region) {
-            if (region.tables && Array.isArray(region.tables)) {
-                return region.tables.map(table => table.url).filter(url => url);
-            }
-            return [];
-        }
-
-        function getDefaultRegionTable(region) {
-            if (region.tables && Array.isArray(region.tables)) {
-                const defaultTable = region.tables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.url : (region.tables[0] ? region.tables[0].url : '');
-            }
-            return '';
-        }
+        // Fonctions des tables d'images supprimées - utilisation des tables JSON uniquement
 
         function getLocationJsonTables(location) {
             if (location.jsonTables && Array.isArray(location.jsonTables)) {
@@ -1293,9 +1206,6 @@
             // Update tradition tab to show tradition editing interface
             updateTraditionTabForEdit(location);
 
-            // Update tables tab to show tables editing interface
-            updateTablesTabForEdit(location);
-
             // Update json-tables tab to show json-tables editing interface
             updateJsonTablesTabForEdit(location);
 
@@ -1388,23 +1298,7 @@
             `;
         }
 
-        function updateTablesTabForEdit(location) {
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = location.tables || [];
-            const tablesHtml = generateTablesEditHTML(tables);
-
-            tablesTab.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-700 p-3 rounded-md">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
-                        <div id="edit-tables-container">${tablesHtml}</div>
-                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
-                    </div>
-                </div>
-            `;
-
-            setupTablesEditListeners();
-        }
+        // Fonction updateTablesTabForEdit supprimée - tables d'images non supportées
 
         function updateJsonTablesTabForEdit(location) {
             const jsonTablesTab = document.getElementById('json-tables-tab');
@@ -1460,8 +1354,31 @@
                         const button = e.target.closest('.remove-json-table-btn');
                         const item = button.closest('.json-table-edit-item');
                         if (item) {
-                            item.remove();
-                            updateJsonTableIndices();
+                            // Vérifier s'il y a au moins une table avant suppression
+                            const allTables = container.querySelectorAll('.json-table-edit-item');
+                            if (allTables.length <= 1) {
+                                // Si c'est la dernière table, la vider au lieu de la supprimer
+                                const textarea = item.querySelector('.json-table-content-input');
+                                if (textarea) {
+                                    textarea.value = '';
+                                    const messageDiv = item.querySelector('.json-validation-message');
+                                    if (messageDiv) {
+                                        messageDiv.textContent = '';
+                                        messageDiv.className = 'json-validation-message text-xs';
+                                    }
+                                }
+                            } else {
+                                item.remove();
+                                updateJsonTableIndices();
+                                // S'assurer qu'il y a toujours une table par défaut
+                                const remainingTables = container.querySelectorAll('.json-table-edit-item');
+                                const hasDefault = Array.from(remainingTables).some(table => 
+                                    table.querySelector('.default-json-table-checkbox').checked
+                                );
+                                if (!hasDefault && remainingTables.length > 0) {
+                                    remainingTables[0].querySelector('.default-json-table-checkbox').checked = true;
+                                }
+                            }
                         }
                     }
                 });
@@ -1499,6 +1416,11 @@
 
         function addNewJsonTableRow() {
             const container = document.getElementById('edit-json-tables-container');
+            if (!container) {
+                console.error('Container edit-json-tables-container not found');
+                return;
+            }
+            
             const currentTables = container.querySelectorAll('.json-table-edit-item');
             
             if (currentTables.length >= 5) {
@@ -1507,12 +1429,14 @@
             }
 
             const newIndex = currentTables.length;
+            const isFirstTable = newIndex === 0;
+            
             const newRow = document.createElement('div');
             newRow.className = 'json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md';
             newRow.innerHTML = `
                 <div class="flex items-center space-x-2">
                     <label class="flex items-center text-sm">
-                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${isFirstTable ? 'checked' : ''}>
                         <span class="text-gray-300">Table par défaut</span>
                     </label>
                     <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${newIndex}">
@@ -1525,6 +1449,7 @@
             
             container.appendChild(newRow);
             updateJsonTableIndices();
+            console.log('Nouvelle table JSON ajoutée');
         }
 
         function updateJsonTableIndices() {
@@ -1854,14 +1779,6 @@
                 // No images, remove both old and new format
                 delete location.images;
                 delete location.imageUrl;
-            }
-
-            // Handle tables
-            const tables = collectTablesFromEdit();
-            if (tables.length > 0) {
-                location.tables = tables;
-            } else {
-                delete location.tables;
             }
 
             // Handle json tables
