@@ -1,0 +1,66 @@
+Absolument \! Voici le format JSON modifié où chaque valeur possible du dé a sa propre ligne.
+
+```json
+[
+  {
+    "Dé du destin": "RUNE",
+    "Résultat": "Fitch Grantarbre",
+    "Description": "Les Héros rencontrent le Forestier d'Archet en personne. En fonction de la nature de leur mission, il peut les aider ou leur donner un aperçu de la situation au Bois de Chet. Il peut aussi leur indiquer le trajet jusqu'à Archet."
+  },
+  {
+    "Dé du destin": "1",
+    "Résultat": "Pris pour des Orques",
+    "Description": "Caché et assez éloigné, un chasseur du Bois de Chet tire une flèche sur les Héros : dans la pénombre des bois, il les a pris pour un groupe d'Orques."
+  },
+  {
+    "Dé du destin": "2",
+    "Résultat": "Pris pour des Orques",
+    "Description": "Caché et assez éloigné, un chasseur du Bois de Chet tire une flèche sur les Héros : dans la pénombre des bois, il les a pris pour un groupe d'Orques."
+  },
+  {
+    "Dé du destin": "3",
+    "Résultat": "Une ferme abandonnée",
+    "Description": "Les Héros découvrent une ferme abandonnée qui semble avoir été saccagée par des Gobelins, avec des traces de lutte évidentes."
+  },
+  {
+    "Dé du destin": "4",
+    "Résultat": "Une ferme abandonnée",
+    "Description": "Les Héros découvrent une ferme abandonnée qui semble avoir été saccagée par des Gobelins, avec des traces de lutte évidentes."
+  },
+  {
+    "Dé du destin": "5",
+    "Résultat": "Poursuivis par des Loups",
+    "Description": "Les Héros remarquent qu'une petite meute de Loups les suit ; ils doivent réussir un test de CHASSE pour les semer, sinon la meute les attaque dans les heures qui suivent."
+  },
+  {
+    "Dé du destin": "6",
+    "Résultat": "Poursuivis par des Loups",
+    "Description": "Les Héros remarquent qu'une petite meute de Loups les suit ; ils doivent réussir un test de CHASSE pour les semer, sinon la meute les attaque dans les heures qui suivent."
+  },
+  {
+    "Dé du destin": "7",
+    "Résultat": "Sables mouvants",
+    "Description": "Piégés dans un bourbier dissimulé par une couche de feuilles et de lichen, les Héros s'enfoncent ; pour se libérer, ils doivent réussir un test d'ATHLÉTISME ; l'incident leur fait gagner 3 points de Fatigue et perdre un jour de voyage."
+  },
+  {
+    "Dé du destin": "8",
+    "Résultat": "Sables mouvants",
+    "Description": "Piégés dans un bourbier dissimulé par une couche de feuilles et de lichen, les Héros s'enfoncent ; pour se libérer, ils doivent réussir un test d'ATHLÉTISME ; l'incident leur fait gagner 3 points de Fatigue et perdre un jour de voyage."
+  },
+  {
+    "Dé du destin": "9",
+    "Résultat": "Des Éclaireurs gobelins",
+    "Description": "Descendus des Collines Venteuses, des Gobelins en mission de reconnaissance dans le Bois de Chet ont repéré les Héros et comptent leur tendre une embuscade."
+  },
+  {
+    "Dé du destin": "10",
+    "Résultat": "Des Éclaireurs gobelins",
+    "Description": "Descendus des Collines Venteuses, des Gobelins en mission de reconnaissance dans le Bois de Chet ont repéré les Héros et comptent leur tendre une embuscade."
+  },
+  {
+    "Dé du destin": "OEIL",
+    "Résultat": "Le Troll des Collines Venteuses",
+    "Description": "Un Troll fait des ravages dans tout le Bois de Chet ; il ne fait pas preuve de discrétion (ni de subtilité). En quête de chair fraîche, il fonce sur les Héros dès qu'il les repère."
+  }
+]
+```
