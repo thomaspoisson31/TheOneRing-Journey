@@ -4294,66 +4294,115 @@
         function calculateRegionTraversalDurations() {
             const regionTraversalInfo = new Map();
             
-            if (!window.regionSegments || !regionsData || !regionsData.regions) {
+            if (!journeyPath || journeyPath.length < 2 || !regionsData || !regionsData.regions) {
                 return regionTraversalInfo;
             }
 
-            // Pour chaque région traversée
-            window.regionSegments.forEach((segment, regionName) => {
-                // Calculer la distance parcourue dans cette région
-                let totalDistance = 0;
-                let pointsInRegion = 0;
-                
-                // Trouver les données de la région
-                const regionData = regionsData.regions.find(r => r.name === regionName);
-                if (!regionData || !regionData.points || regionData.points.length < 3) {
-                    return;
-                }
+            // Variables pour suivre l'état de traversée
+            let currentRegionsActive = new Map(); // regionName -> {entryIndex, pixelDistance}
+            let previousRegions = new Set();
 
-                // Parcourir tous les points du trajet dans le segment de la région
-                for (let i = segment.entryIndex; i <= Math.min(segment.exitIndex, journeyPath.length - 2); i++) {
-                    const currentPoint = journeyPath[i];
-                    const nextPoint = journeyPath[i + 1];
-                    
-                    // Vérifier si les deux points sont dans la région
-                    const currentInRegion = isPointInPolygon(currentPoint, regionData.points);
-                    const nextInRegion = isPointInPolygon(nextPoint, regionData.points);
-                    
-                    // Si au moins un des deux points est dans la région, compter la distance
-                    if (currentInRegion || nextInRegion) {
-                        const segmentDistance = Math.sqrt(
-                            Math.pow(nextPoint.x - currentPoint.x, 2) + 
-                            Math.pow(nextPoint.y - currentPoint.y, 2)
-                        );
-                        
-                        // Si seulement un point est dans la région, ne compter qu'une partie
-                        if (currentInRegion && nextInRegion) {
-                            // Les deux points sont dans la région
-                            totalDistance += segmentDistance;
-                        } else {
-                            // Un seul point dans la région, compter la moitié (approximation)
-                            totalDistance += segmentDistance * 0.5;
+            console.log("🔧 [REGION DURATION] Début du calcul séquentiel pour", journeyPath.length, "points");
+
+            // Parcourir séquentiellement chaque point du tracé (logique étapes 1-5)
+            for (let z = 0; z < journeyPath.length; z++) {
+                const currentPoint = journeyPath[z];
+                const currentRegions = new Set();
+
+                // Étape 1 : Identifier dans quelles régions se trouve le point actuel
+                regionsData.regions.forEach(region => {
+                    if (region.points && region.points.length >= 3) {
+                        if (isPointInPolygon(currentPoint, region.points)) {
+                            currentRegions.add(region.name);
                         }
-                        pointsInRegion++;
                     }
+                });
+
+                // Étape 2 : Détecter les changements de région (entrée/sortie)
+                currentRegions.forEach(regionName => {
+                    if (!previousRegions.has(regionName)) {
+                        // Étape 2 : Entrée dans une nouvelle région A
+                        console.log(`🔧 [REGION DURATION] Point ${z}: Entrée dans région ${regionName}`);
+                        
+                        // Si un calcul d'une autre région était en cours, le finaliser
+                        currentRegionsActive.forEach((data, activeRegionName) => {
+                            if (activeRegionName !== regionName) {
+                                console.log(`🔧 [REGION DURATION] Finalisation région ${activeRegionName} (interrompue par ${regionName})`);
+                                finalizeRegionDuration(activeRegionName, data, z - 1, regionTraversalInfo);
+                            }
+                        });
+
+                        // Étape 3 : Mémoriser le point d'entrée (x,y,z)
+                        currentRegionsActive.set(regionName, {
+                            entryIndex: z,
+                            pixelDistance: 0
+                        });
+                    }
+                });
+
+                // Détecter les sorties de région
+                previousRegions.forEach(regionName => {
+                    if (!currentRegions.has(regionName)) {
+                        // Sortie de région
+                        console.log(`🔧 [REGION DURATION] Point ${z}: Sortie de région ${regionName}`);
+                        
+                        if (currentRegionsActive.has(regionName)) {
+                            const regionData = currentRegionsActive.get(regionName);
+                            finalizeRegionDuration(regionName, regionData, z - 1, regionTraversalInfo);
+                            currentRegionsActive.delete(regionName);
+                        }
+                    }
+                });
+
+                // Étape 4-5 : Pour chaque région active, calculer la distance du segment précédent
+                if (z > 0) {
+                    const previousPoint = journeyPath[z - 1];
+                    
+                    currentRegionsActive.forEach((data, regionName) => {
+                        if (currentRegions.has(regionName)) {
+                            // Étape 5a : La région continue, incrémenter la distance
+                            const segmentDistance = Math.sqrt(
+                                Math.pow(currentPoint.x - previousPoint.x, 2) + 
+                                Math.pow(currentPoint.y - previousPoint.y, 2)
+                            );
+                            
+                            data.pixelDistance += segmentDistance;
+                            console.log(`🔧 [REGION DURATION] Région ${regionName}: +${segmentDistance.toFixed(1)} pixels (total: ${data.pixelDistance.toFixed(1)})`);
+                        }
+                    });
                 }
 
-                // Convertir en miles et calculer la durée
-                const distanceInMiles = pixelsToMiles(totalDistance);
-                const durationInDays = milesToDays(distanceInMiles);
-                
-                // Durée minimale d'une demi-journée pour toute région traversée
-                const finalDuration = Math.max(0.5, durationInDays);
-                
-                regionTraversalInfo.set(regionName, {
-                    distance: distanceInMiles,
-                    duration: finalDuration,
-                    pixelDistance: totalDistance,
-                    pointsInRegion: pointsInRegion
-                });
+                // Mise à jour pour le prochain tour
+                previousRegions = new Set(currentRegions);
+            }
+
+            // Finaliser toutes les régions encore actives à la fin du tracé
+            currentRegionsActive.forEach((data, regionName) => {
+                console.log(`🔧 [REGION DURATION] Finalisation région ${regionName} (fin de tracé)`);
+                finalizeRegionDuration(regionName, data, journeyPath.length - 1, regionTraversalInfo);
             });
 
+            console.log("🔧 [REGION DURATION] Résultats finaux:", regionTraversalInfo);
             return regionTraversalInfo;
+        }
+
+        function finalizeRegionDuration(regionName, regionData, exitIndex, regionTraversalInfo) {
+            // Convertir les pixels en miles puis en jours
+            const distanceInMiles = pixelsToMiles(regionData.pixelDistance);
+            const durationInDays = milesToDays(distanceInMiles);
+            
+            // Arrondir au 0.5 jour le plus proche (minimum 0.5 jour)
+            const roundedDuration = Math.max(0.5, Math.round(durationInDays * 2) / 2);
+            
+            console.log(`🔧 [REGION DURATION] Région ${regionName}: ${regionData.pixelDistance.toFixed(1)} pixels → ${distanceInMiles.toFixed(1)} miles → ${roundedDuration} jour(s)`);
+            
+            regionTraversalInfo.set(regionName, {
+                distance: distanceInMiles,
+                duration: roundedDuration,
+                pixelDistance: regionData.pixelDistance,
+                entryIndex: regionData.entryIndex,
+                exitIndex: exitIndex
+            });
         }
 
         function displayJourneyInfo() {
