@@ -4739,7 +4739,7 @@
                 });
             }
         }
-        // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
+        // The journey button has been removed - the functionality is now integrated into voyage-manager.js
         // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
