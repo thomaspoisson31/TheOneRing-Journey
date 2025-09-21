@@ -506,13 +506,16 @@
         function initializeMap() {
             console.log("🗺️ Initializing map...");
             if (mapImage.naturalWidth === 0) {
-                console.warn("⚠️ Map image not loaded yet, retrying...");
-                return;
+                console.warn("⚠️ Map image not loaded yet, forcing initialization...");
+                // Force dimensions based on expected map size
+                MAP_WIDTH = 5103;
+                MAP_HEIGHT = 3296;
+            } else {
+                MAP_WIDTH = mapImage.naturalWidth;
+                MAP_HEIGHT = mapImage.naturalHeight;
             }
 
-            console.log("📐 Map dimensions:", mapImage.naturalWidth, "x", mapImage.naturalHeight);
-            MAP_WIDTH = mapImage.naturalWidth;
-            MAP_HEIGHT = mapImage.naturalHeight;
+            console.log("📐 Map dimensions:", MAP_WIDTH, "x", MAP_HEIGHT);
             mapContainer.style.width = `${MAP_WIDTH}px`;
             mapContainer.style.height = `${MAP_HEIGHT}px`;
             drawingCanvas.width = MAP_WIDTH;
@@ -2919,15 +2922,35 @@
                 }, 100);
 
                 if (mapImage) {
-                    mapImage.onload = () => {
+                    // Forcer l'initialisation après un délai même si l'image n'est pas chargée
+                    const forceInitTimeout = setTimeout(() => {
+                        console.warn("⚠️ Forçage de l'initialisation après timeout");
                         clearTimeout(startTimeout);
                         initializeMap();
+                    }, 5000); // 5 secondes
+
+                    mapImage.onload = () => {
+                        console.log("✅ Image de carte chargée avec succès");
+                        clearTimeout(startTimeout);
+                        clearTimeout(forceInitTimeout);
+                        initializeMap();
                     };
+                    
                     mapImage.addEventListener('error', (e) => {
                         console.error("❌ Erreur de chargement de la carte:", e);
                         clearTimeout(startTimeout);
+                        clearTimeout(forceInitTimeout);
                         handleImageError();
                     });
+
+                    // Vérifier si l'image est déjà en cache (chargée immédiatement)
+                    if (mapImage.complete && mapImage.naturalWidth > 0) {
+                        console.log("✅ Image déjà en cache");
+                        clearTimeout(startTimeout);
+                        clearTimeout(forceInitTimeout);
+                        initializeMap();
+                        return;
+                    }
 
                     // Utiliser la carte configurée ou la carte par défaut
                     const playerMapSrc = currentMapConfig.playerMap || PLAYER_MAP_URL;
