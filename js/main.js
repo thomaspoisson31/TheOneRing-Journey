@@ -3119,65 +3119,24 @@
                 </div>
             `;
 
-            // Update tables tab content
+            // Update tables tab content - SUPPRIMÉ : Onglet tables d'images non supporté pour les régions
             const tablesTab = document.getElementById('tables-tab');
-            const tables = getRegionTables(region);
-
-            if (tables.length > 0) {
-                if (infoBox.classList.contains('expanded') && tables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple tables
-                    const tableTabs = tables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
-                    ).join('');
-
-                    const tableContents = tables.map((table, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
-                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    tablesTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${tableTabs}</div>
-                            <div class="image-contents">${tableContents}</div>
+            // Les tables d'images ont été supprimées - masquer l'onglet
+            if (!infoBox.classList.contains('expanded')) {
+                tablesTab.innerHTML = `
+                    <div class="image-view">
+                        <div class="compact-title">
+                            <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
                         </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupImageClickHandlers();
-                } else {
-                    // Single table view (compact mode or single table)
-                    const defaultTable = getDefaultRegionTable(region);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
-                                </div>` : '';
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            ${titleHtml}
-                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
-                        </div>
-                    `;
-                    setupImageClickHandlers();
-                }
+                        <div class="image-placeholder">Onglet supprimé - utiliser Tables texte</div>
+                    </div>
+                `;
             } else {
-                // No tables - show placeholder
-                if (!infoBox.classList.contains('expanded')) {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune table disponible</div>
-                        </div>
-                    `;
-                }
+                tablesTab.innerHTML = `
+                    <div class="image-view">
+                        <div class="image-placeholder">Onglet tables d'images supprimé<br>Utiliser l'onglet "Tables texte" à la place</div>
+                    </div>
+                `;
             }
 
             // Update json-tables tab content
