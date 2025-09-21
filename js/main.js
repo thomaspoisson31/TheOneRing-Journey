@@ -181,6 +181,20 @@
                 ];
                 saveMapsData();
             }
+            
+            // S'assurer que les cartes par défaut sont actives
+            if (!currentMapConfig.playerMap || !currentMapConfig.loremasterMap) {
+                const playerMap = availableMaps.find(map => map.type === 'player');
+                const loremasterMap = availableMaps.find(map => map.type === 'loremaster');
+                
+                if (playerMap && !currentMapConfig.playerMap) {
+                    currentMapConfig.playerMap = playerMap.filename;
+                }
+                if (loremasterMap && !currentMapConfig.loremasterMap) {
+                    currentMapConfig.loremasterMap = loremasterMap.filename;
+                }
+                saveMapsData();
+            }
         }
 
         function saveMapsData() {
@@ -2909,13 +2923,20 @@
                         clearTimeout(startTimeout);
                         initializeMap();
                     };
-                    mapImage.addEventListener('error', () => {
+                    mapImage.addEventListener('error', (e) => {
+                        console.error("❌ Erreur de chargement de la carte:", e);
                         clearTimeout(startTimeout);
                         handleImageError();
                     });
 
-                    console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
-                    mapImage.src = PLAYER_MAP_URL;
+                    // Utiliser la carte configurée ou la carte par défaut
+                    const playerMapSrc = currentMapConfig.playerMap || PLAYER_MAP_URL;
+                    console.log("🗺️ Loading map image:", playerMapSrc);
+                    mapImage.src = playerMapSrc;
+                    
+                    // Charger aussi la carte du gardien
+                    const loremasterMapSrc = currentMapConfig.loremasterMap || LOREMASTER_MAP_URL;
+                    loremasterMapImage.src = loremasterMapSrc;
                 }
 
                 if (infoBoxClose) {
