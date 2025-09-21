@@ -3366,13 +3366,13 @@
                 <div class="space-y-4">
                     <div class="bg-gray-700 p-3 rounded-md">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
-                        <div id="edit-tables-container">${tablesHtml}</div>
-                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
+                        <div id="edit-region-tables-container">${tablesHtml}</div>
+                        <button id="add-region-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
                     </div>
                 </div>
             `;
 
-            setupTablesEditListeners();
+            setupRegionTablesEditListeners();
         }
 
         function updateRegionJsonTablesTabForEdit(region) {
@@ -3384,13 +3384,208 @@
                 <div class="space-y-4">
                     <div class="bg-gray-700 p-3 rounded-md">
                         <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires - Texte (max 5)</label>
-                        <div id="edit-json-tables-container">${jsonTablesHtml}</div>
-                        <button id="add-json-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table texte</button>
+                        <div id="edit-region-json-tables-container">${jsonTablesHtml}</div>
+                        <button id="add-region-json-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table texte</button>
                     </div>
                 </div>
             `;
 
-            setupJsonTablesEditListeners();
+            setupRegionJsonTablesEditListeners();
+        }
+
+        function setupRegionJsonTablesEditListeners() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const addButton = document.getElementById('add-region-json-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewRegionJsonTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-json-table-btn')) {
+                        const button = e.target.closest('.remove-json-table-btn');
+                        const item = button.closest('.json-table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateRegionJsonTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-json-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-json-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+
+                container.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('json-table-content-input')) {
+                        const validation = validateJsonTable(e.target.value);
+                        const messageDiv = e.target.closest('.json-table-edit-item').querySelector('.json-validation-message');
+
+                        if (e.target.value.trim() === '') {
+                            messageDiv.textContent = '';
+                            messageDiv.className = 'json-validation-message text-xs';
+                        } else if (validation.valid) {
+                            messageDiv.textContent = '✓ Format JSON valide';
+                            messageDiv.className = 'json-validation-message text-xs text-green-400';
+                        } else {
+                            messageDiv.textContent = `⚠ ${validation.message}`;
+                            messageDiv.className = validation.warning ?
+                                'json-validation-message text-xs text-yellow-400' :
+                                'json-validation-message text-xs text-red-400';
+                        }
+                    }
+                });
+            }
+        }
+
+        function addNewRegionJsonTableRow() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const currentTables = container.querySelectorAll('.json-table-edit-item');
+
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables texte autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md';
+            newRow.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                        <span class="text-gray-300">Table par défaut</span>
+                    </label>
+                    <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${newIndex}">
+                        <i class="fas fa-trash text-xs"></i> Supprimer
+                    </button>
+                </div>
+                <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici..."></textarea>
+                <div class="json-validation-message text-xs"></div>
+            `;
+
+            container.appendChild(newRow);
+            updateRegionJsonTableIndices();
+        }
+
+        function updateRegionJsonTableIndices() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            container.querySelectorAll('.remove-json-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectRegionJsonTablesFromEdit() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const jsonTables = [];
+
+            container.querySelectorAll('.json-table-edit-item').forEach(item => {
+                const content = item.querySelector('.json-table-content-input').value.trim();
+                const isDefault = item.querySelector('.default-json-table-checkbox').checked;
+
+                if (content) {
+                    jsonTables.push({ content, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (jsonTables.length > 0 && !jsonTables.some(table => table.isDefault)) {
+                jsonTables[0].isDefault = true;
+            }
+
+            return jsonTables;
+        }
+
+        function setupRegionTablesEditListeners() {
+            const container = document.getElementById('edit-region-tables-container');
+            const addButton = document.getElementById('add-region-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewRegionTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-table-btn')) {
+                        const button = e.target.closest('.remove-table-btn');
+                        const item = button.closest('.table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateRegionTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+            }
+        }
+
+        function addNewRegionTableRow() {
+            const container = document.getElementById('edit-region-tables-container');
+            const currentTables = container.querySelectorAll('.table-edit-item');
+
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'table-edit-item flex items-center space-x-2 p-2 rounded';
+            newRow.innerHTML = `
+                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            `;
+
+            container.appendChild(newRow);
+            updateRegionTableIndices();
+        }
+
+        function updateRegionTableIndices() {
+            const container = document.getElementById('edit-region-tables-container');
+            container.querySelectorAll('.remove-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectRegionTablesFromEdit() {
+            const container = document.getElementById('edit-region-tables-container');
+            const tables = [];
+
+            container.querySelectorAll('.table-edit-item').forEach(item => {
+                const url = item.querySelector('.table-url-input').value.trim();
+                const isDefault = item.querySelector('.default-table-checkbox').checked;
+
+                if (url) {
+                    tables.push({ url, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (tables.length > 0 && !tables.some(table => table.isDefault)) {
+                tables[0].isDefault = true;
+            }
+
+            return tables;
         }
 
         function addRegionEditControls() {
@@ -3441,16 +3636,16 @@
                 delete region.images;
             }
 
-            // Handle tables
-            const tables = collectTablesFromEdit();
+            // Handle tables - use the region-specific function
+            const tables = collectRegionTablesFromEdit();
             if (tables.length > 0) {
                 region.tables = tables;
             } else {
                 delete region.tables;
             }
 
-            // Handle json tables
-            const jsonTables = collectJsonTablesFromEdit();
+            // Handle json tables - use the region-specific function
+            const jsonTables = collectRegionJsonTablesFromEdit();
             if (jsonTables.length > 0) {
                 region.jsonTables = jsonTables;
             } else {
