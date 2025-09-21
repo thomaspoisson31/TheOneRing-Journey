@@ -3180,424 +3180,6 @@
                 }
             }
 
-            // Update header title
-            updateInfoBoxHeaderTitle(region.name);
-
-            // Show the info box
-            document.getElementById('info-box-edit-content').classList.add('hidden');
-            document.getElementById('info-box-content').classList.remove('hidden');
-
-            infoBox.style.display = 'block';
-            // Ouvrir en mode étendu par défaut
-            if (!infoBox.classList.contains('expanded')) {
-                infoBox.classList.add('expanded');
-                const expandBtn = document.getElementById('info-box-expand');
-                if (expandBtn) {
-                    expandBtn.className = 'fas fa-compress';
-                    expandBtn.title = 'Vue compacte';
-                }
-                const titleElement = document.getElementById('info-box-title');
-                const deleteBtn = document.getElementById('info-box-delete');
-                titleElement.classList.remove('hidden');
-                deleteBtn.classList.remove('hidden');
-            }
-            positionInfoBoxExpanded();
-
-            // Set up event listeners for regions
-            const editBtn = document.getElementById('info-box-edit');
-            editBtn.style.display = 'flex'; // Show edit button for regions
-
-            // Remove any existing event listeners first
-            setupInfoBoxEventListeners('region', region.id);
-
-            // Set up tab switching
-            setupTabSwitching();
-        }
-
-        function enterRegionEditMode() {
-            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
-            if (!region) return;
-
-            // Mark the info box as being in edit mode
-            infoBox.dataset.editMode = 'true';
-            infoBox.dataset.editType = 'region';
-
-            // Update image tab to show image editing interface
-            updateImageTabForRegionEdit(region);
-
-            // Update text tab to show text editing interface
-            updateTextTabForRegionEdit(region);
-
-            // Update rumeurs tab to show rumeurs editing interface
-            updateRumeursTabForRegionEdit(region);
-
-            // Update tradition tab to show tradition editing interface
-            updateTraditionTabForRegionEdit(region);
-
-            // Update tables tab to show tables editing interface
-            updateTablesTabForRegionEdit(region);
-
-            // Add edit controls at the bottom
-            addRegionEditControls();
-        }
-
-        function updateImageTabForRegionEdit(region) {
-            const imageTab = document.getElementById('image-tab');
-            const images = getRegionImages(region);
-            const imagesHtml = generateImageEditHTML(images);
-
-            const colorPickerHtml = Object.keys(regionColorMap).map(color =>
-                `<div class="color-swatch ${region.color === color ? 'selected' : ''}" data-color="${color}" style="background-color: ${regionColorMap[color]}; border: 2px solid ${colorMap[color]};"></div>`
-            ).join('');
-
-            imageTab.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-700 p-3 rounded-md">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
-                        <div id="edit-images-container">${imagesHtml}</div>
-                        <button id="add-image-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une image</button>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Couleur</label>
-                        <div class="flex space-x-2" id="edit-region-color-picker">${colorPickerHtml}</div>
-                    </div>
-                </div>
-            `;
-
-            setupImageEditListeners();
-            setupRegionColorPickerListeners();
-        }
-
-        function updateTextTabForRegionEdit(region) {
-            const textTab = document.getElementById('text-tab');
-            textTab.innerHTML = `
-                <div class="text-view space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Nom de la région</label>
-                        <input type="text" id="edit-region-name" value="${region.name}" placeholder="Nom de la région" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                        <div class="flex items-start space-x-2">
-                            <textarea id="edit-region-desc" rows="4" placeholder="Description" class="flex-1 bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.description || ''}</textarea>
-                            <button id="generate-edit-region-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('generate-edit-region-desc').addEventListener('click', handleGenerateRegionDescription);
-        }
-
-        function updateRumeursTabForRegionEdit(region) {
-            const rumeursTab = document.getElementById('rumeurs-tab');
-            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
-            const rumeursString = Array.isArray(region.Rumeurs) ? region.Rumeurs.join('\n') : (region.Rumeur || '');
-            rumeursTab.innerHTML = `
-                <div class="text-view space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateTraditionTabForRegionEdit(region) {
-            const traditionTab = document.getElementById('tradition-tab');
-            traditionTab.innerHTML = `
-                <div class="text-view space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tradition Ancienne</label>
-                        <textarea id="edit-region-tradition" rows="6" placeholder="Tradition Ancienne" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.Tradition_Ancienne || ''}</textarea>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateTablesTabForRegionEdit(region) {
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = region.tables || [];
-            const tablesHtml = generateTablesEditHTML(tables);
-
-            tablesTab.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-700 p-3 rounded-md">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
-                        <div id="edit-tables-container">${tablesHtml}</div>
-                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
-                    </div>
-                </div>
-            `;
-
-            setupTablesEditListeners();
-        }
-
-        function addRegionEditControls() {
-            // Add save/cancel buttons at the bottom of the scroll wrapper
-            const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
-            let editControls = document.getElementById('edit-controls');
-
-            if (!editControls) {
-                editControls = document.createElement('div');
-                editControls.id = 'edit-controls';
-                editControls.className = 'mt-4 pt-4 border-t border-gray-600 flex justify-end space-x-2 bg-gray-900 sticky bottom-0';
-                scrollWrapper.appendChild(editControls);
-            }
-
-            editControls.innerHTML = `
-                <button id="cancel-region-edit" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-sm">Annuler</button>
-                <button id="save-region-edit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm">Sauver</button>
-            `;
-
-            document.getElementById('save-region-edit').addEventListener('click', saveRegionEdit);
-            document.getElementById('cancel-region-edit').addEventListener('click', cancelRegionEdit);
-        }
-
-        function setupRegionColorPickerListeners() {
-            document.getElementById('edit-region-color-picker').querySelectorAll('.color-swatch').forEach(swatch => {
-                swatch.addEventListener('click', () => {
-                    document.querySelector('#edit-region-color-picker .color-swatch.selected').classList.remove('selected');
-                    swatch.classList.add('selected');
-                });
-            });
-        }
-
-        function saveRegionEdit() {
-            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
-            if (!region) return;
-
-            region.name = document.getElementById('edit-region-name').value;
-            region.description = document.getElementById('edit-region-desc').value;
-            region.Rumeurs = document.getElementById('edit-region-rumeur').value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
-            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value;
-            region.color = document.querySelector('#edit-region-color-picker .color-swatch.selected').dataset.color;
-
-            // Handle images
-            const images = collectImagesFromEdit();
-            if (images.length > 0) {
-                region.images = images;
-            } else {
-                delete region.images;
-            }
-
-            // Handle tables
-            const tables = collectTablesFromEdit();
-            if (tables.length > 0) {
-                region.tables = tables;
-            } else {
-                delete region.tables;
-            }
-
-            saveRegionsToLocal();
-            renderRegions();
-            hideInfoBox();
-        }
-
-        function cancelRegionEdit() {
-            // Remove edit mode flag
-            delete infoBox.dataset.editMode;
-            delete infoBox.dataset.editType;
-
-            // Remove edit controls
-            const editControls = document.getElementById('edit-controls');
-            if (editControls) {
-                editControls.remove();
-            }
-
-            // Re-show the region info without edit mode
-            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
-            if (region) {
-                showRegionContent(region);
-            }
-        }
-
-        function showRegionContent(region) {
-            // Update image tab content
-            const imageTab = document.getElementById('image-tab');
-            const images = getRegionImages(region);
-
-            if (images.length > 0) {
-                if (infoBox.classList.contains('expanded') && images.length > 1) {
-                    // Multi-tab view for expanded mode with multiple images
-                    const imageTabs = images.map((img, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
-                    ).join('');
-
-                    const imageContents = images.map((img, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
-                                <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    imageTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${imageTabs}</div>
-                            <div class="image-contents">${imageContents}</div>
-                        </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupImageClickHandlers();
-                } else {
-                    // Single image view (compact mode or single image)
-                    const defaultImage = getDefaultRegionImage(region);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">${region.name}</span>
-                                </div>` : '';
-                    imageTab.innerHTML = `
-                        <div class="image-view">
-                            ${titleHtml}
-                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
-                        </div>
-                    `;
-                    setupImageClickHandlers();
-                }
-            } else {
-                // No image - show title instead of placeholder in compact mode
-                if (!infoBox.classList.contains('expanded')) {
-                    imageTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">${region.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    imageTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune image disponible</div>
-                        </div>
-                    `;
-                }
-            }
-
-            // Update text tab content
-            const textTab = document.getElementById('text-tab');
-            textTab.innerHTML = `
-                <div class="text-view">
-                    <h3>${region.name}</h3>
-                    <p>${region.description || 'Aucune description.'}</p>
-                </div>
-            `;
-
-            // Update rumeurs tab content
-            const rumeursTab = document.getElementById('rumeurs-tab');
-            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
-            let rumeursContent = '';
-            if (region.Rumeurs && region.Rumeurs.length > 0) {
-                const rumeursValides = region.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
-
-                if (rumeursValides.length > 0) {
-                    rumeursContent += `
-                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                                <i class="fas fa-ear-listen mr-2"></i>
-                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
-                            </div>
-                    `;
-
-                    rumeursValides.forEach((rumeur, index) => {
-                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
-                        rumeursContent += `
-                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
-                                ${rumeur}
-                            </div>
-                        `;
-                    });
-
-                    rumeursContent += `</div>`;
-                }
-            }
-            // Support de l'ancienne structure avec Rumeur simple
-            else if (region.Rumeur && region.Rumeur !== "A définir") {
-                rumeursContent += `
-                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                            <i class="fas fa-ear-listen mr-2"></i>
-                            Rumeur
-                        </div>
-                        <div class="text-yellow-100 text-sm italic leading-relaxed">
-                            ${region.Rumeur}
-                        </div>
-                    </div>
-                `;
-            }
-            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
-
-
-            // Update tradition tab content
-            const traditionTab = document.getElementById('tradition-tab');
-            traditionTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Tradition Ancienne</h3>
-                    <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
-                </div>
-            `;
-
-            // Update tables tab content
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = getRegionTables(region);
-
-            if (tables.length > 0) {
-                if (infoBox.classList.contains('expanded') && tables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple tables
-                    const tableTabs = tables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
-                    ).join('');
-
-                    const tableContents = tables.map((table, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
-                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    tablesTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${tableTabs}</div>
-                            <div class="image-contents">${tableContents}</div>
-                        </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupImageClickHandlers();
-                } else {
-                    // Single table view (compact mode or single table)
-                    const defaultTable = getDefaultRegionTable(region);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
-                                </div>` : '';
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            ${titleHtml}
-                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
-                        </div>
-                    `;
-                    setupImageClickHandlers();
-                }
-            } else {
-                // No tables - show placeholder
-                if (!infoBox.classList.contains('expanded')) {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune table disponible</div>
-                        </div>
-                    `;
-                }
-            }
-
             // Update json-tables tab content
             const jsonTablesTab = document.getElementById('json-tables-tab');
             const jsonTables = getRegionJsonTables(region);
@@ -4319,7 +3901,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const importedData = JSON.parse(e.target.result);
+                    const importedData = JSON.Parse(e.target.result);
 
                     // Supporter les différents formats de fichiers
                     let locationsArray = [];
@@ -4942,126 +4524,60 @@
 
             if (!traversedRegionsInfo || !nearbyLocationsInfo) return;
 
-            // Sort discoveries by discovery order, keeping them mixed
-            const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+            // Calculer les durées de traversée des régions
+            const regionTraversalInfo = calculateRegionTraversalDurations();
 
-            if (chronologicalDiscoveries.length > 0) {
-                // Calculate travel times for each discovery
-                const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
-                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
+            // Séparer les découvertes par type
+            const regions = [];
+            const locations = [];
 
-                    // Calculate reach time for this discovery
-                    let startIndex = 0;
-                    if (index > 0) {
-                        // Find the end point of the previous discovery
-                        const prevDiscovery = chronologicalDiscoveries[index - 1];
-                        if (prevDiscovery.type === 'region' && window.regionSegments) {
-                            const segment = window.regionSegments.get(prevDiscovery.name);
-                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
-                        } else {
-                            startIndex = prevDiscovery.discoveryIndex;
-                        }
+            journeyDiscoveries.forEach(discovery => {
+                if (discovery.type === 'region') {
+                    const traversalData = regionTraversalInfo.get(discovery.name);
+                    if (traversalData) {
+                        regions.push({
+                            name: discovery.name,
+                            duration: traversalData.duration,
+                            distance: traversalData.distance
+                        });
                     }
-
-                    const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
-                    const reachMiles = pixelsToMiles(reachDistance);
-                    const reachDays = milesToDays(reachMiles);
-
-                    // Check if this is a starting location (close to journey start)
-                    let travelInfo;
-                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
-                        // Find the actual location to check distance from start point
-                        const location = locationsData.locations.find(loc => loc.name === discovery.name);
-                        if (location && location.coordinates) {
-                            const distanceFromStart = Math.sqrt(
-                                Math.pow(location.coordinates.x - startPoint.x, 2) +
-                                Math.pow(location.coordinates.y - startPoint.y, 2)
-                            );
-                            if (distanceFromStart <= 20) {
-                                travelInfo = "(point de départ)";
-                            } else {
-                                // Add proximity information for locations
-                                let proximityText = '';
-                                if (discovery.proximityType === 'traversed') {
-                                    proximityText = ', traversé';
-                                } else if (discovery.proximityType === 'nearby') {
-                                    proximityText = ', passage à proximité';
-                                }
-                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                            }
-                        } else {
-                            // Add proximity information for locations
-                            let proximityText = '';
-                            if (discovery.proximityType === 'traversed') {
-                                proximityText = ', traversé';
-                            } else if (discovery.proximityType === 'nearby') {
-                                proximityText = ', passage à proximité';
-                            }
-                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                        }
-                    } else {
-                        // Add proximity information for locations
-                        let proximityText = '';
-                        if (discovery.type === 'location') {
-                            if (discovery.proximityType === 'traversed') {
-                                proximityText = ', traversé';
-                            } else if (discovery.proximityType === 'nearby') {
-                                proximityText = ', passage à proximité';
-                            }
-                        }
-                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
-                    }
-
-                    let displayText = `${icon} ${discovery.name} ${travelInfo}`;
-
-                    // For regions, also calculate duration inside the region
-                    if (discovery.type === 'region') {
-                        // Utiliser les durées calculées par calculateRegionTraversalDurations
-                        const regionTraversalInfo = calculateRegionTraversalDurations();
-                        const traversalData = regionTraversalInfo.get(discovery.name);
-
-                        if (traversalData) {
-                            const regionDays = traversalData.duration;
-                            const regionMiles = traversalData.distance;
-
-                            // Replace travelInfo for regions to include duration
-                            if (travelInfo === "(point de départ)") {
-                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays.toFixed(1)} jour${regionDays > 1 ? 's' : ''})`;
-                            } else {
-                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays.toFixed(1)} jour${regionDays > 1 ? 's' : ''})`;
-                            }
-                        }
-                    }
-
-                    // Get tooltip content
-                    const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
-
-                    // Create span sans tooltip par défaut
-                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="region">${displayText}</span>`;
-                });
-
-                // Join with line breaks instead of commas
-                const discoveryListHTML = discoveryElements.join('<br>');
-
-                // Show only one section with all discoveries                traversedRegionsInfo.classList.remove('hidden');
-                traversedRegionsList.innerHTML = discoveryListHTML;
-                nearbyLocationsInfo.classList.add('hidden');
-
-                // Update the title to reflect mixed content
-                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
-                if (regionsTitle) {
-                    regionsTitle.textContent = 'Découvertes du voyage :';
-                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
+                } else if (discovery.type === 'location') {
+                    locations.push(discovery);
                 }
+            });
 
-                // Setup enhanced tooltips
-                setupDiscoveryTooltips();
+            // Affichage des régions avec durées
+            if (regions.length > 0) {
+                traversedRegionsInfo.classList.remove('hidden');
+                const regionsHtml = regions.map(region => {
+                    const durationText = region.duration >= 1 ?
+                        `${region.duration.toFixed(1)} jour${region.duration > 1 ? 's' : ''}` :
+                        `${Math.round(region.duration * 24)} heures`;
+                    const distanceText = `(${Math.round(region.distance)} miles)`;
 
-                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
+                    return `<div class="mb-1">
+                        <span class="font-medium">${region.name}</span>
+                        <span class="text-gray-400 text-xs ml-2">${durationText} ${distanceText}</span>
+                    </div>`;
+                }).join('');
+                traversedRegionsList.innerHTML = regionsHtml;
             } else {
                 traversedRegionsInfo.classList.add('hidden');
+            }
+
+            // Affichage des lieux
+            if (locations.length > 0) {
+                nearbyLocationsInfo.classList.remove('hidden');
+                const locationsHtml = locations.map(location => {
+                    const proximityText = location.proximityType === 'traversed' ? '(traversé)' : '(à proximité)';
+                    return `<div class="mb-1">
+                        <span class="font-medium">${location.name}</span>
+                        <span class="text-gray-400 text-xs ml-2">${proximityText}</span>
+                    </div>`;
+                }).join('');
+                nearbyLocationsList.innerHTML = locationsHtml;
+            } else {
                 nearbyLocationsInfo.classList.add('hidden');
-                console.log("🌟 No discoveries made");
             }
         }
 
@@ -5345,6 +4861,7 @@
                     // Calculate reach time for this discovery
                     let startIndex = 0;
                     if (index > 0) {
+                        // Find the end point of the previous discovery
                         const prevDiscovery = chronologicalDiscoveries[index - 1];
                         if (prevDiscovery.type === 'region' && window.regionSegments) {
                             const segment = window.regionSegments.get(prevDiscovery.name);
@@ -5429,19 +4946,29 @@
                     return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="region">${displayText}</span>`;
                 });
 
-                journeyDetails = `\n\nVoici les étapes de ce voyage :\n${discoveryList}`;
+                // Join with line breaks instead of commas
+                const discoveryListHTML = discoveryList.join('<br>');
+
+                // Show only one section with all discoveries                traversedRegionsInfo.classList.remove('hidden');
+                traversedRegionsList.innerHTML = discoveryListHTML;
+                nearbyLocationsInfo.classList.add('hidden');
+
+                // Update the title to reflect mixed content
+                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
+                if (regionsTitle) {
+                    regionsTitle.textContent = 'Découvertes du voyage :';
+                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
+                }
+
+                // Setup enhanced tooltips
+                setupDiscoveryTooltips();
+
+                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
+            } else {
+                traversedRegionsInfo.classList.add('hidden');
+                nearbyLocationsInfo.classList.add('hidden');
+                console.log("🌟 No discoveries made");
             }
-
-            const narrationAddition = getNarrationPromptAddition();
-            const prompt = `Rédige une courte chronique de voyage, dans le style de J.R.R. Tolkien, pour un périple en Terre du Milieu. Le voyage a débuté à ${startLocation.name} et s'est terminé près de ${endLocation.name}, couvrant une distance d'environ ${miles} miles, soit environ ${days} jours de marche. ${journeyDetails}.${narrationAddition}`;
-
-
-            const journeyLogContent = document.getElementById('journey-log-content');
-            journeyLogContent.innerHTML = '<p>Génération de la chronique en cours...</p>';
-            journeyLogModal.classList.remove('hidden');
-
-            const result = await callGemini(prompt, button);
-            journeyLogContent.innerHTML = result.replace(/\n/g, '<br>');
         }
 
         // --- Settings Modal Functions ---
