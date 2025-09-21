@@ -465,7 +465,6 @@ class VoyageManager {
         let contentHtml = '';
 
         if (dayData.discoveries.length === 0) {
-            // Ne devrait plus arriver avec la région par défaut "Terres Sauvages"
             contentHtml = '<p class="text-gray-500 text-sm italic text-center p-4">Voyage tranquille...</p>';
         } else {
             const discoveriesHtml = dayData.discoveries.map(discovery => {
@@ -767,51 +766,24 @@ class VoyageManager {
                 }
             }
         } else if (discoveryType === 'region') {
-            // Gestion spéciale pour "Terres Sauvages"
-            if (discoveryName === 'Terres Sauvages') {
-                // Créer une région temporaire pour les Terres Sauvages
-                const wildlandsRegion = {
-                    name: 'Terres Sauvages',
-                    description: 'Vastes étendues sauvages où peu d\'hommes s\'aventurent. Ces terres non cartographiées abritent des créatures anciennes, des ruines oubliées et des mystères perdus. Les voyageurs doivent rester vigilants car ces contrées ne sont pas sous la protection des royaumes civilisés.',
-                    images: []
-                };
+            // Trouver la région et ouvrir sa modal
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                if (region) {
+                    // Simuler un événement de clic sur la région
+                    const fakeEvent = {
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
 
-                const fakeEvent = {
-                    stopPropagation: () => {},
-                    preventDefault: () => {}
-                };
+                    if (typeof showRegionInfo === 'function') {
+                        showRegionInfo(fakeEvent, region);
 
-                if (typeof showRegionInfo === 'function') {
-                    showRegionInfo(fakeEvent, wildlandsRegion);
-
-                    // Forcer l'expansion de la info box
-                    const infoBox = document.getElementById('info-box');
-                    if (infoBox && !infoBox.classList.contains('expanded')) {
-                        if (typeof toggleInfoBoxExpand === 'function') {
-                            toggleInfoBoxExpand();
-                        }
-                    }
-                }
-            } else {
-                // Trouver la région normale et ouvrir sa modal
-                if (typeof regionsData !== 'undefined' && regionsData.regions) {
-                    const region = regionsData.regions.find(reg => reg.name === discoveryName);
-                    if (region) {
-                        // Simuler un événement de clic sur la région
-                        const fakeEvent = {
-                            stopPropagation: () => {},
-                            preventDefault: () => {}
-                        };
-
-                        if (typeof showRegionInfo === 'function') {
-                            showRegionInfo(fakeEvent, region);
-
-                            // Forcer l'expansion de la info box
-                            const infoBox = document.getElementById('info-box');
-                            if (infoBox && !infoBox.classList.contains('expanded')) {
-                                if (typeof toggleInfoBoxExpand === 'function') {
-                                    toggleInfoBoxExpand();
-                                }
+                        // Forcer l'expansion de la info box
+                        const infoBox = document.getElementById('info-box');
+                        if (infoBox && !infoBox.classList.contains('expanded')) {
+                            if (typeof toggleInfoBoxExpand === 'function') {
+                                toggleInfoBoxExpand();
                             }
                         }
                     }
@@ -850,74 +822,40 @@ class VoyageManager {
 
                             // Activer l'onglet Tables aléatoires
                             if (typeof activateTab === 'function') {
-                                activateTab('json-tables');
+                                activateTab('tables');
                             }
                         }, 100);
                     }
                 }
             }
         } else if (discoveryType === 'region') {
-            // Gestion spéciale pour "Terres Sauvages"
-            if (discoveryName === 'Terres Sauvages') {
-                // Créer une région temporaire pour les Terres Sauvages
-                const wildlandsRegion = {
-                    name: 'Terres Sauvages',
-                    description: 'Vastes étendues sauvages où peu d\'hommes s\'aventurent. Ces terres non cartographiées abritent des créatures anciennes, des ruines oubliées et des mystères perdus. Les voyageurs doivent rester vigilants car ces contrées ne sont pas sous la protection des royaumes civilisés.',
-                    images: []
-                };
+            // Trouver la région et ouvrir sa modal
+            if (typeof regionsData !== 'undefined' && regionsData.regions) {
+                const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                if (region) {
+                    // Simuler un événement de clic sur la région
+                    const fakeEvent = {
+                        stopPropagation: () => {},
+                        preventDefault: () => {}
+                    };
 
-                const fakeEvent = {
-                    stopPropagation: () => {},
-                    preventDefault: () => {}
-                };
+                    if (typeof showRegionInfo === 'function') {
+                        showRegionInfo(fakeEvent, region);
 
-                if (typeof showRegionInfo === 'function') {
-                    showRegionInfo(fakeEvent, wildlandsRegion);
-
-                    // Forcer l'expansion de la info box et activer l'onglet Tables
-                    setTimeout(() => {
-                        const infoBox = document.getElementById('info-box');
-                        if (infoBox && !infoBox.classList.contains('expanded')) {
-                            if (typeof toggleInfoBoxExpand === 'function') {
-                                toggleInfoBoxExpand();
+                        // Forcer l'expansion de la info box et activer l'onglet Tables
+                        setTimeout(() => {
+                            const infoBox = document.getElementById('info-box');
+                            if (infoBox && !infoBox.classList.contains('expanded')) {
+                                if (typeof toggleInfoBoxExpand === 'function') {
+                                    toggleInfoBoxExpand();
+                                }
                             }
-                        }
 
-                        // Activer l'onglet Tables aléatoires
-                        if (typeof activateTab === 'function') {
-                            activateTab('json-tables');
-                        }
-                    }, 100);
-                }
-            } else {
-                // Trouver la région normale et ouvrir sa modal
-                if (typeof regionsData !== 'undefined' && regionsData.regions) {
-                    const region = regionsData.regions.find(reg => reg.name === discoveryName);
-                    if (region) {
-                        // Simuler un événement de clic sur la région
-                        const fakeEvent = {
-                            stopPropagation: () => {},
-                            preventDefault: () => {}
-                        };
-
-                        if (typeof showRegionInfo === 'function') {
-                            showRegionInfo(fakeEvent, region);
-
-                            // Forcer l'expansion de la info box et activer l'onglet Tables
-                            setTimeout(() => {
-                                const infoBox = document.getElementById('info-box');
-                                if (infoBox && !infoBox.classList.contains('expanded')) {
-                                    if (typeof toggleInfoBoxExpand === 'function') {
-                                        toggleInfoBoxExpand();
-                                    }
-                                }
-
-                                // Activer l'onglet Tables aléatoires
-                                if (typeof activateTab === 'function') {
-                                    activateTab('json-tables');
-                                }
-                            }, 100);
-                        }
+                            // Activer l'onglet Tables aléatoires
+                            if (typeof activateTab === 'function') {
+                                activateTab('tables');
+                            }
+                        }, 100);
                     }
                 }
             }
@@ -1518,23 +1456,18 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
             // Chercher dans les données de lieux
             if (typeof locationsData !== 'undefined' && locationsData.locations) {
                 const location = locationsData.locations.find(loc => loc.name === discovery.name);
-                if (location && location.jsonTables && Array.isArray(location.jsonTables)) {
-                    // Vérifier s'il y a au moins une table avec du contenu valide
-                    return location.jsonTables.some(table => table.content && table.content.trim() !== '');
+                if (location && location.tables && Array.isArray(location.tables)) {
+                    // Vérifier s'il y a au moins une table avec une URL valide
+                    return location.tables.some(table => table.url && table.url.trim() !== '');
                 }
             }
         } else if (discovery.type === 'region') {
-            // Gestion spéciale pour les Terres Sauvages (pas de tables pour l'instant)
-            if (discovery.name === 'Terres Sauvages') {
-                return false;
-            }
-            
             // Chercher dans les données de régions
             if (typeof regionsData !== 'undefined' && regionsData.regions) {
                 const region = regionsData.regions.find(reg => reg.name === discovery.name);
-                if (region && region.jsonTables && Array.isArray(region.jsonTables)) {
-                    // Vérifier s'il y a au moins une table avec du contenu valide
-                    return region.jsonTables.some(table => table.content && table.content.trim() !== '');
+                if (region && region.tables && Array.isArray(region.tables)) {
+                    // Vérifier s'il y a au moins une table avec une URL valide
+                    return region.tables.some(table => table.url && table.url.trim() !== '');
                 }
             }
         }
@@ -1712,29 +1645,6 @@ Répondez UNIQUEMENT avec le JSON, sans texte d'introduction ni de conclusion.`;
                     });
                 }
             });
-
-            // Si aucune région n'est traversée ce jour, ajouter "Terres Sauvages"
-            const hasRegionForDay = discoveries.some(d => d.type === 'region');
-            if (!hasRegionForDay) {
-                // Vérifier si c'est la première fois qu'on traverse les Terres Sauvages
-                const wildlandsAlreadyDiscovered = Object.keys(dailyDiscoveries).some(prevDay => {
-                    return parseInt(prevDay) < dayNum && dailyDiscoveries[prevDay].some(d => 
-                        d.name === 'Terres Sauvages' && d.type === 'region'
-                    );
-                });
-
-                discoveries.push({
-                    name: 'Terres Sauvages',
-                    type: 'region',
-                    status: wildlandsAlreadyDiscovered ? 'traversing' : 'discovered'
-                });
-
-                if (!wildlandsAlreadyDiscovered) {
-                    console.log(`🔧 [DAILY DISCOVERIES] Jour ${dayNum}: Découverte région Terres Sauvages`);
-                } else {
-                    console.log(`🔧 [DAILY DISCOVERIES] Jour ${dayNum}: Traversée région Terres Sauvages`);
-                }
-            }
         });
 
         console.log("🔧 [DAILY DISCOVERIES] Résultats finaux:", dailyDiscoveries);
