@@ -22,6 +22,14 @@
         activeFilters: { known: false, visited: false, colors: [] }
     };
 
+    // Make appState variables globally accessible for compatibility
+    window.locationsData = appState.locationsData;
+    window.regionsData = appState.regionsData;
+    window.currentCalendarDate = appState.currentCalendarDate;
+    window.isCalendarMode = appState.isCalendarMode;
+    window.calendarData = appState.calendarData;
+    window.currentSeason = appState.currentSeason;
+
     // --- DOM Elements Cache ---
     const dom = {
         // Main viewport
@@ -121,10 +129,12 @@
             if (savedLocations) {
                 try {
                     appState.locationsData = JSON.parse(savedLocations);
+                    window.locationsData = appState.locationsData;
                     console.log("✅ Loaded saved locations from localStorage.");
                 } catch (e) {
                     console.error("Failed to parse saved locations.", e);
                     appState.locationsData = { locations: [] };
+                    window.locationsData = appState.locationsData;
                 }
             } else {
                  console.log("No saved locations found, loading defaults.");
@@ -134,12 +144,14 @@
                      const data = await response.json();
                      if (data?.locations) {
                          appState.locationsData = data;
+                         window.locationsData = appState.locationsData;
                          dataManager.saveLocationsToLocal();
                          console.log("✅ Loaded default locations from URL.");
                      }
                  } catch (error) {
                      console.error("❌ Error fetching locations, using empty list.", error);
                      appState.locationsData = { locations: [] };
+                     window.locationsData = appState.locationsData;
                  }
             }
 
@@ -148,19 +160,23 @@
             if (savedRegions) {
                 try {
                     appState.regionsData = JSON.parse(savedRegions);
+                    window.regionsData = appState.regionsData;
                 } catch(e) {
                     appState.regionsData = { regions: [] };
+                    window.regionsData = appState.regionsData;
                 }
             }
         },
 
         saveLocationsToLocal: () => {
             localStorage.setItem('middleEarthLocations', JSON.stringify(appState.locationsData));
+            window.locationsData = appState.locationsData;
             dataManager.scheduleAutoSync();
         },
 
         saveRegionsToLocal: () => {
             localStorage.setItem('middleEarthRegions', JSON.stringify(appState.regionsData));
+            window.regionsData = appState.regionsData;
             dataManager.scheduleAutoSync();
         },
 
