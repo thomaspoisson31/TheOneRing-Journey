@@ -618,6 +618,11 @@
         _setupEventListeners: (type, itemId) => {
             // Use event delegation on a static parent for dynamically created buttons
             const header = dom.infoBox.querySelector('.info-box-header');
+            if (!header) {
+                console.warn('Info box header not found, skipping event listener setup');
+                return;
+            }
+            
             if (header._listener) {
                 header.removeEventListener('click', header._listener);
             }
@@ -635,6 +640,11 @@
 
         _setupTabSwitching: () => {
             const tabsContainer = dom.infoBox.querySelector('.info-box-tabs');
+            if (!tabsContainer) {
+                console.warn('Info box tabs container not found, skipping tab switching setup');
+                return;
+            }
+            
             if (tabsContainer._listener) {
                  tabsContainer.removeEventListener('click', tabsContainer._listener);
             }
