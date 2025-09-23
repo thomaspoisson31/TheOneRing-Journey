@@ -1,0 +1,48 @@
+🔐 [AUTH] 🔐 [AUTH] Utilisateur non authentifié 
+🔐 [AUTH] Mise à jour de l'interface utilisateur d'authentification 
+🔐 [AUTH] Affichage du panneau utilisateur non connecté 
+❌ Auto-sync désactivé
+🔄 Sync Status: Synchronisation automatique désactivée.
+🖱️ Viewport mousedown event fired, isDrawingMode: false
+🖱️ Main viewport mousedown, mode: 
+Object {drawing: false, adding: false, region: false}
+👆 Starting pan mode
+🖱️ Viewport mousedown event fired, isDrawingMode: false
+🖱️ Main viewport mousedown, mode: 
+Object {drawing: false, adding: false, region: false}
+👆 Starting pan mode
+🖱️ Viewport mousedown event fired, isDrawingMode: false
+🖱️ Main viewport mousedown, mode: 
+Object {drawing: false, adding: false, region: false}
+👆 Starting pan mode
+🖱️ Viewport mousedown event fired, isDrawingMode: false
+🖱️ Main viewport mousedown, mode: 
+Object {drawing: false, adding: false, region: false}
+👆 Starting pan mode
+🖱️ Viewport mousedown event fired, isDrawingMode: false
+🖱️ Main viewport mousedown, mode: 
+Object {drawing: false, adding: false, region: false}
+👆 Starting pan mode
+Cannot read properties of null (reading 'value')
+⚠️ Erreur JavaScript: 
+TypeError {}
+
+Cannot read properties of null (reading 'value')
+⚠️ Erreur JavaScript: 
+TypeError {}
+
+Cannot read properties of null (reading 'value')
+⚠️ Erreur JavaScript: 
+TypeError {}
+
+at t.value (https://255964db-d493-4dcc-9de4-48b29bf7eaab-00-6jef37qxw62b.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://255964db-d493-4dcc-9de4-48b29bf7eaab-00-6jef37qxw62b.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://255964db-d493-4dcc-9de4-48b29bf7eaab-00-6jef37qxw62b.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://255964db-d493-4dcc-9de4-48b29bf7eaab-00-6jef37qxw62b.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Cannot read properties of null (reading 'value')
+⚠️ Erreur JavaScript: 
+TypeError {}
+
+Cannot read properties of null (reading 'value')
+⚠️ Erreur JavaScript: 
+TypeError {}
