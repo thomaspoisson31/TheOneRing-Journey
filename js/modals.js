@@ -531,6 +531,85 @@
                 </div>
             `;
 
+            // Update json-tables tab content pour les régions
+            const jsonTablesTab = document.getElementById('json-tables-tab');
+            const jsonTables = getRegionJsonTables(region);
+
+            if (jsonTables.length > 0) {
+                if (infoBox.classList.contains('expanded') && jsonTables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple json tables
+                    const jsonTableTabs = jsonTables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table texte ${index + 1}</button>`
+                    ).join('');
+
+                    const jsonTableContents = jsonTables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="json-table-container">
+                                <div class="mb-3 flex justify-end">
+                                    <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="${index}">
+                                        <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                    </button>
+                                </div>
+                                <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                    <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                    <div class="event-content text-yellow-100"></div>
+                                </div>
+                                ${formatJsonTableForDisplay(table)}
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${jsonTableTabs}</div>
+                            <div class="image-contents">${jsonTableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupRandomEventButtonsForRegion(region);
+                } else {
+                    // Single json table view (compact mode or single table)
+                    const defaultJsonTable = getDefaultRegionJsonTable(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables texte - ${region.name}</span>
+                                </div>` : '';
+                    jsonTablesTab.innerHTML = `
+                        <div class="json-table-container">
+                            ${titleHtml}
+                            <div class="mb-3 flex justify-end">
+                                <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="0">
+                                    <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
+                                </button>
+                            </div>
+                            <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
+                                <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
+                                <div class="event-content text-yellow-100"></div>
+                            </div>
+                            ${formatJsonTableForDisplay(defaultJsonTable)}
+                        </div>
+                    `;
+                    setupRandomEventButtonsForRegion(region);
+                }
+            } else {
+                // No json tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables texte - ${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    jsonTablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table texte disponible</div>
+                        </div>
+                    `;
+                }
+            }
+
             // Update header title
             updateInfoBoxHeaderTitle(region.name);
 
@@ -932,6 +1011,29 @@
             });
         }
 
+        function setupRandomEventButtonsForRegion(region) {
+            const buttons = document.querySelectorAll('.generate-random-event-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tableIndex = parseInt(e.currentTarget.dataset.tableIndex);
+                    const jsonTables = getRegionJsonTables(region);
+
+                    if (jsonTables[tableIndex]) {
+                        try {
+                            const eventText = generateRandomEvent(jsonTables[tableIndex]);
+                            const eventDisplay = e.currentTarget.closest('.json-table-container, .image-content').querySelector('.random-event-display');
+                            const eventContent = eventDisplay.querySelector('.event-content');
+                            eventContent.textContent = eventText;
+                            eventDisplay.classList.remove('hidden');
+                        } catch (error) {
+                            console.error('Erreur lors de la génération de l\'événement aléatoire:', error);
+                            alert('Erreur lors de la génération de l\'événement aléatoire. Vérifiez le format de la table.');
+                        }
+                    }
+                });
+            });
+        }
+
         function showLocationContent(location) {
             // Reset edit mode and show normal content
             delete infoBox.dataset.editMode;
@@ -1147,6 +1249,64 @@
                     }
                 });
             }
+        }
+
+        function addNewRegionJsonTableRow() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const currentTables = container.querySelectorAll('.json-table-edit-item');
+
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables texte autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md';
+            newRow.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                        <span class="text-gray-300">Table par défaut</span>
+                    </label>
+                    <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${newIndex}">
+                        <i class="fas fa-trash text-xs"></i> Supprimer
+                    </button>
+                </div>
+                <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici..."></textarea>
+                <div class="json-validation-message text-xs"></div>
+            `;
+
+            container.appendChild(newRow);
+            updateRegionJsonTableIndices();
+        }
+
+        function updateRegionJsonTableIndices() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            container.querySelectorAll('.remove-json-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectRegionJsonTablesFromEdit() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const jsonTables = [];
+
+            container.querySelectorAll('.json-table-edit-item').forEach(item => {
+                const content = item.querySelector('.json-table-content-input').value.trim();
+                const isDefault = item.querySelector('.default-json-table-checkbox').checked;
+
+                if (content) {
+                    jsonTables.push({ content, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (jsonTables.length > 0 && !jsonTables.some(table => table.isDefault)) {
+                jsonTables[0].isDefault = true;
+            }
+
+            return jsonTables;
         }
 
         function addNewJsonTableRow() {
