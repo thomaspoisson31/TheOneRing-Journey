@@ -60,25 +60,14 @@
         let isDrawingMode = false, isDrawing = false;
         let isAddingLocationMode = false;
         let isAddingRegionMode = false;
-        let totalPathPixels = 0, lastPoint = null, startPoint = null;
         let draggedMarker = null, dragStartX = 0, dragStartY = 0;
         let newLocationCoords = null;
         let activeLocationId = null;
         let activeFilters = { known: false, visited: false, colors: [] };
 
-        // --- Journey tracking ---
-        let journeyPath = [];
-        let traversedRegions = new Set();
-        let nearbyLocations = new Set();
-        const PROXIMITY_DISTANCE = 50;
-        let journeyDiscoveries = []; // Chronological list of discoveries (regions and locations)
+        // --- Journey tracking (moved to journey.js) ---
 
-        // --- Voyage Segments ---
-        let currentVoyage = null;
-        let voyageSegments = [];
-        let currentSegmentIndex = -1;
-        let isVoyageActive = false;
-        let activatedSegments = new Set(); // Track which segments have been activated
+        // --- Voyage Segments (moved to journey.js) ---
 
         // --- Region creation states ---
         let currentRegionPoints = [];
