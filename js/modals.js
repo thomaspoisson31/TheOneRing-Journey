@@ -1097,6 +1097,57 @@
                 });
             }
         }
+        
+        function setupRegionJsonTablesEditListeners() {
+            const container = document.getElementById('edit-region-json-tables-container');
+            const addButton = document.getElementById('add-region-json-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewRegionJsonTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-json-table-btn')) {
+                        const button = e.target.closest('.remove-json-table-btn');
+                        const item = button.closest('.json-table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateRegionJsonTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-json-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-json-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+
+                container.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('json-table-content-input')) {
+                        const validation = validateJsonTable(e.target.value);
+                        const messageDiv = e.target.closest('.json-table-edit-item').querySelector('.json-validation-message');
+
+                        if (e.target.value.trim() === '') {
+                            messageDiv.textContent = '';
+                            messageDiv.className = 'json-validation-message text-xs';
+                        } else if (validation.valid) {
+                            messageDiv.textContent = '✓ Format JSON valide';
+                            messageDiv.className = 'json-validation-message text-xs text-green-400';
+                        } else {
+                            messageDiv.textContent = `⚠ ${validation.message}`;
+                            messageDiv.className = validation.warning ?
+                                'json-validation-message text-xs text-yellow-400' :
+                                'json-validation-message text-xs text-red-400';
+                        }
+                    }
+                });
+            }
+        }
 
         function addNewJsonTableRow() {
             const container = document.getElementById('edit-json-tables-container');
