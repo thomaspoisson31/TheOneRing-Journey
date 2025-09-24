@@ -38,7 +38,28 @@
             // Vérifier si toutes les fonctions nécessaires sont disponibles
             if (typeof loadInitialLocations !== 'function') {
                 console.error("❌ loadInitialLocations not defined, retrying in 100ms...");
-                setTimeout(initializeApp, 100);
+                setTimeout(() => {
+                    // Réessayer seulement le chargement des locations, pas toute l'initialisation
+                    if (typeof loadInitialLocations === 'function') {
+                        console.log("✅ loadInitialLocations now available, continuing...");
+                        startApplicationFlow();
+                    } else {
+                        console.error("❌ loadInitialLocations still not available after retry");
+                        clearTimeout(startTimeout);
+                        handleStartupError();
+                    }
+                }, 100);
+                return;
+            }
+
+            startApplicationFlow();
+        }
+
+        function startApplicationFlow() {
+
+            if (typeof loadInitialLocations !== 'function') {
+                console.error("❌ loadInitialLocations still not available in startApplicationFlow");
+                handleStartupError();
                 return;
             }
 
@@ -134,15 +155,22 @@
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
-                const loaderOverlay = document.getElementById('loader-overlay');
-                if (loaderOverlay) {
-                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
-                        <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
-                        Erreur lors du démarrage.<br>
-                        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
-                    </div>`;
-                }
+                handleStartupError();
             });
+        }
+
+        function handleStartupError() {
+            console.error("❌ Application startup failed");
+            const loaderOverlay = document.getElementById('loader-overlay');
+            if (loaderOverlay) {
+                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                    <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
+                    Erreur lors du démarrage.<br>
+                    <span class="text-sm text-gray-400 mt-2">Vérifiez que tous les fichiers JavaScript sont chargés correctement.</span><br>
+                    <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
+                </div>`;
+            }
+        }
 
             // Region modal handlers with null checks
             const confirmAddRegionBtn = document.getElementById('confirm-add-region');
