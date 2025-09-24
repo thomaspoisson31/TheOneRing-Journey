@@ -186,6 +186,9 @@
             }
         }
 
+        // Make checkAuthError globally available
+        window.checkAuthError = checkAuthError;
+
         // --- Toggle Authentication Modal ---
         function toggleAuthModal() {
             logAuth("Basculement de la modal d'authentification");
@@ -203,11 +206,9 @@
             }
         }
 
-        }
-
         // Handle escape key to close info box
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && infoBox.style.display === 'block') {
+            if (event.key === 'Escape' && infoBox && infoBox.style.display === 'block') {
                 hideInfoBox();
             }
         });

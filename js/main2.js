@@ -951,7 +951,9 @@
 
         function handleImageError() {
             console.error("❌ Erreur de chargement de l'image de carte");
-            loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
+            if (typeof loaderOverlay !== 'undefined' && loaderOverlay) {
+                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
+            }
         }
         function startDragMarker(e) { e.stopPropagation(); draggedMarker = e.target; dragStartX = e.clientX; dragStartY = e.clientY; document.addEventListener('mousemove', dragMarker); document.addEventListener('mouseup', stopDragMarker); }
         function dragMarker(e) { if (!draggedMarker) return; const deltaX = e.clientX - dragStartX; const deltaY = e.clientY - dragStartY; const newX = parseFloat(draggedMarker.style.left) + (deltaX / scale); const newY = parseFloat(draggedMarker.style.top) + (deltaY / scale); draggedMarker.style.left = `${newX}px`; draggedMarker.style.top = `${newY}px`; dragStartX = e.clientX; dragStartY = e.clientY; }
@@ -1103,8 +1105,9 @@
         viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
         ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
         // Gestionnaires d'événements pour le dessin - attachés au viewport au lieu du canvas
-        viewport.addEventListener('mousedown', (event) => {
-            console.log("🖱️ Viewport mousedown event fired, isDrawingMode:", isDrawingMode);
+        if (viewport) {
+            viewport.addEventListener('mousedown', (event) => {
+                console.log("🖱️ Viewport mousedown event fired, isDrawingMode:", isDrawingMode);
 
             // Handle drawing mode specifically
             if (isDrawingMode) {
@@ -1151,31 +1154,32 @@
         });
 
         viewport.addEventListener('mousemove', (event) => {
-            if (!isDrawing || !isDrawingMode) return;
+                if (!isDrawing || !isDrawingMode) return;
 
-            console.log("✏️ Mouse move during drawing");
-            const currentPoint = getCanvasCoordinates(event);
-            const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2));
-            totalPathPixels += segmentLength;
+                console.log("✏️ Mouse move during drawing");
+                const currentPoint = getCanvasCoordinates(event);
+                const segmentLength = Math.sqrt(Math.pow(currentPoint.x - lastPoint.x, 2) + Math.pow(currentPoint.y - lastPoint.y, 2));
+                totalPathPixels += segmentLength;
 
-            // Add current point to journey path for region/location detection
-            journeyPath.push({x: currentPoint.x, y: currentPoint.y});
+                // Add current point to journey path for region/location detection
+                journeyPath.push({x: currentPoint.x, y: currentPoint.y});
 
-            lastPoint = currentPoint;
-            ctx.lineTo(currentPoint.x, currentPoint.y);
-            ctx.stroke();
-            updateDistanceDisplay();
-            console.log("✏️ Drawing segment, total pixels:", totalPathPixels.toFixed(1));
-        });
+                lastPoint = currentPoint;
+                ctx.lineTo(currentPoint.x, currentPoint.y);
+                ctx.stroke();
+                updateDistanceDisplay();
+                console.log("✏️ Drawing segment, total pixels:", totalPathPixels.toFixed(1));
+            });
 
-        ['mouseup', 'mouseleave'].forEach(eventType => viewport.addEventListener(eventType, (event) => {
-            if (isDrawing) {
-                console.log("🛑 Drawing stopped on", eventType);
-                isDrawing = false;
-                console.log("🔄 Programmation de la synchronisation après tracé");
-                scheduleAutoSync(); // Synchroniser après avoir terminé un segment de tracé
-            }
-        }));
+            ['mouseup', 'mouseleave'].forEach(eventType => viewport.addEventListener(eventType, (event) => {
+                if (isDrawing) {
+                    console.log("🛑 Drawing stopped on", eventType);
+                    isDrawing = false;
+                    console.log("🔄 Programmation de la synchronisation après tracé");
+                    scheduleAutoSync(); // Synchroniser après avoir terminé un segment de tracé
+                }
+            }));
+        }
         // Les boutons zoom ont été supprimés de l'interface
         // document.getElementById('zoom-in').addEventListener('click', () => { scale *= 1.2; applyTransform(); });
         // document.getElementById('zoom-out').addEventListener('click', () => { scale /= 1.2; applyTransform(); });
