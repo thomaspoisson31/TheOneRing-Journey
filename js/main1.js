@@ -336,6 +336,9 @@ function initializeMap() {
     console.log("✅ Map initialized successfully");
 }
 
+// Rendre initializeMap globalement accessible
+window.initializeMap = initializeMap;
+
 function preloadLoremasterMap() {
     console.log("Preloading Loremaster map...");
     const lmImage = new Image();
@@ -2150,9 +2153,3 @@ function hideInfoBox() {
         }
     }
 
-// Rendre toutes les autres fonctions globalement accessibles
-window.initializeMap = initializeMap;
-window.hideInfoBox = hideInfoBox;
-window.handleImageError = handleImageError;
-window.setupNarrationListeners = setupNarrationListeners;
-window.loadSavedSeason = loadSavedSeason;
