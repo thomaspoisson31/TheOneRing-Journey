@@ -1,5 +1,7 @@
 // --- DOM Elements nécessaires ---
-// viewport et loaderOverlay sont définis dans main.js
+// Attendre que les éléments DOM soient disponibles
+const viewport = document.getElementById('viewport');
+const loaderOverlay = document.getElementById('loader-overlay');
 
 // --- Start the app ---
         // Ensure the app starts only once when the DOM is ready

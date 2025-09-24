@@ -2149,4 +2149,3 @@ function hideInfoBox() {
             saveFiltersToLocal();
         }
     }
-}
