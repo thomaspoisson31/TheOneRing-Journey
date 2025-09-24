@@ -385,10 +385,40 @@
             }
         }
 
+        // --- Auto-sync Functions ---
+        function enableAutoSync() {
+            autoSyncEnabled = true;
+            console.log("🔄 Auto-synchronisation activée");
+        }
+
+        function disableAutoSync() {
+            autoSyncEnabled = false;
+            console.log("🔄 Auto-synchronisation désactivée");
+        }
+
+        function scheduleAutoSync() {
+            if (!autoSyncEnabled || !currentUser) {
+                return;
+            }
+
+            // Déclencher une synchronisation automatique après un délai
+            clearTimeout(window.autoSyncTimeout);
+            window.autoSyncTimeout = setTimeout(() => {
+                if (autoSyncEnabled && currentUser) {
+                    console.log("🔄 Synchronisation automatique en cours...");
+                    // Ici on pourrait sauvegarder automatiquement les données
+                    // Pour l'instant on ne fait que logger
+                }
+            }, SYNC_DELAY);
+        }
+
         // Rendre les fonctions globales pour main2.js
         window.loadSavedContexts = loadSavedContexts;
         window.setupSettingsEventListeners = setupSettingsEventListeners;
         window.setupAuthEventListeners = setupAuthEventListeners;
+        window.enableAutoSync = enableAutoSync;
+        window.disableAutoSync = disableAutoSync;
+        window.scheduleAutoSync = scheduleAutoSync;
 
         function setupSettingsEventListeners() {
             // Settings modal event listeners
