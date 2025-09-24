@@ -1,7 +1,5 @@
 // --- DOM Elements nécessaires ---
-// Attendre que les éléments DOM soient disponibles
-const viewport = document.getElementById('viewport');
-const loaderOverlay = document.getElementById('loader-overlay');
+// viewport et loaderOverlay sont définis dans main.js et accessibles globalement
 
 // --- Start the app ---
         // Ensure the app starts only once when the DOM is ready
@@ -20,9 +18,9 @@ const loaderOverlay = document.getElementById('loader-overlay');
 
             // Global timeout for the application startup
             const startTimeout = setTimeout(() => {
-                if (loaderOverlay && loaderOverlay.style.display !== 'none') {
+                if (window.loaderOverlay && window.loaderOverlay.style.display !== 'none') {
                     console.error("❌ Application startup timed out");
-                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                    window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
                         <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
                         Temps de chargement dépassé.<br>
                         <span class="text-sm text-gray-400 mt-2">Vérifiez votre connexion et les fichiers requis.</span><br>
@@ -32,7 +30,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
             }, 30000); // 30 seconds timeout
 
             // Check for authentication errors in the URL
-            checkAuthError();
+            window.checkAuthError();
 
             loadInitialLocations().then(() => {
                 loadRegionsFromLocal();
@@ -98,8 +96,8 @@ const loaderOverlay = document.getElementById('loader-overlay');
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
-                if (loaderOverlay) {
-                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                if (window.loaderOverlay) {
+                    window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
                         <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
                         Erreur lors du démarrage.<br>
                         <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
@@ -126,7 +124,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
 
             // Double-click to complete region
             if (viewport) {
-                viewport.addEventListener('dblclick', (event) => {
+                window.viewport.addEventListener('dblclick', (event) => {
                     if (isAddingRegionMode && currentRegionPoints.length >= 3) {
                         event.preventDefault();
                         completeRegion();
@@ -884,7 +882,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
             }
 
             isAddingRegionMode = false;
-            viewport.classList.remove('adding-region');
+            window.viewport.classList.remove('adding-region');
             document.getElementById('add-region-mode').classList.remove('btn-active');
         }
 
@@ -921,7 +919,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
                 descInput.value = '';
 
                 isAddingRegionMode = false;
-                viewport.classList.remove('adding-region');
+                window.viewport.classList.remove('adding-region');
                 document.getElementById('add-region-mode').classList.remove('btn-active');
             }
         }
@@ -954,17 +952,21 @@ const loaderOverlay = document.getElementById('loader-overlay');
             }
         }
 
+        // Rendre les fonctions globales
+        window.loadRegionsFromLocal = loadRegionsFromLocal;
+        window.setupFilters = setupFilters;
+
         function handleImageError() {
             console.error("❌ Erreur de chargement de l'image de carte");
-            if (typeof loaderOverlay !== 'undefined' && loaderOverlay) {
-                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
+            if (window.loaderOverlay) {
+                window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
             }
         }
         function startDragMarker(e) { e.stopPropagation(); draggedMarker = e.target; dragStartX = e.clientX; dragStartY = e.clientY; document.addEventListener('mousemove', dragMarker); document.addEventListener('mouseup', stopDragMarker); }
         function dragMarker(e) { if (!draggedMarker) return; const deltaX = e.clientX - dragStartX; const deltaY = e.clientY - dragStartY; const newX = parseFloat(draggedMarker.style.left) + (deltaX / scale); const newY = parseFloat(draggedMarker.style.top) + (deltaY / scale); draggedMarker.style.left = `${newX}px`; draggedMarker.style.top = `${newY}px`; dragStartX = e.clientX; dragStartY = e.clientY; }
         function stopDragMarker() { if (!draggedMarker) return; const locationId = parseInt(draggedMarker.dataset.id, 10); const location = locationsData.locations.find(loc => loc.id === locationId); if (location) { location.coordinates.x = parseFloat(draggedMarker.style.left); location.coordinates.y = parseFloat(draggedMarker.style.top); } draggedMarker = null; document.removeEventListener('mousemove', dragMarker); document.removeEventListener('mouseup', stopDragMarker); saveLocationsToLocal(); }
         function applyTransform() { mapContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-        function resetView() { const viewportWidth = viewport.clientWidth; if (viewportWidth === 0 || MAP_WIDTH === 0) return; scale = viewportWidth / MAP_WIDTH; panX = 0; panY = 0; applyTransform(); }
+        function resetView() { const viewportWidth = window.viewport.clientWidth; if (viewportWidth === 0 || MAP_WIDTH === 0) return; scale = viewportWidth / MAP_WIDTH; panX = 0; panY = 0; applyTransform(); }
         function setupFilters() {
             const filterColorPicker = document.getElementById('filter-color-picker');
             filterColorPicker.innerHTML = Object.keys(colorMap).map(color => `
@@ -1073,7 +1075,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
                 }
             }
         }
-        viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
+        window.viewport.addEventListener('wheel', (event) => { event.preventDefault(); const zoomIntensity = 0.1; const wheel = event.deltaY < 0 ? 1 : -1; const zoom = Math.exp(wheel * zoomIntensity); const rect = window.viewport.getBoundingClientRect(); const mouseX = event.clientX - rect.left; const mouseY = event.clientY - rect.top; panX = mouseX - (mouseX - panX) * zoom; panY = mouseY - (mouseY - panY) * zoom; scale = Math.max(0.1, Math.min(scale * zoom, 5)); applyTransform(); });
         // Gestionnaire mousedown principal du viewport
         function handleViewportMouseDown(event) {
             console.log("🖱️ Main viewport mousedown, mode:", {drawing: isDrawingMode, adding: isAddingLocationMode, region: isAddingRegionMode});
@@ -1105,13 +1107,13 @@ const loaderOverlay = document.getElementById('loader-overlay');
             isPanning = true;
             startPanX = event.clientX - panX;
             startPanY = event.clientY - panY;
-            viewport.classList.add('panning');
+            window.viewport.classList.add('panning');
         }
-        viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
-        ['mouseup', 'mouseleave'].forEach(event => viewport.addEventListener(event, () => { isPanning = false; viewport.classList.remove('panning'); }));
+        window.viewport.addEventListener('mousemove', (event) => { if (isPanning) { event.preventDefault(); panX = event.clientX - startPanX; panY = event.clientY - startPanY; applyTransform(); } });
+        ['mouseup', 'mouseleave'].forEach(event => window.viewport.addEventListener(event, () => { isPanning = false; window.viewport.classList.remove('panning'); }));
         // Gestionnaires d'événements pour le dessin - attachés au viewport au lieu du canvas
-        if (viewport) {
-            viewport.addEventListener('mousedown', (event) => {
+        if (window.viewport) {
+            window.viewport.addEventListener('mousedown', (event) => {
                 console.log("🖱️ Viewport mousedown event fired, isDrawingMode:", isDrawingMode);
 
             // Handle drawing mode specifically
@@ -1158,7 +1160,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
             handleViewportMouseDown(event);
         });
 
-        viewport.addEventListener('mousemove', (event) => {
+        window.viewport.addEventListener('mousemove', (event) => {
                 if (!isDrawing || !isDrawingMode) return;
 
                 console.log("✏️ Mouse move during drawing");
@@ -1176,7 +1178,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
                 console.log("✏️ Drawing segment, total pixels:", totalPathPixels.toFixed(1));
             });
 
-            ['mouseup', 'mouseleave'].forEach(eventType => viewport.addEventListener(eventType, (event) => {
+            ['mouseup', 'mouseleave'].forEach(eventType => window.viewport.addEventListener(eventType, (event) => {
                 if (isDrawing) {
                     console.log("🛑 Drawing stopped on", eventType);
                     isDrawing = false;
@@ -1193,7 +1195,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
             console.log("🎨 Draw mode button clicked");
             isAddingLocationMode = false;
             isAddingRegionMode = false;
-            viewport.classList.remove('adding-location', 'adding-region');
+            window.viewport.classList.remove('adding-location', 'adding-region');
             document.getElementById('add-location-mode').classList.remove('btn-active');
             document.getElementById('add-region-mode').classList.remove('btn-active');
             cancelRegionCreation();
@@ -1206,7 +1208,7 @@ const loaderOverlay = document.getElementById('loader-overlay');
 
             isDrawingMode = !isDrawingMode;
             console.log("🎨 Drawing mode is now:", isDrawingMode);
-            viewport.classList.toggle('drawing', isDrawingMode);
+            window.viewport.classList.toggle('drawing', isDrawingMode);
             e.currentTarget.classList.toggle('btn-active', isDrawingMode);
 
             // Ensure canvas has proper pointer events when in drawing mode
@@ -1224,12 +1226,12 @@ const loaderOverlay = document.getElementById('loader-overlay');
         document.getElementById('add-location-mode').addEventListener('click', (e) => {
             isDrawingMode = false;
             isAddingRegionMode = false;
-            viewport.classList.remove('drawing', 'adding-region');
+            window.viewport.classList.remove('drawing', 'adding-region');
             document.getElementById('draw-mode').classList.remove('btn-active');
             document.getElementById('add-region-mode').classList.remove('btn-active');
             cancelRegionCreation();
             isAddingLocationMode = !isAddingLocationMode;
-            viewport.classList.toggle('adding-location', isAddingLocationMode);
+            window.viewport.classList.toggle('adding-location', isAddingLocationMode);
             e.currentTarget.classList.toggle('btn-active', isAddingLocationMode);
             // Re-render locations to update event handlers
             renderLocations();
@@ -1238,11 +1240,11 @@ const loaderOverlay = document.getElementById('loader-overlay');
         document.getElementById('add-region-mode').addEventListener('click', (e) => {
             isDrawingMode = false;
             isAddingLocationMode = false;
-            viewport.classList.remove('drawing', 'adding-location');
+            window.viewport.classList.remove('drawing', 'adding-location');
             document.getElementById('draw-mode').classList.remove('btn-active');
             document.getElementById('add-location-mode').classList.remove('btn-active');
             isAddingRegionMode = !isAddingRegionMode;
-            viewport.classList.toggle('adding-region', isAddingRegionMode);
+            window.viewport.classList.toggle('adding-region', isAddingRegionMode);
             e.currentTarget.classList.toggle('btn-active', isAddingRegionMode);
 
             if (!isAddingRegionMode) {
@@ -1290,24 +1292,24 @@ const loaderOverlay = document.getElementById('loader-overlay');
             exportRegionsBtn.addEventListener('click', exportUnifiedData);
         }
         // document.getElementById('reset-locations').addEventListener('click', () => { if (confirm("Voulez-vous vraiment réinitialiser tous les lieux par défaut ?")) { locationsData = getDefaultLocations(); renderLocations(); saveLocationsToLocal(); } });
-        mapSwitchBtn.addEventListener('click', () => {
+        window.mapSwitchBtn.addEventListener('click', () => {
             isPlayerView = !isPlayerView;
             const icon = document.getElementById('map-switch-icon');
             if (isPlayerView) {
                 mapImage.style.opacity = '1';
                 loremasterMapImage.style.opacity = '0';
                 icon.className = 'fas fa-book-open';
-                mapSwitchBtn.title = "Vue Gardien";
+                window.mapSwitchBtn.title = "Vue Gardien";
             } else {
                 mapImage.style.opacity = '0';
                 loremasterMapImage.style.opacity = '1';
                 icon.className = 'fas fa-users';
-                mapSwitchBtn.title = "Vue Joueurs";
+                window.mapSwitchBtn.title = "Vue Joueurs";
             }
         });
         document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeurs: [], Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
-        function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
+        function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; window.viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
         function saveLocationsToLocal() {
             localStorage.setItem('middleEarthLocations', JSON.stringify(locationsData));
             scheduleAutoSync(); // Synchroniser après modification

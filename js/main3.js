@@ -386,6 +386,11 @@
             }
         }
 
+        // Rendre les fonctions globales pour main2.js
+        window.loadSavedContexts = loadSavedContexts;
+        window.setupSettingsEventListeners = setupSettingsEventListeners;
+        window.setupAuthEventListeners = setupAuthEventListeners;
+
         function setupSettingsEventListeners() {
             // Settings modal event listeners
             const settingsBtn = document.getElementById('settings-btn');

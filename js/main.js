@@ -189,10 +189,15 @@
         // Make checkAuthError globally available
         window.checkAuthError = checkAuthError;
         
-        // Make DOM elements globally available
+        // Make DOM elements and variables globally available
         window.viewport = viewport;
         window.loaderOverlay = document.getElementById('loader-overlay');
         window.mapSwitchBtn = mapSwitchBtn;
+        window.mapImage = mapImage;
+        window.infoBoxClose = infoBoxClose;
+        window.PLAYER_MAP_URL = PLAYER_MAP_URL;
+        window.logAuth = logAuth;
+        window.checkGoogleAuth = checkGoogleAuth;
 
         // --- Toggle Authentication Modal ---
         function toggleAuthModal() {

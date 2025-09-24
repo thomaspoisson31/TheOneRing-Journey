@@ -295,7 +295,7 @@ async function loadInitialLocations() {
     }
 }
 
-// Rendre la fonction globalement accessible
+// Rendre les fonctions globalement accessibles
 window.loadInitialLocations = loadInitialLocations;
 
 function initializeMap() {
@@ -2149,3 +2149,10 @@ function hideInfoBox() {
             saveFiltersToLocal();
         }
     }
+
+// Rendre toutes les autres fonctions globalement accessibles
+window.initializeMap = initializeMap;
+window.hideInfoBox = hideInfoBox;
+window.handleImageError = handleImageError;
+window.setupNarrationListeners = setupNarrationListeners;
+window.loadSavedSeason = loadSavedSeason;
