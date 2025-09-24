@@ -1,5 +1,4 @@
-
-        // --- Start the app ---
+// --- Start the app ---
         // Ensure the app starts only once when the DOM is ready
         function initializeApp() {
             // Global error handlers
@@ -66,7 +65,7 @@
 
                 // Setup settings event listeners
                 setupSettingsEventListeners();
-                
+
                 // Setup narration listeners
                 setupNarrationListeners();
 
@@ -2315,5 +2314,3 @@ function highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
 // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
 // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
 document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
-
-// The journey button will be updated when the voyage manager is initialized

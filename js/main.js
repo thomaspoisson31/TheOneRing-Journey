@@ -205,47 +205,9 @@
 
         }
 
-        // Function to properly manage event listeners to avoid accumulation
-        function setupInfoBoxEventListeners(type, itemId) {
-            // Get references to the buttons
-            const editBtn = document.getElementById('info-box-edit');
-            const deleteBtn = document.getElementById('info-box-delete');
-            const expandBtn = document.getElementById('info-box-expand');
-
-            // Clone and replace buttons to remove all existing event listeners
-            if (editBtn) {
-                const newEditBtn = editBtn.cloneNode(true);
-                editBtn.parentNode.replaceChild(newEditBtn, editBtn);
-            }
-            if (deleteBtn) {
-                const newDeleteBtn = deleteBtn.cloneNode(true);
-                deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
-            }
-            if (expandBtn) {
-                const newExpandBtn = expandBtn.cloneNode(true);
-                expandBtn.parentNode.replaceChild(newExpandBtn, expandBtn);
-            }
-
-            // Add fresh event listeners
-            const freshEditBtn = document.getElementById('info-box-edit');
-            const freshDeleteBtn = document.getElementById('info-box-delete');
-            const freshExpandBtn = document.getElementById('info-box-expand');
-
-            if (type === 'location') {
-                if (freshEditBtn) freshEditBtn.addEventListener('click', enterEditMode);
-                if (freshDeleteBtn) freshDeleteBtn.addEventListener('click', () => deleteLocation(itemId));
-            } else if (type === 'region') {
-                if (freshEditBtn) freshEditBtn.addEventListener('click', enterRegionEditMode);
-                if (freshDeleteBtn) freshDeleteBtn.addEventListener('click', () => deleteRegion(itemId));
-            }
-
-            if (freshExpandBtn) freshExpandBtn.addEventListener('click', toggleInfoBoxExpand);
-        }
-
         // Handle escape key to close info box
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && infoBox.style.display === 'block') {
                 hideInfoBox();
             }
         });
-    
