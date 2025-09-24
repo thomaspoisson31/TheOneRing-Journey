@@ -3456,8 +3456,622 @@
                     adventurersReadMode.classList.remove('hidden');
                     // Reload original content
                     const saved = localStorage.getItem('adventurersGroup');
-                    if ([
-  {"op": "replace", "path": "/id", "value": "edit-region-name"},
-  {"op": "replace", "path": "/value", "value": "Region Name"},
-  {"op": "replace", "path": "/name", "value": "Region Name"}
-]
+                    if (saved) {
+                        try {
+                            const adventurersData = JSON.parse(saved);
+                            adventurersTextarea.value = adventurersData;
+                        } catch (e) {
+                            console.error('Failed to load adventurers data:', e);
+                        }
+                    }
+                });
+            }
+
+            if (saveAdventurersEdit) {
+                saveAdventurersEdit.addEventListener('click', () => {
+                    const adventurersData = adventurersTextarea.value;
+                    localStorage.setItem('adventurersGroup', JSON.stringify(adventurersData));
+                    updateAdventurersDisplay();
+                    adventurersEditMode.classList.add('hidden');
+                    adventurersReadMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            // Quest edit listeners
+            const editQuestBtn = document.getElementById('edit-quest-btn');
+            const cancelQuestEdit = document.getElementById('cancel-quest-edit');
+            const saveQuestEdit = document.getElementById('save-quest-edit');
+            const questReadMode = document.getElementById('quest-read-mode');
+            const questEditMode = document.getElementById('quest-edit-mode');
+            const questTextarea = document.getElementById('adventurers-quest');
+
+            if (editQuestBtn) {
+                editQuestBtn.addEventListener('click', () => {
+                    questReadMode.classList.add('hidden');
+                    questEditMode.classList.remove('hidden');
+                });
+            }
+
+            if (cancelQuestEdit) {
+                cancelQuestEdit.addEventListener('click', () => {
+                    questEditMode.classList.add('hidden');
+                    questReadMode.classList.remove('hidden');
+                    // Reload original content
+                    const saved = localStorage.getItem('adventurersQuest');
+                    if (saved) {
+                        try {
+                            const questData = JSON.parse(saved);
+                            questTextarea.value = questData;
+                        } catch (e) {
+                            console.error('Failed to load quest data:', e);
+                        }
+                    }
+                });
+            }
+
+            if (saveQuestEdit) {
+                saveQuestEdit.addEventListener('click', () => {
+                    const questData = questTextarea.value;
+                    localStorage.setItem('adventurersQuest', JSON.stringify(questData));
+                    updateQuestDisplay();
+                    questEditMode.classList.add('hidden');
+                    questReadMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            // Season radio button listeners
+            const seasonRadios = document.querySelectorAll('input[name="season"]');
+            seasonRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        currentSeason = e.target.value;
+                        updateSeasonDisplay();
+                        localStorage.setItem('currentSeason', currentSeason);
+                        scheduleAutoSync();
+                    }
+                });
+            });
+
+            // Generate adventurers wizard
+            const generateAdventurersWizard = document.getElementById('generate-adventurers-wizard');
+            if (generateAdventurersWizard) {
+                generateAdventurersWizard.addEventListener('click', handleGenerateAdventurersWizard);
+            }
+
+            // Calendar event listeners
+            setupCalendarEventListeners();
+        }
+
+        function updateAdventurersDisplay() {
+            const adventurersContent = document.getElementById('adventurers-content');
+            const saved = localStorage.getItem('adventurersGroup');
+
+            if (saved && saved !== '""' && saved !== 'null') {
+                try {
+                    const adventurersData = JSON.parse(saved);
+                    if (adventurersData && adventurersData.trim()) {
+                        adventurersContent.innerHTML = parseMarkdown(adventurersData);
+                    } else {
+                        adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                    }
+                } catch (e) {
+                    adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                }
+            } else {
+                adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+            }
+        }
+
+        function updateQuestDisplay() {
+            const questContent = document.getElementById('quest-content');
+            const saved = localStorage.getItem('adventurersQuest');
+
+            if (saved && saved !== '""' && saved !== 'null') {
+                try {
+                    const questData = JSON.parse(saved);
+                    if (questData && questData.trim()) {
+                        questContent.innerHTML = parseMarkdown(questData);
+                    } else {
+                        questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    }
+                } catch (e) {
+                    questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                }
+            } else {
+                questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+            }
+        }
+
+        function parseMarkdown(text) {
+            return text
+                .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mb-3">$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mb-2">$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^- (.*$)/gim, '<li class="ml-4">• $1</li>')
+                .replace(/\n\n/g, '</p><p class="mb-3">')
+                .replace(/\n/g, '<br>')
+                .replace(/^(.*)/, '<p class="mb-3">$1')
+                .concat('</p>');
+        }
+
+        async function handleGenerateAdventurersWizard(event) {
+            const button = event.currentTarget;
+            const adventurersTextarea = document.getElementById('adventurers-group');
+
+            const prompt = `Génère un groupe de 2 à 5 aventuriers pour un jeu de rôle en Terre du Milieu (fin du Troisième Âge). Pour chaque personnage, indique :
+- Nom et prénom
+- Peuple (Hommes de l\'Eriador, Hobbits, Elfes, Nains, etc.)
+- Occupation/Classe
+- Brève description de personnalité
+- Motivation pour participer à l\'aventure
+
+Unite-les par un objectif commun crédible et évocateur. Style J.R.R. Tolkien, format Markdown.`;
+
+            const result = await callGemini(prompt, button);
+            adventurersTextarea.value = result;
+        }
+
+        function updateSeasonDisplay() {
+            const seasonIndicator = document.getElementById('season-indicator');
+            const currentSeasonText = document.getElementById('current-season-text');
+            const currentSeasonSymbol = document.getElementById('current-season-symbol');
+
+            const season = currentSeason.split('-')[0];
+            const symbol = seasonSymbols[season] || '🌱';
+
+            if (seasonIndicator) seasonIndicator.textContent = symbol;
+            if (currentSeasonText) currentSeasonText.textContent = seasonNames[currentSeason] || 'Printemps-début';
+            if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
+        }
+
+        function setupCalendarEventListeners() {
+            const uploadBtn = document.getElementById('upload-calendar-btn');
+            const fileInput = document.getElementById('calendar-file-input');
+            const exportBtn = document.getElementById('export-calendar-btn');
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', handleCalendarUpload);
+            }
+
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportCalendar);
+            }
+
+            if (monthSelect) {
+                monthSelect.addEventListener('change', handleMonthChange);
+            }
+
+            if (daySelect) {
+                daySelect.addEventListener('change', handleDayChange);
+            }
+
+            // Season and calendar indicator click listeners
+            const seasonIndicator = document.getElementById('season-indicator');
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+
+            if (seasonIndicator) {
+                seasonIndicator.addEventListener('click', () => {
+                    const settingsModal = document.getElementById('settings-modal');
+                    settingsModal.classList.remove('hidden');
+                    activateTab('season');
+                });
+            }
+
+            if (calendarDateIndicator) {
+                calendarDateIndicator.addEventListener('click', () => {
+                    const settingsModal = document.getElementById('settings-modal');
+                    settingsModal.classList.remove('hidden');
+                    activateTab('season');
+                });
+            }
+        }
+
+        function handleCalendarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvContent = e.target.result;
+                    const calendar = parseCalendarCSV(csvContent);
+
+                    calendarData = calendar;
+                    localStorage.setItem('calendarData', JSON.stringify(calendar));
+
+                    updateCalendarUI();
+                    updateCalendarStatusDisplay();
+
+                    alert(`Calendrier importé avec succès ! ${calendar.length} entrées.`);
+                    scheduleAutoSync();
+                } catch (error) {
+                    alert(`Erreur lors de l'import du calendrier: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCalendarCSV(csvContent) {
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',').map(h => h.trim());
+
+            const calendar = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                if (values.length >= headers.length) {
+                    const entry = {};
+                    headers.forEach((header, index) => {
+                        entry[header] = values[index];
+                    });
+                    calendar.push(entry);
+                }
+            }
+
+            return calendar;
+        }
+
+        function updateCalendarUI() {
+            const monthSelect = document.getElementById('calendar-month-select');
+            const dateSelector = document.getElementById('calendar-date-selector');
+
+            if (calendarData && calendarData.length > 0) {
+                // Extract unique months
+                const months = [...new Set(calendarData.map(entry => entry.Month || entry.Mois))].filter(Boolean);
+
+                monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
+                months.forEach(month => {
+                    monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
+                });
+
+                dateSelector.classList.remove('hidden');
+            } else {
+                dateSelector.classList.add('hidden');
+            }
+        }
+
+        function updateCalendarStatusDisplay() {
+            const statusText = document.getElementById('calendar-status-text');
+            const modeInfo = document.getElementById('season-mode-info');
+
+            if (calendarData && calendarData.length > 0) {
+                statusText.textContent = `Calendrier chargé : ${calendarData.length} entrées`;
+                statusText.className = 'text-green-400';
+                modeInfo.textContent = 'Mode calendrier : les saisons sont synchronisées avec les dates du calendrier importé.';
+            } else {
+                statusText.textContent = 'Aucun calendrier chargé';
+                statusText.className = 'text-gray-400';
+                modeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
+            }
+        }
+
+        function handleMonthChange(event) {
+            const selectedMonth = event.target.value;
+            const daySelect = document.getElementById('calendar-day-select');
+
+            if (selectedMonth && calendarData) {
+                const daysInMonth = calendarData
+                    .filter(entry => (entry.Month || entry.Mois) === selectedMonth)
+                    .map(entry => entry.Day || entry.Jour)
+                    .filter(Boolean);
+
+                daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
+                daysInMonth.forEach(day => {
+                    daySelect.innerHTML += `<option value="${day}">${day}</option>`;
+                });
+            } else {
+                daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
+            }
+        }
+
+        function handleDayChange(event) {
+            const selectedDay = event.target.value;
+            const monthSelect = document.getElementById('calendar-month-select');
+            const selectedMonth = monthSelect.value;
+
+            if (selectedMonth && selectedDay && calendarData) {
+                const calendarEntry = calendarData.find(entry => 
+                    (entry.Month || entry.Mois) === selectedMonth && 
+                    (entry.Day || entry.Jour) === selectedDay
+                );
+
+                if (calendarEntry) {
+                    currentCalendarDate = { month: selectedMonth, day: selectedDay };
+                    localStorage.setItem('currentCalendarDate', JSON.stringify(currentCalendarDate));
+
+                    // Update season based on calendar entry if available
+                    const season = calendarEntry.Season || calendarEntry.Saison;
+                    if (season) {
+                        currentSeason = season;
+                        localStorage.setItem('currentSeason', currentSeason);
+                    }
+
+                    updateCalendarDateDisplay();
+                    updateSeasonDisplay();
+                    scheduleAutoSync();
+                }
+            }
+        }
+
+        function updateCalendarDateDisplay() {
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            const currentCalendarDateDisplay = document.getElementById('current-calendar-date');
+
+            if (currentCalendarDate) {
+                const dateText = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                if (calendarDateIndicator) calendarDateIndicator.textContent = dateText;
+                if (currentCalendarDateDisplay) currentCalendarDateDisplay.textContent = dateText;
+            }
+        }
+
+        function exportCalendar() {
+            if (!calendarData || calendarData.length === 0) {
+                alert('Aucun calendrier à exporter.');
+                return;
+            }
+
+            const csvContent = convertCalendarToCSV(calendarData);
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calendrier-terre-du-milieu.csv';
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        function convertCalendarToCSV(calendar) {
+            if (calendar.length === 0) return '';
+
+            const headers = Object.keys(calendar[0]);
+            const csvRows = [headers.join(',')];
+
+            calendar.forEach(entry => {
+                const values = headers.map(header => entry[header] || '');
+                csvRows.push(values.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        function loadSavedSettings() {
+            // Load adventurers
+            updateAdventurersDisplay();
+
+            // Load quest
+            updateQuestDisplay();
+
+            // Load season
+            const savedSeason = localStorage.getItem('currentSeason');
+            if (savedSeason) {
+                currentSeason = savedSeason;
+                // Update radio button
+                const seasonRadio = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
+                if (seasonRadio) seasonRadio.checked = true;
+            }
+            updateSeasonDisplay();
+
+            // Load calendar
+            const savedCalendar = localStorage.getItem('calendarData');
+            const savedCalendarDate = localStorage.getItem('currentCalendarDate');
+
+            if (savedCalendar) {
+                try {
+                    calendarData = JSON.parse(savedCalendar);
+                    updateCalendarUI();
+                } catch (e) {
+                    console.error('Failed to load calendar data:', e);
+                }
+            }
+
+            if (savedCalendarDate) {
+                try {
+                    currentCalendarDate = JSON.parse(savedCalendarDate);
+                    updateCalendarDateDisplay();
+                } catch (e) {
+                    console.error('Failed to load calendar date:', e);
+                }
+            }
+
+            updateCalendarStatusDisplay();
+
+            // Load narration style
+            const savedNarrationStyle = localStorage.getItem('narrationStyle');
+            if (savedNarrationStyle) {
+                const narrationRadio = document.querySelector(`input[name="narration-style"][value="${savedNarrationStyle}"]`);
+                if (narrationRadio) narrationRadio.checked = true;
+            }
+
+            // Load narration style listeners
+            const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
+            narrationRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        localStorage.setItem('narrationStyle', e.target.value);
+                        scheduleAutoSync();
+                    }
+                });
+            });
+        }
+
+        function getNarrationPromptAddition() {
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+
+            switch (narrationStyle) {
+                case 'detailed':
+                    return '\n\nStyle de narration : Rédige plusieurs paragraphes détaillés par jour dans un style littéraire évocateur et immersif.';
+                case 'keywords':
+                    return '\n\nStyle de narration : Fournis seulement des mots-clés évocateurs et des éléments d\'inspiration pour le Meneur de Jeu, pas de paragraphes complets.';
+                case 'brief':
+                default:
+                    return '\n\nStyle de narration : Rédige un paragraphe unique par jour dans un style concis mais évocateur.';
+            }
+        }
+
+        // --- Auto-sync Functions ---
+        function enableAutoSync() {
+            console.log("✅ Auto-sync activé");
+            autoSyncEnabled = true;
+            updateSyncStatus();
+        }
+
+        function disableAutoSync() {
+            console.log("❌ Auto-sync désactivé");
+            autoSyncEnabled = false;
+            updateSyncStatus();
+        }
+
+        function scheduleAutoSync() {
+            if (!autoSyncEnabled || !currentUser) return;
+
+            clearTimeout(window.autoSyncTimeout);
+            window.autoSyncTimeout = setTimeout(() => {
+                performAutoSync();
+            }, SYNC_DELAY);
+        }
+
+        async function performAutoSync() {
+            if (!autoSyncEnabled || !currentUser) return;
+
+            console.log("🔄 Auto-sync: Synchronisation automatique...");
+
+            const currentData = {
+                locations: locationsData,
+                regions: regionsData,
+                scale: scale,
+                panX: panX,
+                panY: panY,
+                activeFilters: activeFilters,
+                filters: activeFilters,
+                journeyPath: journeyPath,
+                totalPathPixels: totalPathPixels,
+                startPoint: startPoint,
+                lastPoint: lastPoint,
+                journeyDiscoveries: journeyDiscoveries,
+                currentSeason: currentSeason,
+                calendarData: calendarData,
+                currentCalendarDate: currentCalendarDate
+            };
+
+            try {
+                const response = await fetch('/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(currentData)
+                });
+
+                if (response.ok) {
+                    lastSyncTime = Date.now();
+                    updateSyncStatus();
+                    console.log("✅ Auto-sync: Synchronisation réussie");
+                } else {
+                    console.warn("⚠️ Auto-sync: Échec de la synchronisation");
+                }
+            } catch (error) {
+                console.error("❌ Auto-sync: Erreur de synchronisation:", error);
+            }
+        }
+
+        function updateSyncStatus() {
+            // Update UI to show sync status if needed
+            const syncStatusText = autoSyncEnabled ? 
+                `Synchronisation automatique activée. Dernière sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'jamais'}` :
+                'Synchronisation automatique désactivée.';
+
+            console.log(`🔄 Sync Status: ${syncStatusText}`);
+        }
+
+        function activateTab(tabName) {
+            // For settings tabs
+            const settingsTabButtons = document.querySelectorAll('.settings-tab-button');
+            const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+
+            if (settingsTabButtons.length > 0) {
+                settingsTabButtons.forEach(btn => btn.classList.remove('active'));
+                settingsTabContents.forEach(content => content.style.display = 'none');
+
+                const targetButton = document.querySelector(`[data-tab="${tabName}"].settings-tab-button`);
+                const targetContent = document.getElementById(`${tabName}-tab`);
+
+                if (targetButton && targetContent) {
+                    targetButton.classList.add('active');
+                    targetContent.style.display = 'flex';
+                }
+            }
+
+            // For info box tabs
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            if (tabButtons.length > 0) {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                const targetTabButton = document.querySelector(`[data-tab="${tabName}"].tab-button`);
+                const targetTabContent = document.getElementById(`${tabName}-tab`);
+
+                if (targetTabButton && targetTabContent) {
+                    targetTabButton.classList.add('active');
+                    targetTabContent.classList.add('active');
+                }
+            }
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("🌍 Document loaded, initializing application...");
+            loadMapsData();
+            loadRegionsFromLocal();
+            loadFiltersFromLocal(); // Load filters early to set up UI correctly
+            setupMapsEventListeners();
+            setupFilters();
+            setupSettingsEventListeners(); // Setup settings listeners early
+
+            if (mapImage.complete) {
+                initializeMap();
+            } else {
+                mapImage.addEventListener('load', initializeMap);
+            }
+            mapImage.addEventListener('error', handleImageError);
+
+            // Fetch and check authentication status on load
+            checkAuthStatus();
+            checkAuthError(); // Check for auth-related errors in the URL
+
+            // Setup button event listeners
+            saveContextBtn.addEventListener('click', saveCurrentContext);
+            googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            authBtn.addEventListener('click', toggleAuthModal);
+            closeAuthModalBtn.addEventListener('click', toggleAuthModal);
+
+            // Initialize the season display based on saved or default season
+            updateSeasonDisplay();
+            updateCalendarDateDisplay(); // Ensure calendar date is displayed if loaded
+
+            // Load saved data after initial setup
+            loadSavedSettings();
+
+            // Display initial map state
+            renderMapsGrid();
+
+            // Initial rendering of locations and regions based on loaded filters
+            renderLocations();
+            const showRegionsInitial = document.getElementById('filter-show-regions').checked;
+            if (showRegionsInitial) {
+                renderRegions();
+            } else {
+                regionsLayer.style.display = 'none';
+            }
+
+            console.log("✅ Application initialized successfully.");
+        });
