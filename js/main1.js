@@ -2148,3 +2148,5 @@ function hideInfoBox() {
             // Sauvegarder les filtres après mise à jour
             saveFiltersToLocal();
         }
+    }
+}
