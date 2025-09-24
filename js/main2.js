@@ -996,6 +996,7 @@
         // Rendre les fonctions globales
         window.loadRegionsFromLocal = loadRegionsFromLocal;
         window.setupFilters = setupFilters;
+        window.initializeApp = initializeApp;
 
         function handleImageError() {
             console.error("❌ Erreur de chargement de l'image de carte");

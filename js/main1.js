@@ -1,10 +1,5 @@
 // --- Maps Management Functions ---
-        let availableMaps = [];
-        let currentMapConfig = {
-            playerMap: 'fr_tor_2nd_eriadors_map_page-0001.webp',
-            loremasterMap: 'fr_tor_2nd_eriadors_map_page_loremaster.webp'
-        };
-        let editingMapIndex = -1;
+        // Variables déclarées dans main.js : availableMaps, currentMapConfig, editingMapIndex
 
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');

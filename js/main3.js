@@ -1,5 +1,4 @@
-
-        // --- Gemini API Functions ---
+// --- Gemini API Functions ---
         async function callGemini(prompt, button) {
             const buttonIcon = button.querySelector('.gemini-icon') || button;
             const originalContent = buttonIcon.innerHTML;
@@ -417,19 +416,19 @@
             settingsTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const targetTab = tab.dataset.tab;
-                    
+
                     // Update active tab
                     settingsTabs.forEach(t => t.classList.remove('active', 'text-white', 'border-blue-500'));
                     settingsTabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
                     tab.classList.remove('text-gray-400', 'border-transparent');
                     tab.classList.add('active', 'text-white', 'border-blue-500');
-                    
+
                     // Update active content
                     settingsTabContents.forEach(content => {
                         content.classList.remove('active');
                         content.style.display = 'none';
                     });
-                    
+
                     const targetContent = document.getElementById(`${targetTab}-tab`);
                     if (targetContent) {
                         targetContent.classList.add('active');
@@ -440,11 +439,11 @@
 
             // Maps management listeners
             setupMapsEventListeners();
-            
+
             // Season indicator click
             const seasonIndicator = document.getElementById('season-indicator');
             const calendarDateIndicator = document.getElementById('calendar-date-indicator');
-            
+
             if (seasonIndicator) {
                 seasonIndicator.addEventListener('click', () => {
                     settingsModal.classList.remove('hidden');
@@ -455,7 +454,7 @@
                     }
                 });
             }
-            
+
             if (calendarDateIndicator) {
                 calendarDateIndicator.addEventListener('click', () => {
                     settingsModal.classList.remove('hidden');
@@ -469,7 +468,7 @@
 
             // Adventurers tab functionality
             setupAdventurersTab();
-            
+
             // Quest tab functionality
             setupQuestTab();
         }
@@ -1910,9 +1909,19 @@ Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eria
                 }
             }
 
-            // Démarrer l'application quand le DOM est prêt
+            // Start the app when the DOM is ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeApp);
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (typeof initializeApp === 'function') {
+                        initializeApp();
+                    } else {
+                        console.error('initializeApp not available');
+                    }
+                });
             } else {
-                initializeApp();
+                if (typeof initializeApp === 'function') {
+                    initializeApp();
+                } else {
+                    console.error('initializeApp not available');
+                }
             }
