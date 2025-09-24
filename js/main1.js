@@ -1,4 +1,11 @@
 // --- Maps Management Functions ---
+        let availableMaps = [];
+        let currentMapConfig = {
+            playerMap: 'fr_tor_2nd_eriadors_map_page-0001.webp',
+            loremasterMap: 'fr_tor_2nd_eriadors_map_page_loremaster.webp'
+        };
+        let editingMapIndex = -1;
+
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');
             const savedConfig = localStorage.getItem('currentMapConfig');
@@ -247,56 +254,46 @@
 
 
 // --- Initialization ---
-async function loadInitialLocations() {
-    console.log("Attempting to load locations...");
-    const savedData = localStorage.getItem('middleEarthLocations');
-    if (savedData) {
-        try {
-            const parsedData = JSON.parse(savedData);
-            if (parsedData && Array.isArray(parsedData.locations)) {
-               locationsData = parsedData;
-               console.log("✅ Success: Loaded saved locations from localStorage.");
-               return;
+        // --- Load Initial Locations ---
+        async function loadInitialLocations() {
+            console.log("Attempting to load locations...");
+            try {
+                // Try to load from localStorage first
+                const saved = localStorage.getItem('middleEarthLocations');
+                if (saved) {
+                    try {
+                        locationsData = JSON.parse(saved);
+                        console.log("✅ Success: Loaded saved locations from localStorage.");
+                        return Promise.resolve();
+                    } catch (parseError) {
+                        console.warn("⚠️ Warning: Failed to parse saved locations, loading defaults.");
+                    }
+                }
+
+                // If no saved data or parsing failed, load from file
+                try {
+                    const response = await fetch(LOCATIONS_URL);
+                    if (response.ok) {
+                        locationsData = await response.json();
+                        console.log("✅ Success: Loaded locations from file.");
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (fetchError) {
+                    console.warn("⚠️ Warning: Failed to load locations file, using defaults.");
+                    locationsData = getDefaultLocations();
+                }
+
+                return Promise.resolve();
+            } catch (error) {
+                console.error("❌ Error loading locations:", error);
+                locationsData = getDefaultLocations();
+                return Promise.resolve();
             }
-        } catch (e) {
-            console.error("Failed to parse saved locations, will fetch from URL.", e);
         }
-    }
 
-    console.log("No valid saved data found. Fetching from URL:", LOCATIONS_URL);
-    try {
-        // Ajouter un timeout pour éviter les attentes infinies
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
-
-        const response = await fetch(LOCATIONS_URL, {
-            signal: controller.signal,
-            cache: 'no-cache' // Éviter les problèmes de cache
-        });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data && Array.isArray(data.locations)) {
-            locationsData = data;
-            console.log("✅ Success: Loaded default locations from URL.");
-            saveLocationsToLocal();
-        } else {
-            throw new Error("Invalid JSON structure from URL");
-        }
-    } catch (error) {
-        console.error("❌ Error fetching locations from URL, using empty list as fallback.", error);
-        if (error.name === 'AbortError') {
-            console.error("Request timed out after 10 seconds");
-        }
-        locationsData = getDefaultLocations();
-        // Sauvegarder même la liste vide pour éviter les futures tentatives de chargement
-        saveLocationsToLocal();
-    }
-}
-
-// Rendre les fonctions globalement accessibles
-window.loadInitialLocations = loadInitialLocations;
+        // Make function globally available
+        window.loadInitialLocations = loadInitialLocations;
 
 function initializeMap() {
     console.log("🗺️ Initializing map...");
@@ -2152,4 +2149,3 @@ function hideInfoBox() {
             saveFiltersToLocal();
         }
     }
-

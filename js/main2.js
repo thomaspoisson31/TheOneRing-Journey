@@ -30,25 +30,51 @@
             }, 30000); // 30 seconds timeout
 
             // Check for authentication errors in the URL
-            window.checkAuthError();
+            if (typeof window.checkAuthError === 'function') {
+                window.checkAuthError();
+            }
+
+            // Vérifier si toutes les fonctions nécessaires sont disponibles
+            if (typeof loadInitialLocations !== 'function') {
+                console.error("❌ loadInitialLocations not defined, retrying in 100ms...");
+                setTimeout(initializeApp, 100);
+                return;
+            }
 
             loadInitialLocations().then(() => {
-                loadRegionsFromLocal();
-                loadSavedContexts();
-                setupFilters();
-                loadSavedSeason(); // Load season at startup
-                loadMapsData(); // Load maps data at startup
-                logAuth("Initialisation de l'authentification...");
+                if (typeof loadRegionsFromLocal === 'function') {
+                    loadRegionsFromLocal();
+                }
+                if (typeof loadSavedContexts === 'function') {
+                    loadSavedContexts();
+                }
+                if (typeof setupFilters === 'function') {
+                    setupFilters();
+                }
+                if (typeof loadSavedSeason === 'function') {
+                    loadSavedSeason();
+                }
+                if (typeof loadMapsData === 'function') {
+                    loadMapsData();
+                }
+                
+                if (typeof logAuth === 'function') {
+                    logAuth("Initialisation de l'authentification...");
+                }
 
                 // Initialize authentication after a short delay to ensure DOM is ready
                 setTimeout(() => {
-                    checkGoogleAuth();
+                    if (typeof checkGoogleAuth === 'function') {
+                        checkGoogleAuth();
+                    }
                 }, 100);
 
                 if (mapImage) {
                     mapImage.onload = () => {
                         clearTimeout(startTimeout);
-                        initializeMap();
+                        if (typeof initializeMap === 'function') {
+                            initializeMap();
+                        }
                     };
                     mapImage.addEventListener('error', () => {
                         clearTimeout(startTimeout);
@@ -59,38 +85,49 @@
                     mapImage.src = PLAYER_MAP_URL;
                 }
 
-                if (infoBoxClose) {
+                if (infoBoxClose && typeof hideInfoBox === 'function') {
                     infoBoxClose.addEventListener('click', hideInfoBox);
                 }
 
-                logAuth("Configuration des event listeners d'authentification...");
-                setupAuthEventListeners();
+                if (typeof logAuth === 'function') {
+                    logAuth("Configuration des event listeners d'authentification...");
+                }
+                
+                if (typeof setupAuthEventListeners === 'function') {
+                    setupAuthEventListeners();
+                }
 
                 // Setup settings event listeners
-                setupSettingsEventListeners();
+                if (typeof setupSettingsEventListeners === 'function') {
+                    setupSettingsEventListeners();
+                }
 
                 // Setup narration listeners
-                setupNarrationListeners();
+                if (typeof setupNarrationListeners === 'function') {
+                    setupNarrationListeners();
+                }
 
                 // Test DOM elements after a delay
                 setTimeout(() => {
-                    logAuth("=== TEST DES ÉLÉMENTS DOM ===");
-                    logAuth("authModal element:", !!document.getElementById('auth-modal'));
-                    logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
-                    logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
-                    logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
-                    logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
-                    logAuth("settings-btn element:", !!document.getElementById('settings-btn'));
-                    logAuth("settings-modal element:", !!document.getElementById('settings-modal'));
-                    logAuth("close-settings-modal element:", !!document.getElementById('close-settings-modal'));
+                    if (typeof logAuth === 'function') {
+                        logAuth("=== TEST DES ÉLÉMENTS DOM ===");
+                        logAuth("authModal element:", !!document.getElementById('auth-modal'));
+                        logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
+                        logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
+                        logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
+                        logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
+                        logAuth("settings-btn element:", !!document.getElementById('settings-btn'));
+                        logAuth("settings-modal element:", !!document.getElementById('settings-modal'));
+                        logAuth("close-settings-modal element:", !!document.getElementById('close-settings-modal'));
 
-                    const testAuthBtn = document.getElementById('auth-btn');
-                    if (testAuthBtn) {
-                        logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
-                        logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
-                        logAuth("Classes du bouton auth:", testAuthBtn.className);
+                        const testAuthBtn = document.getElementById('auth-btn');
+                        if (testAuthBtn) {
+                            logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
+                            logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
+                            logAuth("Classes du bouton auth:", testAuthBtn.className);
+                        }
+                        logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
                     }
-                    logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
                 }, 2000);
 
             }).catch(error => {
@@ -109,7 +146,7 @@
             const confirmAddRegionBtn = document.getElementById('confirm-add-region');
             const cancelAddRegionBtn = document.getElementById('cancel-add-region');
 
-            if (confirmAddRegionBtn) {
+            if (confirmAddRegionBtn && typeof saveRegion === 'function') {
                 confirmAddRegionBtn.addEventListener('click', saveRegion);
             }
 
@@ -118,7 +155,9 @@
                     if (addRegionModal) {
                         addRegionModal.classList.add('hidden');
                     }
-                    cancelRegionCreation();
+                    if (typeof cancelRegionCreation === 'function') {
+                        cancelRegionCreation();
+                    }
                 });
             }
 
@@ -127,7 +166,9 @@
                 window.viewport.addEventListener('dblclick', (event) => {
                     if (isAddingRegionMode && currentRegionPoints.length >= 3) {
                         event.preventDefault();
-                        completeRegion();
+                        if (typeof completeRegion === 'function') {
+                            completeRegion();
+                        }
                     }
                 });
             }
