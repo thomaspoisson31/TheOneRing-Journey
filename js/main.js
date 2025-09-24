@@ -139,6 +139,15 @@
         // --- Voyage Manager ---
         let voyageManager;
 
+        // =============================================================================
+        // POINT D'INSERTION POUR LES FICHIERS SÉPARÉS
+        // =============================================================================
+        // Les fonctions seront réparties comme suit :
+        // main1.js : Fonctions de gestion des cartes, authentification, saisons/calendrier
+        // main2.js : Fonctions de gestion des lieux, régions, filtres
+        // main3.js : Fonctions de voyage/tracé, segments, Gemini API
+        // =============================================================================
+
         // --- Maps Management Functions ---
         function loadMapsData() {
             const savedMaps = localStorage.getItem('availableMaps');
