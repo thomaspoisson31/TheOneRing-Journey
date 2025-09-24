@@ -622,7 +622,9 @@ function showInfoBox(event) {
 function hideInfoBox() {
     infoBox.style.display = 'none';
     activeLocationId = null;
+}
 
+// --- Utility Functions (moved to global scope) ---
     function setupTabSwitching() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -728,7 +730,6 @@ function hideInfoBox() {
         });
     }
 
-
     function getRegionImages(region) {
         if (region.images && Array.isArray(region.images)) {
             return region.images.map(img => img.url).filter(url => url);
@@ -773,6 +774,124 @@ function hideInfoBox() {
         }
         return '';
     }
+
+    // Make functions globally available
+    window.setupTabSwitching = setupTabSwitching;
+    window.activateTab = activateTab;
+    window.handleImageError = handleImageError;
+    window.getLocationImages = getLocationImages;
+    window.getDefaultLocationImage = getDefaultLocationImage;
+    window.setupImageTabSwitching = setupImageTabSwitching;
+    window.setupImageClickHandlers = setupImageClickHandlers;
+    window.getRegionImages = getRegionImages;
+    window.getDefaultRegionImage = getDefaultRegionImage;
+    window.getLocationTables = getLocationTables;
+    window.getDefaultLocationTable = getDefaultLocationTable;
+    window.getRegionTables = getRegionTables;
+    window.getDefaultRegionTable = getDefaultRegionTable;
+
+// --- Image and Tables Edit Functions ---
+    function generateImageEditHTML(images) {
+        if (!images || images.length === 0) {
+            return '<div class="text-gray-400 text-sm">Aucune image</div>';
+        }
+
+        return images.map((image, index) => `
+            <div class="image-edit-item flex items-center space-x-2 p-2 rounded">
+                <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${image.url || ''}" placeholder="URL de l'image">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-image-checkbox mr-1" ${image.isDefault ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function generateTablesEditHTML(tables) {
+        if (!tables || tables.length === 0) {
+            return '<div class="text-gray-400 text-sm">Aucune table</div>';
+        }
+
+        return tables.map((table, index) => `
+            <div class="table-edit-item flex items-center space-x-2 p-2 rounded">
+                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${table.url || ''}" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function collectImagesFromEdit() {
+        const container = document.getElementById('edit-images-container');
+        if (!container) return [];
+
+        const images = [];
+        container.querySelectorAll('.image-edit-item').forEach(item => {
+            const url = item.querySelector('.image-url-input').value.trim();
+            const isDefault = item.querySelector('.default-image-checkbox').checked;
+
+            if (url) {
+                images.push({ url, isDefault });
+            }
+        });
+
+        // Ensure at least one default if images exist
+        if (images.length > 0 && !images.some(img => img.isDefault)) {
+            images[0].isDefault = true;
+        }
+
+        return images;
+    }
+
+    function collectTablesFromEdit() {
+        const container = document.getElementById('edit-tables-container');
+        if (!container) return [];
+
+        const tables = [];
+        container.querySelectorAll('.table-edit-item').forEach(item => {
+            const url = item.querySelector('.table-url-input').value.trim();
+            const isDefault = item.querySelector('.default-table-checkbox').checked;
+
+            if (url) {
+                tables.push({ url, isDefault });
+            }
+        });
+
+        // Ensure at least one default if tables exist
+        if (tables.length > 0 && !tables.some(table => table.isDefault)) {
+            tables[0].isDefault = true;
+        }
+
+        return tables;
+    }
+
+    // Make functions globally available
+    window.setupTabSwitching = setupTabSwitching;
+    window.activateTab = activateTab;
+    window.handleImageError = handleImageError;
+    window.getLocationImages = getLocationImages;
+    window.getDefaultLocationImage = getDefaultLocationImage;
+    window.setupImageTabSwitching = setupImageTabSwitching;
+    window.setupImageClickHandlers = setupImageClickHandlers;
+    window.getRegionImages = getRegionImages;
+    window.getDefaultRegionImage = getDefaultRegionImage;
+    window.getLocationTables = getLocationTables;
+    window.getDefaultLocationTable = getDefaultLocationTable;
+    window.getRegionTables = getRegionTables;
+    window.getDefaultRegionTable = getDefaultRegionTable;
+    window.generateImageEditHTML = generateImageEditHTML;
+    window.generateTablesEditHTML = generateTablesEditHTML;
+    window.collectImagesFromEdit = collectImagesFromEdit;
+    window.collectTablesFromEdit = collectTablesFromEdit;
+    window.hideInfoBox = hideInfoBox;
 
     function startDrawingFromLocation(event, location) {
         console.log("🎯 Starting drawing from location:", location.name);
@@ -951,25 +1070,6 @@ function hideInfoBox() {
         setupTablesEditListeners();
     }
 
-    function generateTablesEditHTML(tables) {
-        if (!tables || tables.length === 0) {
-            return '<div class="text-gray-400 text-sm">Aucune table</div>';
-        }
-
-        return tables.map((table, index) => `
-            <div class="table-edit-item flex items-center space-x-2 p-2 rounded">
-                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${table.url || ''}" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
-                <label class="flex items-center text-sm">
-                    <input type="checkbox" class="default-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
-                    <span class="text-gray-300">Défaut</span>
-                </label>
-                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
-                    <i class="fas fa-trash text-xs"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-
     function setupTablesEditListeners() {
         const container = document.getElementById('edit-tables-container');
         const addButton = document.getElementById('add-table-btn');
@@ -1035,27 +1135,6 @@ function hideInfoBox() {
         });
     }
 
-    function collectTablesFromEdit() {
-        const container = document.getElementById('edit-tables-container');
-        const tables = [];
-
-        container.querySelectorAll('.table-edit-item').forEach(item => {
-            const url = item.querySelector('.table-url-input').value.trim();
-            const isDefault = item.querySelector('.default-table-checkbox').checked;
-
-            if (url) {
-                tables.push({ url, isDefault });
-            }
-        });
-
-        // Ensure at least one default if tables exist
-        if (tables.length > 0 && !tables.some(table => table.isDefault)) {
-            tables[0].isDefault = true;
-        }
-
-        return tables;
-    }
-
     function addEditControls() {
         // Add save/cancel buttons at the bottom of the scroll wrapper
         const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
@@ -1084,27 +1163,6 @@ function hideInfoBox() {
                 swatch.classList.add('selected');
             });
         });
-    }
-
-
-
-    function generateImageEditHTML(images) {
-        if (!images || images.length === 0) {
-            return '<div class="text-gray-400 text-sm">Aucune image</div>';
-        }
-
-        return images.map((image, index) => `
-            <div class="image-edit-item flex items-center space-x-2 p-2 rounded">
-                <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${image.url || ''}" placeholder="URL de l'image">
-                <label class="flex items-center text-sm">
-                    <input type="checkbox" class="default-image-checkbox mr-1" ${image.isDefault ? 'checked' : ''}>
-                    <span class="text-gray-300">Défaut</span>
-                </label>
-                <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
-                    <i class="fas fa-trash text-xs"></i>
-                </button>
-            </div>
-        `).join('');
     }
 
     function setupImageEditListeners() {
@@ -1178,27 +1236,6 @@ function hideInfoBox() {
                 document.getElementById('edit-known').checked = true;
             }
         });
-    }
-
-    function collectImagesFromEdit() {
-        const container = document.getElementById('edit-images-container');
-        const images = [];
-
-        container.querySelectorAll('.image-edit-item').forEach(item => {
-            const url = item.querySelector('.image-url-input').value.trim();
-            const isDefault = item.querySelector('.default-image-checkbox').checked;
-
-            if (url) {
-                images.push({ url, isDefault });
-            }
-        });
-
-        // Ensure at least one default if images exist
-        if (images.length > 0 && !images.some(img => img.isDefault)) {
-            images[0].isDefault = true;
-        }
-
-        return images;
     }
 
     function saveEdit() {
@@ -1765,21 +1802,6 @@ function hideInfoBox() {
             const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
 
             if (button) {
-                let styleText = '';
-                switch (narrationStyle) {
-                    case 'detailed':
-                        styleText = ' (Détaillée)';
-                        break;
-                    case 'brief':
-                        styleText = ' (Brève)';
-                        break;
-                    case 'keywords':
-                        styleText = ' (Points clés)';
-                        break;
-                    default:
-                        styleText = ' (Brève)';
-                }
-
                 const span = button.querySelector('span:last-child');
                 if (span) {
                     span.textContent = `Décrire le voyage${styleText}`;
