@@ -295,6 +295,9 @@ async function loadInitialLocations() {
     }
 }
 
+// Rendre la fonction globalement accessible
+window.loadInitialLocations = loadInitialLocations;
+
 function initializeMap() {
     console.log("🗺️ Initializing map...");
     if (mapImage.naturalWidth === 0) {
