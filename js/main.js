@@ -1,6 +1,3 @@
-// --- Import des fonctions modales ---
-        // Les fonctions modales sont chargées depuis le fichier modals.js via une balise script
-
 // --- Data ---
         const colorMap = { red: 'rgba(239, 68, 68, 0.8)', blue: 'rgba(59, 130, 246, 0.8)', green: 'rgba(34, 197, 94, 0.8)', violet: 'rgba(139, 92, 246, 0.8)', orange: 'rgba(252, 169, 3, 0.8)', black: 'rgba(17, 24, 39, 0.8)' };
         const regionColorMap = { red: 'rgba(239, 68, 68, 0.15)', blue: 'rgba(59, 130, 246, 0.15)', green: 'rgba(34, 197, 94, 0.15)', violet: 'rgba(139, 92, 246, 0.15)', orange: 'rgba(252, 169, 3, 0.15)', black: 'rgba(17, 24, 39, 0.15)' };
@@ -60,14 +57,25 @@
         let isDrawingMode = false, isDrawing = false;
         let isAddingLocationMode = false;
         let isAddingRegionMode = false;
+        let totalPathPixels = 0, lastPoint = null, startPoint = null;
         let draggedMarker = null, dragStartX = 0, dragStartY = 0;
         let newLocationCoords = null;
         let activeLocationId = null;
         let activeFilters = { known: false, visited: false, colors: [] };
 
-        // --- Journey tracking (moved to journey.js) ---
+        // --- Journey tracking ---
+        let journeyPath = [];
+        let traversedRegions = new Set();
+        let nearbyLocations = new Set();
+        const PROXIMITY_DISTANCE = 50;
+        let journeyDiscoveries = []; // Chronological list of discoveries (regions and locations)
 
-        // --- Voyage Segments (moved to journey.js) ---
+        // --- Voyage Segments ---
+        let currentVoyage = null;
+        let voyageSegments = [];
+        let currentSegmentIndex = -1;
+        let isVoyageActive = false;
+        let activatedSegments = new Set(); // Track which segments have been activated
 
         // --- Region creation states ---
         let currentRegionPoints = [];
@@ -158,14 +166,14 @@
                 availableMaps = [
                     {
                         id: 1,
-                        name: 'Carte Joueur - Eriadors',
+                        name: 'Carte Joueur - Eriador',
                         filename: 'fr_tor_2nd_eriadors_map_page-0001.webp',
                         type: 'player',
                         isDefault: true
                     },
                     {
                         id: 2,
-                        name: 'Carte Gardien - Eriadors',
+                        name: 'Carte Gardien - Eriador',
                         filename: 'fr_tor_2nd_eriadors_map_page_loremaster.webp',
                         type: 'loremaster',
                         isDefault: true
@@ -662,48 +670,12 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
-            let rumeursContent = '';
-            if (location.Rumeurs && location.Rumeurs.length > 0) {
-                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
-
-                if (rumeursValides.length > 0) {
-                    rumeursContent += `
-                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                                <i class="fas fa-ear-listen mr-2"></i>
-                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
-                            </div>
-                    `;
-
-                    rumeursValides.forEach((rumeur, index) => {
-                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
-                        rumeursContent += `
-                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
-                                ${rumeur}
-                            </div>
-                        `;
-                    });
-
-                    rumeursContent += `</div>`;
-                }
-            }
-            // Support de l'ancienne structure avec Rumeur simple
-            else if (location.Rumeur && location.Rumeur !== "A définir") {
-                rumeursContent += `
-                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                            <i class="fas fa-ear-listen mr-2"></i>
-                            Rumeur
-                        </div>
-                        <div class="text-yellow-100 text-sm italic leading-relaxed">
-                            ${location.Rumeur}
-                        </div>
-                    </div>
-                `;
-            }
-            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
-
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -713,146 +685,6 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
-
-            // Update tables tab content
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = getLocationTables(location);
-
-            if (tables.length > 0) {
-                if (infoBox.classList.contains('expanded') && tables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple tables
-                    const tableTabs = tables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
-                    ).join('');
-
-                    const tableContents = tables.map((table, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="image-view">
-                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    tablesTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${tableTabs}</div>
-                            <div class="image-contents">${tableContents}</div>
-                        </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupImageClickHandlers();
-                } else {
-                    // Single table view (compact mode or single table)
-                    const defaultTable = getDefaultLocationTable(location);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
-                                </div>` : '';
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            ${titleHtml}
-                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
-                        </div>
-                    `;
-                    setupImageClickHandlers();
-                }
-            } else {
-                // No tables - show placeholder
-                if (!infoBox.classList.contains('expanded')) {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    tablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune table disponible</div>
-                        </div>
-                    `;
-                }
-            }
-
-            // Update json-tables tab content
-            const jsonTablesTab = document.getElementById('json-tables-tab');
-            const jsonTables = getLocationJsonTables(location);
-
-            if (jsonTables.length > 0) {
-                if (infoBox.classList.contains('expanded') && jsonTables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple json tables
-                    const jsonTableTabs = jsonTables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table texte ${index + 1}</button>`
-                    ).join('');
-
-                    const jsonTableContents = jsonTables.map((table, index) =>
-                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="json-table-container">
-                                <div class="mb-3 flex justify-end">
-                                    <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="${index}">
-                                        <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
-                                    </button>
-                                </div>
-                                <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
-                                    <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
-                                    <div class="event-content text-yellow-100"></div>
-                                </div>
-                                ${formatJsonTableForDisplay(table)}
-                            </div>
-                        </div>`
-                    ).join('');
-
-                    jsonTablesTab.innerHTML = `
-                        <div class="image-tabs-container">
-                            <div class="image-tabs">${jsonTableTabs}</div>
-                            <div class="image-contents">${jsonTableContents}</div>
-                        </div>
-                    `;
-
-                    setupImageTabSwitching();
-                    setupRandomEventButtons(location);
-                } else {
-                    // Single json table view (compact mode or single table)
-                    const defaultJsonTable = getDefaultLocationJsonTable(location);
-                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
-                                </div>` : '';
-                    jsonTablesTab.innerHTML = `
-                        <div class="json-table-container">
-                            ${titleHtml}
-                            <div class="mb-3 flex justify-end">
-                                <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="0">
-                                    <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
-                                </button>
-                            </div>
-                            <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
-                                <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
-                                <div class="event-content text-yellow-100"></div>
-                            </div>
-                            ${formatJsonTableForDisplay(defaultJsonTable)}
-                        </div>
-                    `;
-                    setupRandomEventButtons(location);
-                }
-            } else {
-                // No json tables - show placeholder
-                if (!infoBox.classList.contains('expanded')) {
-                    jsonTablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    jsonTablesTab.innerHTML = `
-                        <div class="image-view">
-                            <div class="image-placeholder">Aucune table texte disponible</div>
-                        </div>
-                    `;
-                }
-            }
 
             // Update header title
             updateInfoBoxHeaderTitle(location.name);
@@ -1046,179 +878,55 @@
             return '';
         }
 
-        function getLocationTables(location) {
-            if (location.tables && Array.isArray(location.tables)) {
-                return location.tables.map(table => table.url).filter(url => url);
-            }
-            return [];
+        function startDrawingFromLocation(event, location) {
+            console.log("🎯 Starting drawing from location:", location.name);
+
+            // Convert location coordinates to canvas coordinates
+            const canvasCoords = {
+                x: location.coordinates.x,
+                y: location.coordinates.y
+            };
+
+            console.log("📍 Canvas coordinates:", canvasCoords);
+
+            // Clear any existing drawing
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+
+            // Reset journey tracking
+            journeyPath = [];
+            traversedRegions.clear();
+            nearbyLocations.clear();
+            journeyDiscoveries = [];
+
+            // Start drawing from this location
+            isDrawing = true;
+            totalPathPixels = 0;
+            startPoint = canvasCoords;
+            lastPoint = canvasCoords;
+
+            // Add start point to journey path
+            journeyPath.push({x: canvasCoords.x, y: canvasCoords.y});
+
+            // Draw a small circle to show the starting point
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.beginPath();
+            ctx.arc(lastPoint.x, lastPoint.y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Begin the path again for the line
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.x, lastPoint.y);
+
+            // Update distance display
+            updateDistanceDisplay();
+
+            // Show distance container
+            distanceContainer.classList.remove('hidden');
+
+            console.log("✅ Drawing started successfully");
         }
 
-        function getDefaultLocationTable(location) {
-            if (location.tables && Array.isArray(location.tables)) {
-                const defaultTable = location.tables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.url : (location.tables[0] ? location.tables[0].url : '');
-            }
-            return '';
-        }
-
-        function getRegionTables(region) {
-            if (region.tables && Array.isArray(region.tables)) {
-                return region.tables.map(table => table.url).filter(url => url);
-            }
-            return [];
-        }
-
-        function getDefaultRegionTable(region) {
-            if (region.tables && Array.isArray(region.tables)) {
-                const defaultTable = region.tables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.url : (region.tables[0] ? region.tables[0].url : '');
-            }
-            return '';
-        }
-
-        function getLocationJsonTables(location) {
-            if (location.jsonTables && Array.isArray(location.jsonTables)) {
-                return location.jsonTables.map(table => table.content).filter(content => content);
-            }
-            return [];
-        }
-
-        function getDefaultLocationJsonTable(location) {
-            if (location.jsonTables && Array.isArray(location.jsonTables)) {
-                const defaultTable = location.jsonTables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.content : (location.jsonTables[0] ? location.jsonTables[0].content : '');
-            }
-            return '';
-        }
-
-        function getRegionJsonTables(region) {
-            if (region.jsonTables && Array.isArray(region.jsonTables)) {
-                return region.jsonTables.map(table => table.content).filter(content => content);
-            }
-            return [];
-        }
-
-        function getDefaultRegionJsonTable(region) {
-            if (region.jsonTables && Array.isArray(region.jsonTables)) {
-                const defaultTable = region.jsonTables.find(table => table.isDefault);
-                return defaultTable ? defaultTable.content : (region.jsonTables[0] ? region.jsonTables[0].content : '');
-            }
-            return '';
-        }
-
-        function validateJsonTable(content) {
-            try {
-                const parsed = JSON.parse(content);
-                if (!Array.isArray(parsed)) {
-                    return { valid: false, message: "Le JSON doit être un tableau d'objets" };
-                }
-
-                for (let i = 0; i < parsed.length; i++) {
-                    const item = parsed[i];
-                    if (typeof item !== 'object' || item === null) {
-                        return { valid: false, message: `L'élément ${i + 1} doit être un objet` };
-                    }
-
-                    // Vérification optionnelle du format attendu
-                    const hasDestinyDie = item.hasOwnProperty('Dé du destin');
-                    const hasResult = item.hasOwnProperty('Résultat');
-                    const hasDescription = item.hasOwnProperty('Description');
-
-                    if (hasDestinyDie || hasResult || hasDescription) {
-                        if (!hasDestinyDie || !hasResult || !hasDescription) {
-                            return {
-                                valid: false,
-                                message: `L'élément ${i + 1} semble suivre le format standard mais il manque des propriétés (Dé du destin, Résultat, Description)`,
-                                warning: true
-                            };
-                        }
-                    }
-                }
-
-                return { valid: true, message: "Format JSON valide" };
-            } catch (e) {
-                return { valid: false, message: `JSON invalide: ${e.message}` };
-            }
-        }
-
-        function formatJsonTableForDisplay(content) {
-            try {
-                const parsed = JSON.parse(content);
-                if (!Array.isArray(parsed)) return content;
-
-                let html = '<div class="json-table-display">';
-
-                // Vérifier si c'est le format standard avec "Dé du destin"
-                const isStandardFormat = parsed.length > 0 && parsed[0].hasOwnProperty('Dé du destin');
-
-                if (isStandardFormat) {
-                    html += '<table class="w-full border-collapse border border-gray-600 text-sm">';
-                    html += '<thead><tr class="bg-gray-700">';
-                    html += '<th class="border border-gray-600 px-2 py-1">Dé du destin</th>';
-                    html += '<th class="border border-gray-600 px-2 py-1">Résultat</th>';
-                    html += '<th class="border border-gray-600 px-2 py-1">Description</th>';
-                    html += '</tr></thead><tbody>';
-
-                    parsed.forEach(item => {
-                        html += '<tr>';
-                        html += `<td class="border border-gray-600 px-2 py-1 font-bold text-center">${escapeHtml(item['Dé du destin'] || '')}</td>`;
-                        html += `<td class="border border-gray-600 px-2 py-1 font-semibold">${escapeHtml(item['Résultat'] || '')}</td>`;
-                        html += `<td class="border border-gray-600 px-2 py-1">${escapeHtml(item['Description'] || '')}</td>`;
-                        html += '</tr>';
-                    });
-
-                    html += '</tbody></table>';
-                } else {
-                    // Format libre - affichage en liste
-                    html += '<div class="space-y-2">';
-                    parsed.forEach((item, index) => {
-                        html += `<div class="bg-gray-800 rounded p-2 border border-gray-600">`;
-                        html += `<div class="font-semibold text-blue-400 mb-1">Entrée ${index + 1}</div>`;
-                        Object.entries(item).forEach(([key, value]) => {
-                            html += `<div><span class="font-medium">${escapeHtml(key)}:</span> ${escapeHtml(String(value))}</div>`;
-                        });
-                        html += '</div>';
-                    });
-                    html += '</div>';
-                }
-
-                html += '</div>';
-                return html;
-            } catch (e) {
-                return `<div class="text-red-400">Erreur d'affichage: ${escapeHtml(e.message)}</div>`;
-            }
-        }
-
-        function generateRandomEvent(jsonContent) {
-            try {
-                const parsed = JSON.parse(jsonContent);
-                if (!Array.isArray(parsed) || parsed.length === 0) {
-                    throw new Error("Tableau vide ou invalide");
-                }
-
-                const randomIndex = Math.floor(Math.random() * parsed.length);
-                const randomEntry = parsed[randomIndex];
-
-                // Construire la description de l'événement
-                let eventDescription = '';
-
-                if (randomEntry['Dé du destin'] && randomEntry['Résultat'] && randomEntry['Description']) {
-                    // Format standard
-                    eventDescription = `**${randomEntry['Résultat']}** (${randomEntry['Dé du destin']})\n\n${randomEntry['Description']}`;
-                } else {
-                    // Format libre
-                    eventDescription = Object.entries(randomEntry)
-                        .map(([key, value]) => `**${key}:** ${value}`)
-                        .join('\n\n');
-                }
-
-                return eventDescription;
-            } catch (e) {
-                throw new Error(`Impossible de générer un événement: ${e.message}`);
-            }
-        }
-
-               function enterEditMode() {
+        function enterEditMode() {
             const location = locationsData.locations.find(loc => loc.id === activeLocationId);
             if (!location) return;
 
@@ -1236,12 +944,6 @@
 
             // Update tradition tab to show tradition editing interface
             updateTraditionTabForEdit(location);
-
-            // Update tables tab to show tables editing interface
-            updateTablesTabForEdit(location);
-
-            // Update json-tables tab to show json-tables editing interface
-            updateJsonTablesTabForEdit(location);
 
             // Add edit controls at the bottom
             addEditControls();
@@ -1308,13 +1010,11 @@
 
         function updateRumeursTabForEdit(location) {
             const rumeursTab = document.getElementById('rumeurs-tab');
-            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
-            const rumeursString = Array.isArray(location.Rumeurs) ? location.Rumeurs.join('\n') : (location.Rumeur || '');
             rumeursTab.innerHTML = `
                 <div class="text-view space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
+                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${location.Rumeur || ''}</textarea>
                     </div>
                 </div>
             `;
@@ -1330,278 +1030,6 @@
                     </div>
                 </div>
             `;
-        }
-
-        function updateTablesTabForEdit(location) {
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = location.tables || [];
-            const tablesHtml = generateTablesEditHTML(tables);
-
-            tablesTab.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-700 p-3 rounded-md">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
-                        <div id="edit-tables-container">${tablesHtml}</div>
-                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
-                    </div>
-                </div>
-            `;
-
-            setupTablesEditListeners();
-        }
-
-        function updateJsonTablesTabForEdit(location) {
-            const jsonTablesTab = document.getElementById('json-tables-tab');
-            const jsonTables = location.jsonTables || [];
-            const jsonTablesHtml = generateJsonTablesEditHTML(jsonTables);
-
-            jsonTablesTab.innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-gray-700 p-3 rounded-md">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires - Texte (max 5)</label>
-                        <div id="edit-json-tables-container">${jsonTablesHtml}</div>
-                        <button id="add-json-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table texte</button>
-                    </div>
-                </div>
-            `;
-
-            setupJsonTablesEditListeners();
-        }
-
-        function generateJsonTablesEditHTML(jsonTables) {
-            if (!jsonTables || jsonTables.length === 0) {
-                return '<div class="text-gray-400 text-sm">Aucune table texte</div>';
-            }
-
-            return jsonTables.map((table, index) => `
-                <div class="json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md">
-                    <div class="flex items-center space-x-2">
-                        <label class="flex items-center text-sm">
-                            <input type="checkbox" class="default-json-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
-                            <span class="text-gray-300">Table par défaut</span>
-                        </label>
-                        <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${index}">
-                            <i class="fas fa-trash text-xs"></i> Supprimer
-                        </button>
-                    </div>
-                    <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici...">${table.content || ''}</textarea>
-                    <div class="json-validation-message text-xs"></div>
-                </div>
-            `).join('');
-        }
-
-        function setupJsonTablesEditListeners() {
-            const container = document.getElementById('edit-json-tables-container');
-            const addButton = document.getElementById('add-json-table-btn');
-
-            if (addButton) {
-                addButton.addEventListener('click', addNewJsonTableRow);
-            }
-
-            if (container) {
-                container.addEventListener('click', (e) => {
-                    if (e.target.closest('.remove-json-table-btn')) {
-                        const button = e.target.closest('.remove-json-table-btn');
-                        const item = button.closest('.json-table-edit-item');
-                        if (item) {
-                            item.remove();
-                            updateJsonTableIndices();
-                        }
-                    }
-                });
-
-                container.addEventListener('change', (e) => {
-                    if (e.target.classList.contains('default-json-table-checkbox') && e.target.checked) {
-                        // Uncheck other default checkboxes
-                        container.querySelectorAll('.default-json-table-checkbox').forEach(cb => {
-                            if (cb !== e.target) cb.checked = false;
-                        });
-                    }
-                });
-
-                container.addEventListener('input', (e) => {
-                    if (e.target.classList.contains('json-table-content-input')) {
-                        const validation = validateJsonTable(e.target.value);
-                        const messageDiv = e.target.closest('.json-table-edit-item').querySelector('.json-validation-message');
-
-                        if (e.target.value.trim() === '') {
-                            messageDiv.textContent = '';
-                            messageDiv.className = 'json-validation-message text-xs';
-                        } else if (validation.valid) {
-                            messageDiv.textContent = '✓ Format JSON valide';
-                            messageDiv.className = 'json-validation-message text-xs text-green-400';
-                        } else {
-                            messageDiv.textContent = `⚠ ${validation.message}`;
-                            messageDiv.className = validation.warning ?
-                                'json-validation-message text-xs text-yellow-400' :
-                                'json-validation-message text-xs text-red-400';
-                        }
-                    }
-                });
-            }
-        }
-
-        function addNewJsonTableRow() {
-            const container = document.getElementById('edit-json-tables-container');
-            const currentTables = container.querySelectorAll('.json-table-edit-item');
-
-            if (currentTables.length >= 5) {
-                alert('Maximum 5 tables texte autorisées');
-                return;
-            }
-
-            const newIndex = currentTables.length;
-            const newRow = document.createElement('div');
-            newRow.className = 'json-table-edit-item space-y-2 p-3 border border-gray-600 rounded-md';
-            newRow.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" class="default-json-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
-                        <span class="text-gray-300">Table par défaut</span>
-                    </label>
-                    <button class="remove-json-table-btn text-red-400 hover:text-red-300 px-2 py-1 ml-auto" data-index="${newIndex}">
-                        <i class="fas fa-trash text-xs"></i> Supprimer
-                    </button>
-                </div>
-                <textarea class="json-table-content-input w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono" rows="8" placeholder="Collez votre JSON ici..."></textarea>
-                <div class="json-validation-message text-xs"></div>
-            `;
-
-            container.appendChild(newRow);
-            updateJsonTableIndices();
-        }
-
-        function updateJsonTableIndices() {
-            const container = document.getElementById('edit-json-tables-container');
-            container.querySelectorAll('.remove-json-table-btn').forEach((btn, index) => {
-                btn.dataset.index = index;
-            });
-        }
-
-        function collectJsonTablesFromEdit() {
-            const container = document.getElementById('edit-json-tables-container');
-            const jsonTables = [];
-
-            container.querySelectorAll('.json-table-edit-item').forEach(item => {
-                const content = item.querySelector('.json-table-content-input').value.trim();
-                const isDefault = item.querySelector('.default-json-table-checkbox').checked;
-
-                if (content) {
-                    jsonTables.push({ content, isDefault });
-                }
-            });
-
-            // Ensure at least one default if tables exist
-            if (jsonTables.length > 0 && !jsonTables.some(table => table.isDefault)) {
-                jsonTables[0].isDefault = true;
-            }
-
-            return jsonTables;
-        }
-
-        function generateTablesEditHTML(tables) {
-            if (!tables || tables.length === 0) {
-                return '<div class="text-gray-400 text-sm">Aucune table</div>';
-            }
-
-            return tables.map((table, index) => `
-                <div class="table-edit-item flex items-center space-x-2 p-2 rounded">
-                    <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${table.url || ''}" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" class="default-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
-                        <span class="text-gray-300">Défaut</span>
-                    </label>
-                    <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function setupTablesEditListeners() {
-            const container = document.getElementById('edit-tables-container');
-            const addButton = document.getElementById('add-table-btn');
-
-            if (addButton) {
-                addButton.addEventListener('click', addNewTableRow);
-            }
-
-            if (container) {
-                container.addEventListener('click', (e) => {
-                    if (e.target.closest('.remove-table-btn')) {
-                        const button = e.target.closest('.remove-table-btn');
-                        const item = button.closest('.table-edit-item');
-                        if (item) {
-                            item.remove();
-                            updateTableIndices();
-                        }
-                    }
-                });
-
-                container.addEventListener('change', (e) => {
-                    if (e.target.classList.contains('default-table-checkbox') && e.target.checked) {
-                        // Uncheck other default checkboxes
-                        container.querySelectorAll('.default-table-checkbox').forEach(cb => {
-                            if (cb !== e.target) cb.checked = false;
-                        });
-                    }
-                });
-            }
-        }
-
-        function addNewTableRow() {
-            const container = document.getElementById('edit-tables-container');
-            const currentTables = container.querySelectorAll('.table-edit-item');
-
-            if (currentTables.length >= 5) {
-                alert('Maximum 5 tables autorisées');
-                return;
-            }
-
-            const newIndex = currentTables.length;
-            const newRow = document.createElement('div');
-            newRow.className = 'table-edit-item flex items-center space-x-2 p-2 rounded';
-            newRow.innerHTML = `
-                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
-                <label class="flex items-center text-sm">
-                    <input type="checkbox" class="default-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
-                    <span class="text-gray-300">Défaut</span>
-                </label>
-                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
-                    <i class="fas fa-trash text-xs"></i>
-                </button>
-            `;
-
-            container.appendChild(newRow);
-            updateTableIndices();
-        }
-
-        function updateTableIndices() {
-            const container = document.getElementById('edit-tables-container');
-            container.querySelectorAll('.remove-table-btn').forEach((btn, index) => {
-                btn.dataset.index = index;
-            });
-        }
-
-        function collectTablesFromEdit() {
-            const container = document.getElementById('edit-tables-container');
-            const tables = [];
-
-            container.querySelectorAll('.table-edit-item').forEach(item => {
-                const url = item.querySelector('.table-url-input').value.trim();
-                const isDefault = item.querySelector('.default-table-checkbox').checked;
-
-                if (url) {
-                    tables.push({ url, isDefault });
-                }
-            });
-
-            // Ensure at least one default if tables exist
-            if (tables.length > 0 && !tables.some(table => table.isDefault)) {
-                tables[0].isDefault = true;
-            }
-
-            return tables;
         }
 
         function addEditControls() {
@@ -1634,119 +1062,6 @@
             });
         }
 
-        function generateImageEditHTML(images) {
-            if (!images || images.length === 0) {
-                return '<div class="text-gray-400 text-sm">Aucune image</div>';
-            }
-
-            return images.map((image, index) => `
-                <div class="image-edit-item flex items-center space-x-2 p-2 rounded">
-                    <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${image.url || ''}" placeholder="URL de l'image">
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" class="default-image-checkbox mr-1" ${image.isDefault ? 'checked' : ''}>
-                        <span class="text-gray-300">Défaut</span>
-                    </label>
-                    <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function setupImageEditListeners() {
-            const container = document.getElementById('edit-images-container');
-            const addButton = document.getElementById('add-image-btn');
-
-            if (addButton) {
-                addButton.addEventListener('click', addNewImageRow);
-            }
-
-            if (container) {
-                container.addEventListener('click', (e) => {
-                    if (e.target.closest('.remove-image-btn')) {
-                        const button = e.target.closest('.remove-image-btn');
-                        const item = button.closest('.image-edit-item');
-                        if (item) {
-                            item.remove();
-                            updateImageIndices();
-                        }
-                    }
-                });
-
-                container.addEventListener('change', (e) => {
-                    if (e.target.classList.contains('default-image-checkbox') && e.target.checked) {
-                        // Uncheck other default checkboxes
-                        container.querySelectorAll('.default-image-checkbox').forEach(cb => {
-                            if (cb !== e.target) cb.checked = false;
-                        });
-                    }
-                });
-            }
-        }
-
-        function addNewImageRow() {
-            const container = document.getElementById('edit-images-container');
-            const currentImages = container.querySelectorAll('.image-edit-item');
-
-            if (currentImages.length >= 5) {
-                alert('Maximum 5 images autorisées');
-                return;
-            }
-
-            const newIndex = currentImages.length;
-            const newRow = document.createElement('div');
-            newRow.className = 'image-edit-item flex items-center space-x-2 p-2 rounded';
-            newRow.innerHTML = `
-                <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="URL de l'image">
-                <label class="flex items-center text-sm">
-                    <input type="checkbox" class="default-image-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
-                    <span class="text-gray-300">Défaut</span>
-                </label>
-                <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
-                    <i class="fas fa-trash text-xs"></i>
-                </button>
-            `;
-
-            container.appendChild(newRow);
-            updateImageIndices();
-        }
-
-        function updateImageIndices() {
-            const container = document.getElementById('edit-images-container');
-            container.querySelectorAll('.remove-image-btn').forEach((btn, index) => {
-                btn.dataset.index = index;
-            });
-        }
-
-        function setupRandomEventButtons(location) {
-            const buttons = document.querySelectorAll('.generate-random-event-btn');
-            buttons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const tableIndex = parseInt(e.currentTarget.dataset.tableIndex);
-                    const jsonTables = getLocationJsonTables(location);
-
-                    if (jsonTables[tableIndex]) {
-                        try {
-                            const eventText = generateRandomEvent(jsonTables[tableIndex]);
-
-                            // Trouver le conteneur d'affichage d'événement approprié
-                            const container = e.currentTarget.closest('.image-content, .json-table-container');
-                            const eventDisplay = container.querySelector('.random-event-display');
-                            const eventContent = container.querySelector('.event-content');
-
-                            eventContent.innerHTML = eventText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
-                            eventContent.innerHTML = '<p>' + eventContent.innerHTML + '</p>';
-                            eventContent.innerHTML = eventContent.innerHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-                            eventDisplay.classList.remove('hidden');
-                        } catch (error) {
-                            alert(`Erreur lors de la génération de l'événement: ${error.message}`);
-                        }
-                    }
-                });
-            });
-        }
-
         function setupStatusCheckboxListeners() {
             document.getElementById('edit-visited').addEventListener('change', (e) => {
                 if (e.target.checked) {
@@ -1759,21 +1074,12 @@
             const container = document.getElementById('edit-images-container');
             const images = [];
 
-            if (!container) {
-                return images; // Retourner un tableau vide si le conteneur n'existe pas
-            }
-
             container.querySelectorAll('.image-edit-item').forEach(item => {
-                const urlElement = item.querySelector('.image-url-input');
-                const defaultElement = item.querySelector('.default-image-checkbox');
+                const url = item.querySelector('.image-url-input').value.trim();
+                const isDefault = item.querySelector('.default-image-checkbox').checked;
 
-                if (urlElement && defaultElement) {
-                    const url = urlElement.value.trim();
-                    const isDefault = defaultElement.checked;
-
-                    if (url) {
-                        images.push({ url, isDefault });
-                    }
+                if (url) {
+                    images.push({ url, isDefault });
                 }
             });
 
@@ -1789,24 +1095,13 @@
             const location = locationsData.locations.find(loc => loc.id === activeLocationId);
             if (!location) return;
 
-            const nameElement = document.getElementById('edit-name');
-            const descElement = document.getElementById('edit-desc');
-            const rumeurElement = document.getElementById('edit-rumeur');
-            const traditionElement = document.getElementById('edit-tradition');
-            const colorElement = document.querySelector('#edit-color-picker .color-swatch.selected');
-            const knownElement = document.getElementById('edit-known');
-            const visitedElement = document.getElementById('edit-visited');
-
-            if (nameElement) location.name = nameElement.value;
-            if (descElement) location.description = descElement.value;
-            if (rumeurElement) {
-                location.Rumeurs = rumeurElement.value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
-            }
-            if (traditionElement) location.Tradition_Ancienne = traditionElement.value;
-            if (colorElement) location.color = colorElement.dataset.color;
-            if (knownElement) location.known = knownElement.checked;
-            if (visitedElement) location.visited = visitedElement.checked;
-
+            location.name = document.getElementById('edit-name').value;
+            location.description = document.getElementById('edit-desc').value;
+            location.Rumeur = document.getElementById('edit-rumeur').value || 'A définir';
+            location.Tradition_Ancienne = document.getElementById('edit-tradition').value || 'A définir';
+            location.color = document.querySelector('#edit-color-picker .color-swatch.selected').dataset.color;
+            location.known = document.getElementById('edit-known').checked;
+            location.visited = document.getElementById('edit-visited').checked;
 
             // Handle images
             const images = collectImagesFromEdit();
@@ -1820,22 +1115,6 @@
                 delete location.imageUrl;
             }
 
-            // Handle tables
-            const tables = collectTablesFromEdit();
-            if (tables.length > 0) {
-                location.tables = tables;
-            } else {
-                delete location.tables;
-            }
-
-            // Handle json tables
-            const jsonTables = collectJsonTablesFromEdit();
-            if (jsonTables.length > 0) {
-                location.jsonTables = jsonTables;
-            } else {
-                delete location.jsonTables;
-            }
-
             saveLocationsToLocal();
             renderLocations();
             hideInfoBox();
@@ -1844,13 +1123,14 @@
         function cancelEdit() {
             // Remove edit mode flag
             delete infoBox.dataset.editMode;
+
             // Remove edit controls
             const editControls = document.getElementById('edit-controls');
             if (editControls) {
                 editControls.remove();
             }
 
-            // Re-show the location info without edit mode - reload fresh content
+            // Re-show the location info without edit mode
             const location = locationsData.locations.find(loc => loc.id === activeLocationId);
             if (location) {
                 showLocationContent(location);
@@ -1930,48 +1210,12 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
-            let rumeursContent = '';
-            if (location.Rumeurs && location.Rumeurs.length > 0) {
-                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
-
-                if (rumeursValides.length > 0) {
-                    rumeursContent += `
-                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                                <i class="fas fa-ear-listen mr-2"></i>
-                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
-                            </div>
-                    `;
-
-                    rumeursValides.forEach((rumeur, index) => {
-                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
-                        rumeursContent += `
-                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
-                                ${rumeur}
-                            </div>
-                        `;
-                    });
-
-                    rumeursContent += `</div>`;
-                }
-            }
-            // Support de l'ancienne structure avec Rumeur simple
-            else if (location.Rumeur && location.Rumeur !== "A définir") {
-                rumeursContent += `
-                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
-                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
-                            <i class="fas fa-ear-listen mr-2"></i>
-                            Rumeur
-                        </div>
-                        <div class="text-yellow-100 text-sm italic leading-relaxed">
-                            ${location.Rumeur}
-                        </div>
-                    </div>
-                `;
-            }
-            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
-
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -1981,146 +1225,1186 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+        }
 
-            // Update tables tab content - FIX: Utiliser la même logique que dans showInfoBox
-            const tablesTab = document.getElementById('tables-tab');
-            const tables = getLocationTables(location);
+        // --- Info box sizing/positioning ---
+        function getToolbarRect() {
+            const toolbar = document.getElementById('toolbar');
+            return toolbar ? toolbar.getBoundingClientRect() : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
+        }
 
-            if (tables.length > 0) {
-                if (infoBox.classList.contains('expanded') && tables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple tables
-                    const tableTabs = tables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+        function positionInfoBoxCompact(event) {
+            const vpRect = viewport.getBoundingClientRect();
+            const tbRect = getToolbarRect();
+            const margin = 16;
+
+            // Dimensions estimées de la boîte d'information
+            const boxWidth = 280;
+            const boxHeight = 250;
+
+            // Centrer horizontalement, mais éviter la toolbar
+            const centeredLeft = Math.floor((vpRect.width - boxWidth) / 2);
+            const minLeft = tbRect.right - vpRect.left + margin;
+            const left = Math.max(centeredLeft, minLeft);
+
+            // Centrer verticalement
+            const top = Math.floor((vpRect.height - boxHeight) / 2);
+
+            infoBox.style.left = `${left}px`;
+            infoBox.style.top = `${top}px`;
+            infoBox.style.width = '';
+            infoBox.style.height = '';
+            infoBox.style.maxWidth = '280px';
+            const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
+            if (scrollWrapper) {
+                scrollWrapper.style.maxHeight = '250px';
+                scrollWrapper.style.height = '';
+            }
+        }
+
+        function positionInfoBoxExpanded() {
+            const vpRect = viewport.getBoundingClientRect();
+            const tbRect = getToolbarRect();
+            const margin = 16;
+
+            // Use 90% of viewport dimensions
+            const desiredWidth = Math.floor(vpRect.width * 0.9);
+            const desiredHeight = Math.floor(vpRect.height * 0.9);
+
+            // Ensure it doesn't cover the toolbar
+            const availableRightOfToolbar = Math.floor(vpRect.width - (tbRect.right - vpRect.left) - margin);
+            const finalWidth = Math.min(desiredWidth, availableRightOfToolbar);
+
+            // Center horizontally, but ensure it's to the right of the toolbar
+            const centeredLeft = Math.floor((vpRect.width - finalWidth) / 2);
+            const minLeft = Math.max(margin, tbRect.right - vpRect.left + margin);
+            const left = Math.max(centeredLeft, minLeft);
+
+            // Center vertically
+            const top = Math.floor((vpRect.height - desiredHeight) / 2);
+
+            infoBox.style.left = `${left}px`;
+            infoBox.style.top = `${top}px`;
+            infoBox.style.width = `${finalWidth}px`;
+            infoBox.style.height = `${desiredHeight}px`;
+            infoBox.style.maxWidth = 'none';
+
+            const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
+            if (scrollWrapper) {
+                scrollWrapper.style.maxHeight = 'none';
+                scrollWrapper.style.height = 'calc(100% - 3rem)';
+            }
+        }
+
+        function updateInfoBoxHeaderTitle(title) {
+            const titleElement = document.getElementById('info-box-title');
+            titleElement.textContent = title;
+
+            // Show title only in expanded mode
+            if (infoBox.classList.contains('expanded')) {
+                titleElement.classList.remove('hidden');
+            } else {
+                titleElement.classList.add('hidden');
+            }
+        }
+
+        function toggleInfoBoxExpand() {
+            const isExpanded = infoBox.classList.toggle('expanded');
+            const expandBtn = document.getElementById('info-box-expand');
+            const titleElement = document.getElementById('info-box-title');
+
+            if (expandBtn) {
+                expandBtn.className = `fas ${isExpanded ? 'fa-compress' : 'fa-expand'}`;
+                expandBtn.title = isExpanded ? 'Vue compacte' : 'Vue étendue';
+            }
+
+            // Show/hide title and delete button based on expanded state
+            const deleteBtn = document.getElementById('info-box-delete');
+            if (isExpanded) {
+                titleElement.classList.remove('hidden');
+                deleteBtn.classList.remove('hidden');
+                positionInfoBoxExpanded();
+                // Activate image tab by default when expanding
+                activateTab('image');
+            } else {
+                titleElement.classList.add('hidden');
+                deleteBtn.classList.add('hidden');
+                // Return to compact mode positioning (centered)
+                positionInfoBoxCompact();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (infoBox.style.display === 'block' && infoBox.classList.contains('expanded')) {
+                positionInfoBoxExpanded();
+            }
+        });
+
+        // Handle escape key to close info box
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && infoBox.style.display === 'block') {
+                hideInfoBox();
+            }
+        });
+
+        // --- Auto-sync Functions ---
+        function enableAutoSync() {
+            if (currentUser) {
+                autoSyncEnabled = true;
+                loadUserData();
+                console.log("✅ Auto-sync activé");
+                updateSyncStatus("Synchronisation automatique activée.");
+            }
+        }
+
+        function disableAutoSync() {
+            autoSyncEnabled = false;
+            console.log("❌ Auto-sync désactivé");
+            updateSyncStatus("Synchronisation automatique désactivée.");
+        }
+
+        function scheduleAutoSync() {
+            if (!autoSyncEnabled || !currentUser) return;
+
+            // Debounce: attendre 2 secondes après la dernière modification
+            clearTimeout(window.autoSyncTimeout);
+            window.autoSyncTimeout = setTimeout(() => {
+                autoSyncUserData();
+            }, SYNC_DELAY);
+        }
+
+        // --- Calendar Functions ---
+        function loadCalendarFromCSV(csvContent) {
+            const lines = csvContent.trim().split('\n');
+            const calendar = [];
+
+            for (const line of lines) {
+                const parts = line.split(',');
+                if (parts.length >= 3) {
+                    const monthName = parts[0].trim();
+                    const season = parts[1].trim();
+                    const days = parts.slice(2).map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+
+                    calendar.push({
+                        name: monthName,
+                        season: season,
+                        days: days
+                    });
+                }
+            }
+
+            return calendar;
+        }
+
+        function saveCalendarToLocal() {
+            if (calendarData) {
+                localStorage.setItem('calendarData', JSON.stringify(calendarData));
+            }
+            if (currentCalendarDate) {
+                localStorage.setItem('currentCalendarDate', JSON.stringify(currentCalendarDate));
+            }
+            localStorage.setItem('isCalendarMode', isCalendarMode.toString());
+        }
+
+        function loadCalendarFromLocal() {
+            const savedCalendar = localStorage.getItem('calendarData');
+            const savedDate = localStorage.getItem('currentCalendarDate');
+            const savedMode = localStorage.getItem('isCalendarMode');
+
+            if (savedCalendar) {
+                try {
+                    calendarData = JSON.parse(savedCalendar);
+                } catch (e) {
+                    console.error('Error loading calendar:', e);
+                }
+            }
+
+            if (savedDate) {
+                try {
+                    currentCalendarDate = JSON.parse(savedDate);
+                } catch (e) {
+                    console.error('Error loading calendar date:', e);
+                }
+            }
+
+            isCalendarMode = savedMode === 'true';
+        }
+
+        function updateCalendarUI() {
+            const calendarStatus = document.getElementById('calendar-status-text');
+            const dateSelector = document.getElementById('calendar-date-selector');
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const manualSeasons = document.getElementById('manual-seasons-section');
+            const seasonModeInfo = document.getElementById('season-mode-info');
+
+            if (calendarData && calendarData.length > 0) {
+                isCalendarMode = true;
+                calendarStatus.textContent = `Calendrier chargé (${calendarData.length} mois)`;
+                calendarStatus.className = 'text-green-400';
+                dateSelector.classList.remove('hidden');
+
+                // Populate month selector with season icons
+                monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
+                calendarData.forEach((month, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    // Get season icon
+                    const seasonMainName = month.season.toLowerCase().split('-')[0];
+                    const seasonIcon = seasonSymbols[seasonMainName] || '🌿';
+                    option.textContent = `${seasonIcon} ${month.name}`;
+                    monthSelect.appendChild(option);
+                });
+
+                // Set current selections
+                if (currentCalendarDate) {
+                    const monthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
+                    if (monthIndex >= 0) {
+                        monthSelect.value = monthIndex;
+                        updateDaySelector();
+                        daySelect.value = currentCalendarDate.day;
+                    }
+                }
+
+                // Hide manual seasons completely
+                manualSeasons.style.display = 'none';
+                seasonModeInfo.textContent = 'Mode calendrier : la saison est déterminée automatiquement par la date sélectionnée.';
+            } else {
+                isCalendarMode = false;
+                calendarStatus.textContent = 'Aucun calendrier chargé';
+                calendarStatus.className = 'text-gray-400';
+                dateSelector.classList.add('hidden');
+
+                // Show manual seasons
+                manualSeasons.style.display = 'block';
+                seasonModeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
+            }
+        }
+
+        function updateDaySelector() {
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const monthIndex = parseInt(monthSelect.value);
+
+            daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
+
+            if (monthIndex >= 0 && calendarData[monthIndex]) {
+                const month = calendarData[monthIndex];
+                month.days.forEach(day => {
+                    const option = document.createElement('option');
+                    option.value = day;
+                    option.textContent = day;
+                    daySelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateCalendarDate() {
+            const monthSelect = document.getElementById('calendar-month-select');
+            const daySelect = document.getElementById('calendar-day-select');
+            const monthIndex = parseInt(monthSelect.value);
+            const day = parseInt(daySelect.value);
+
+            if (monthIndex >= 0 && !isNaN(day) && calendarData[monthIndex]) {
+                const month = calendarData[monthIndex];
+                currentCalendarDate = {
+                    month: month.name,
+                    day: day
+                };
+
+                // Update season based on exact calendar season - use the season directly from CSV
+                const calendarSeason = month.season.toLowerCase();
+                console.log("📅 Saison du calendrier CSV:", calendarSeason, "pour le mois:", month.name);
+
+                // Use the exact season from the CSV as-is
+                currentSeason = calendarSeason;
+
+                // Save the season for consistency
+                localStorage.setItem('currentSeason', currentSeason);
+
+                updateSeasonDisplay();
+                saveCalendarToLocal();
+                scheduleAutoSync();
+            }
+        }
+
+        function exportCalendarToCSV() {
+            if (!calendarData || calendarData.length === 0) {
+                alert('Aucun calendrier à exporter');
+                return;
+            }
+
+            const csvLines = calendarData.map(month => {
+                const daysStr = month.days.join(',');
+                return `${month.name},${month.season},${daysStr}`;
+            });
+
+            const csvContent = csvLines.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calendrier.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Season Functions ---
+        function updateSeasonDisplay() {
+            const seasonMainName = currentSeason.split('-')[0]; // 'printemps', 'ete', etc.
+            const symbol = seasonSymbols[seasonMainName] || '🌿'; // fallback symbol
+
+            // Use the season name from seasonNames if available, otherwise use currentSeason directly
+            const fullName = seasonNames[currentSeason] || currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
+
+            console.log("🌱 Affichage saison:", {
+                currentSeason: currentSeason,
+                seasonMainName: seasonMainName,
+                symbol: symbol,
+                fullName: fullName,
+                isCalendarMode: isCalendarMode
+            });
+
+            // Update header indicator
+            const seasonIndicator = document.getElementById('season-indicator');
+            if (seasonIndicator) {
+                seasonIndicator.textContent = symbol;
+                seasonIndicator.title = `Saison actuelle: ${fullName}`;
+            }
+
+            // Update calendar date indicator in header
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            if (calendarDateIndicator && currentCalendarDate && isCalendarMode) {
+                calendarDateIndicator.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                calendarDateIndicator.classList.remove('hidden');
+            } else {
+                calendarDateIndicator.classList.add('hidden');
+            }
+
+            // Update settings display
+            const currentSeasonSymbol = document.getElementById('current-season-symbol');
+            const currentSeasonText = document.getElementById('current-season-text');
+            const currentCalendarDateElement = document.getElementById('current-calendar-date');
+
+            if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
+            if (currentSeasonText) currentSeasonText.textContent = fullName;
+
+            if (currentCalendarDateElement && currentCalendarDate && isCalendarMode) {
+                currentCalendarDateElement.textContent = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
+                currentCalendarDateElement.classList.remove('hidden');
+            } else if (currentCalendarDateElement) {
+                currentCalendarDateElement.classList.add('hidden');
+            }
+        }
+
+        function setupSeasonListeners() {
+            // Season radio buttons (manual mode)
+            document.querySelectorAll('input[name="season"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked && !isCalendarMode) {
+                        currentSeason = e.target.value;
+                        localStorage.setItem('currentSeason', currentSeason);
+                        updateSeasonDisplay();
+                        scheduleAutoSync();
+                    }
+                });
+            });
+
+            // Calendar upload button
+            const uploadBtn = document.getElementById('upload-calendar-btn');
+            const fileInput = document.getElementById('calendar-file-input');
+
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file && file.type === 'text/csv') {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                calendarData = loadCalendarFromCSV(event.target.result);
+                                if (calendarData.length > 0) {
+                                    // Set default date (first day of first month)
+                                    currentCalendarDate = {
+                                        month: calendarData[0].name,
+                                        day: calendarData[0].days[0]
+                                    };
+                                    updateCalendarUI();
+                                    updateCalendarDate();
+                                    alert(`Calendrier importé avec succès (${calendarData.length} mois)`);
+                                } else {
+                                    alert('Fichier CSV invalide ou vide');
+                                }
+                            } catch (error) {
+                                console.error('Error importing calendar:', error);
+                                alert('Erreur lors de l\'importation du calendrier');
+                            }
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        alert('Veuillez sélectionner un fichier CSV valide');
+                    }
+                    fileInput.value = ''; // Reset input
+                });
+            }
+
+            // Calendar export button
+            const exportBtn = document.getElementById('export-calendar-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportCalendarToCSV);
+            }
+
+            // Calendar month selector
+            const monthSelect = document.getElementById('calendar-month-select');
+            if (monthSelect) {
+                monthSelect.addEventListener('change', () => {
+                    updateDaySelector();
+                    updateCalendarDate();
+                });
+            }
+
+            // Calendar day selector
+            const daySelect = document.getElementById('calendar-day-select');
+            if (daySelect) {
+                daySelect.addEventListener('change', updateCalendarDate);
+            }
+        }
+
+        function loadSavedSeason() {
+            // Load calendar data first
+            loadCalendarFromLocal();
+
+            const saved = localStorage.getItem('currentSeason');
+            if (saved && seasonNames[saved]) {
+                currentSeason = saved;
+            }
+
+            // Update UI based on calendar mode
+            if (isCalendarMode && calendarData) {
+                updateCalendarUI();
+            } else {
+                // Update radio button for manual mode
+                const radioButton = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
+                if (radioButton) {
+                    radioButton.checked = true;
+                }
+                updateCalendarUI();
+            }
+
+            updateSeasonDisplay();
+        }
+
+        async function autoSyncUserData() {
+            if (!currentUser || !autoSyncEnabled) return;
+
+            const userData = {
+                locations: locationsData,
+                regions: regionsData,
+                scale: scale,
+                panX: panX,
+                panY: panY,
+                activeFilters: activeFilters,
+                filters: activeFilters, // Ajout explicite des filtres pour compatibilité
+                journeyPath: journeyPath,
+                totalPathPixels: totalPathPixels,
+                startPoint: startPoint,
+                lastPoint: lastPoint,
+                journeyDiscoveries: journeyDiscoveries, // Included journey discoveries
+                currentSeason: currentSeason, // Include season data
+                calendarData: calendarData, // Include calendar data
+                currentCalendarDate: currentCalendarDate,
+                isCalendarMode: isCalendarMode
+            };
+
+            console.log("🔄 Synchronisation des données:", {
+                journeyPathLength: journeyPath.length,
+                totalPathPixels: totalPathPixels,
+                hasStartPoint: !!startPoint,
+                hasLastPoint: !!lastPoint,
+                currentSeason: currentSeason
+            });
+
+            try {
+                const response = await fetch('/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    lastSyncTime = Date.now();
+                    console.log("✅ Données utilisateur synchronisées automatiquement (tracé et saison inclus)");
+                } else {
+                    console.error("❌ Erreur lors de la synchronisation automatique");
+                }
+            } catch (error) {
+                console.error("❌ Erreur réseau lors de la synchronisation:", error);
+            }
+        }
+
+        async function loadUserData() {
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch('/api/user/data');
+                if (response.ok) {
+                    const userData = await response.json();
+
+                    // Charger les données utilisateur
+                    if (userData.locations) {
+                        locationsData = userData.locations;
+                        console.log("📍 Lieux utilisateur chargés");
+                    }
+                    if (userData.regions) {
+                        regionsData = userData.regions;
+                        console.log("🗺️ Régions utilisateur chargées");
+                    }
+                    if (userData.scale) {
+                        scale = userData.scale;
+                        panX = userData.panX || 0;
+                        panY = userData.panY || 0;
+                        console.log("🔍 Vue utilisateur restaurée");
+                    }
+                    if (userData.activeFilters) {
+                        activeFilters = userData.activeFilters;
+                        console.log("🔍 Filtres utilisateur restaurés");
+                    }
+
+                    // Charger les tracés de voyage
+                    if (userData.journeyPath && Array.isArray(userData.journeyPath)) {
+                        journeyPath = userData.journeyPath;
+                        totalPathPixels = userData.totalPathPixels || 0;
+                        startPoint = userData.startPoint || null;
+                        lastPoint = userData.lastPoint || null;
+
+                        // Charger les découvertes de voyage
+                        if (userData.journeyDiscoveries && Array.isArray(userData.journeyDiscoveries)) {
+                            journeyDiscoveries = userData.journeyDiscoveries;
+                            console.log("🌟 Découvertes de voyage chargées");
+                        }
+
+                        // Redessiner le tracé sur le canvas
+                        if (journeyPath.length > 0) {
+                            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                            ctx.beginPath();
+                            ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
+
+                            for (let i = 1; i < journeyPath.length; i++) {
+                                ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
+                            }
+                            ctx.stroke();
+
+                            // Mettre à jour l'affichage des distances
+                            updateDistanceDisplay();
+                            // Réinitialiser les régions traversées et lieux proches
+                            updateJourneyInfo();
+                        }
+
+                        console.log("🎨 Tracé de voyage restauré");
+                    }
+
+                    // Charger les filtres depuis le cloud
+                    if (userData.filters) {
+                        activeFilters = userData.filters;
+                        console.log("🔍 Filtres utilisateur chargés depuis le cloud");
+                        // Sauvegarder localement pour synchronisation
+                        saveFiltersToLocal();
+                    }
+
+                    // Charger la saison depuis le cloud
+                    if (userData.currentSeason && seasonNames[userData.currentSeason]) {
+                        currentSeason = userData.currentSeason;
+                        localStorage.setItem('currentSeason', currentSeason);
+                        console.log("🌱 Saison utilisateur chargée depuis le cloud:", currentSeason);
+                    }
+
+                    // Charger le calendrier depuis le cloud
+                    if (userData.calendarData) {
+                        calendarData = userData.calendarData;
+                        console.log("📅 Calendrier utilisateur chargé depuis le cloud");
+                    }
+                    if (userData.currentCalendarDate) {
+                        currentCalendarDate = userData.currentCalendarDate;
+                        console.log("📅 Date calendrier utilisateur chargée depuis le cloud");
+                    }
+                    if (userData.isCalendarMode !== undefined) {
+                        isCalendarMode = userData.isCalendarMode;
+                        console.log("📅 Mode calendrier utilisateur chargé depuis le cloud:", isCalendarMode);
+                    }
+
+                    // Re-render everything
+                    renderLocations();
+                    renderRegions();
+                    applyTransform();
+                    updateFiltersUI();
+                    updateSeasonDisplay();
+
+                    console.log("✅ Données utilisateur complètement chargées");
+                } else if (response.status === 404) {
+                    console.log("ℹ️ Aucune donnée utilisateur trouvée, utilisation des données par défaut");
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des données utilisateur:", error);
+            }
+        }
+
+        function updateFiltersUI() {
+            // Mettre à jour l'interface des filtres
+            document.getElementById('filter-known').checked = activeFilters.known;
+            document.getElementById('filter-visited').checked = activeFilters.visited;
+            document.getElementById('filter-show-regions').checked = true;
+            document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
+                cb.checked = activeFilters.colors.includes(cb.dataset.color);
+            });
+
+            // Sauvegarder les filtres après mise à jour
+            saveFiltersToLocal();
+        }
+
+        // --- Start the app ---
+        // Ensure the app starts only once when the DOM is ready
+        function initializeApp() {
+            // Global error handlers
+            window.addEventListener('unhandledrejection', function(event) {
+                console.error('⚠️ Promesse rejetée non gérée:', event.reason);
+                event.preventDefault();
+            });
+
+            window.addEventListener('error', function(event) {
+                console.error('⚠️ Erreur JavaScript:', event.error);
+            });
+
+            console.log('🚀 Starting application...');
+
+            // Global timeout for the application startup
+            const startTimeout = setTimeout(() => {
+                if (loaderOverlay && loaderOverlay.style.display !== 'none') {
+                    console.error("❌ Application startup timed out");
+                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                        <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
+                        Temps de chargement dépassé.<br>
+                        <span class="text-sm text-gray-400 mt-2">Vérifiez votre connexion et les fichiers requis.</span><br>
+                        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
+                    </div>`;
+                }
+            }, 30000); // 30 seconds timeout
+
+            // Check for authentication errors in the URL
+            checkAuthError();
+
+            loadInitialLocations().then(() => {
+                loadRegionsFromLocal();
+                loadSavedContexts();
+                setupFilters();
+                loadSavedSeason(); // Load season at startup
+                loadMapsData(); // Load maps data at startup
+                logAuth("Initialisation de l'authentification...");
+
+                // Initialize authentication after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    checkGoogleAuth();
+                }, 100);
+
+                if (mapImage) {
+                    mapImage.onload = () => {
+                        clearTimeout(startTimeout);
+                        initializeMap();
+                    };
+                    mapImage.addEventListener('error', () => {
+                        clearTimeout(startTimeout);
+                        handleImageError();
+                    });
+
+                    console.log("🗺️ Loading map image:", PLAYER_MAP_URL);
+                    mapImage.src = PLAYER_MAP_URL;
+                }
+
+                if (infoBoxClose) {
+                    infoBoxClose.addEventListener('click', hideInfoBox);
+                }
+
+                logAuth("Configuration des event listeners d'authentification...");
+                setupAuthEventListeners();
+
+                // Setup settings event listeners
+                setupSettingsEventListeners();
+
+                // Test DOM elements after a delay
+                setTimeout(() => {
+                    logAuth("=== TEST DES ÉLÉMENTS DOM ===");
+                    logAuth("authModal element:", !!document.getElementById('auth-modal'));
+                    logAuth("auth-btn element:", !!document.getElementById('auth-btn'));
+                    logAuth("close-auth-modal element:", !!document.getElementById('close-auth-modal'));
+                    logAuth("google-signin-btn element:", !!document.getElementById('google-signin-btn'));
+                    logAuth("save-context-btn element:", !!document.getElementById('save-context-btn'));
+                    logAuth("settings-btn element:", !!document.getElementById('settings-btn'));
+                    logAuth("settings-modal element:", !!document.getElementById('settings-modal'));
+                    logAuth("close-settings-modal element:", !!document.getElementById('close-settings-modal'));
+
+                    const testAuthBtn = document.getElementById('auth-btn');
+                    if (testAuthBtn) {
+                        logAuth("Bouton auth visible:", testAuthBtn.offsetParent !== null);
+                        logAuth("Bouton auth cliquable:", !testAuthBtn.disabled);
+                        logAuth("Classes du bouton auth:", testAuthBtn.className);
+                    }
+                    logAuth("=== FIN TEST DES ÉLÉMENTS DOM ===");
+                }, 2000);
+
+            }).catch(error => {
+                clearTimeout(startTimeout);
+                console.error("❌ Error during app startup:", error);
+                if (loaderOverlay) {
+                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                        <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
+                        Erreur lors du démarrage.<br>
+                        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
+                    </div>`;
+                }
+            });
+
+            // Region modal handlers with null checks
+            const confirmAddRegionBtn = document.getElementById('confirm-add-region');
+            const cancelAddRegionBtn = document.getElementById('cancel-add-region');
+
+            if (confirmAddRegionBtn) {
+                confirmAddRegionBtn.addEventListener('click', saveRegion);
+            }
+
+            if (cancelAddRegionBtn) {
+                cancelAddRegionBtn.addEventListener('click', () => {
+                    if (addRegionModal) {
+                        addRegionModal.classList.add('hidden');
+                    }
+                    cancelRegionCreation();
+                });
+            }
+
+            // Double-click to complete region
+            if (viewport) {
+                viewport.addEventListener('dblclick', (event) => {
+                    if (isAddingRegionMode && currentRegionPoints.length >= 3) {
+                        event.preventDefault();
+                        completeRegion();
+                    }
+                });
+            }
+        }
+
+        // --- Region Functions ---
+        function renderRegions() {
+            regionsLayer.innerHTML = '';
+
+            regionsData.regions.forEach(region => {
+                if (region.points && region.points.length >= 3) {
+                    const pathData = `M ${region.points.map(p => `${p.x},${p.y}`).join(' L ')} Z`;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', pathData);
+                    path.classList.add('region');
+                    path.style.fill = regionColorMap[region.color] || regionColorMap.green;
+                    path.style.stroke = colorMap[region.color] || colorMap.green;
+                    path.dataset.regionId = region.id;
+
+                    path.addEventListener('click', (e) => {
+                        if (!isAddingRegionMode && !isDrawingMode && !isAddingLocationMode) {
+                            e.stopPropagation();
+                            showRegionInfo(e, region);
+                        }
+                    });
+
+                    regionsLayer.appendChild(path);
+                }
+            });
+        }
+
+        function showRegionInfo(event, region) {
+            // Set active region (similar to activeLocationId)
+            activeLocationId = region.id;
+
+            // Update image tab content
+            const imageTab = document.getElementById('image-tab');
+            const images = getRegionImages(region);
+
+            if (images.length > 0) {
+                if (infoBox.classList.contains('expanded') && images.length > 1) {
+                    // Multi-tab view for expanded mode with multiple images
+                    const imageTabs = images.map((img, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const tableContents = tables.map((table, index) =>
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
                             <div class="image-view">
-                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                                <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
 
-                    tablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-tabs-container">
-                            <div class="image-tabs">${tableTabs}</div>
-                            <div class="image-contents">${tableContents}</div>
+                            <div class="image-tabs">${imageTabs}</div>
+                            <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
 
                     setupImageTabSwitching();
                     setupImageClickHandlers();
                 } else {
-                    // Single table view (compact mode or single table)
-                    const defaultTable = getDefaultLocationTable(location);
+                    // Single image view (compact mode or single image)
+                    const defaultImage = getDefaultRegionImage(region);
                     const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                    <span style="font-family: 'Merriweather', serif;">${region.name}</span>
                                 </div>` : '';
-                    tablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-view">
                             ${titleHtml}
-                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
                     setupImageClickHandlers();
                 }
             } else {
-                // No tables - show placeholder
+                // No image - show title instead of placeholder in compact mode
                 if (!infoBox.classList.contains('expanded')) {
-                    tablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-view">
                             <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                <span style="font-family: 'Merriweather', serif;">${region.name}</span>
                             </div>
                         </div>
                     `;
                 } else {
-                    tablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-view">
-                            <div class="image-placeholder">Aucune table disponible</div>
+                            <div class="image-placeholder">Aucune image disponible</div>
                         </div>
                     `;
                 }
             }
 
-            // Update json-tables tab content - same logic as in showInfoBox
-            const jsonTablesTab = document.getElementById('json-tables-tab');
-            const jsonTables = getLocationJsonTables(location);
+            // Update text tab content
+            const textTab = document.getElementById('text-tab');
+            textTab.innerHTML = `
+                <div class="text-view">
+                    <h3>${region.name}</h3>
+                    <p>${region.description || 'Aucune description.'}</p>
+                </div>
+            `;
 
-            if (jsonTables.length > 0) {
-                if (infoBox.classList.contains('expanded') && jsonTables.length > 1) {
-                    // Multi-tab view for expanded mode with multiple json tables
-                    const jsonTableTabs = jsonTables.map((table, index) =>
-                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table texte ${index + 1}</button>`
+            // Update rumeurs tab content
+            const rumeursTab = document.getElementById('rumeurs-tab');
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
+
+            // Update tradition tab content
+            const traditionTab = document.getElementById('tradition-tab');
+            traditionTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Tradition Ancienne</h3>
+                    <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
+                </div>
+            `;
+
+            // Update header title
+            updateInfoBoxHeaderTitle(region.name);
+
+            // Show the info box
+            document.getElementById('info-box-edit-content').classList.add('hidden');
+            document.getElementById('info-box-content').classList.remove('hidden');
+
+            infoBox.style.display = 'block';
+            // Ouvrir en mode étendu par défaut
+            if (!infoBox.classList.contains('expanded')) {
+                infoBox.classList.add('expanded');
+                const expandBtn = document.getElementById('info-box-expand');
+                if (expandBtn) {
+                    expandBtn.className = 'fas fa-compress';
+                    expandBtn.title = 'Vue compacte';
+                }
+                const titleElement = document.getElementById('info-box-title');
+                const deleteBtn = document.getElementById('info-box-delete');
+                titleElement.classList.remove('hidden');
+                deleteBtn.classList.remove('hidden');
+            }
+            positionInfoBoxExpanded();
+
+            // Set up event listeners for regions
+            const editBtn = document.getElementById('info-box-edit');
+            editBtn.style.display = 'flex'; // Show edit button for regions
+
+            // Remove any existing event listeners first
+            setupInfoBoxEventListeners('region', region.id);
+
+            // Set up tab switching
+            setupTabSwitching();
+        }
+
+        function enterRegionEditMode() {
+            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
+            if (!region) return;
+
+            // Mark the info box as being in edit mode
+            infoBox.dataset.editMode = 'true';
+            infoBox.dataset.editType = 'region';
+
+            // Update image tab to show image editing interface
+            updateImageTabForRegionEdit(region);
+
+            // Update text tab to show text editing interface
+            updateTextTabForRegionEdit(region);
+
+            // Update rumeurs tab to show rumeurs editing interface
+            updateRumeursTabForRegionEdit(region);
+
+            // Update tradition tab to show tradition editing interface
+            updateTraditionTabForRegionEdit(region);
+
+            // Add edit controls at the bottom
+            addRegionEditControls();
+        }
+
+        function updateImageTabForRegionEdit(region) {
+            const imageTab = document.getElementById('image-tab');
+            const images = getRegionImages(region);
+            const imagesHtml = generateImageEditHTML(images);
+
+            const colorPickerHtml = Object.keys(regionColorMap).map(color =>
+                `<div class="color-swatch ${region.color === color ? 'selected' : ''}" data-color="${color}" style="background-color: ${regionColorMap[color]}; border: 2px solid ${colorMap[color]};"></div>`
+            ).join('');
+
+            imageTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Images (max 5)</label>
+                        <div id="edit-images-container">${imagesHtml}</div>
+                        <button id="add-image-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une image</button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Couleur</label>
+                        <div class="flex space-x-2" id="edit-region-color-picker">${colorPickerHtml}</div>
+                    </div>
+                </div>
+            `;
+
+            setupImageEditListeners();
+            setupRegionColorPickerListeners();
+        }
+
+        function updateTextTabForRegionEdit(region) {
+            const textTab = document.getElementById('text-tab');
+            textTab.innerHTML = `
+                <div class="text-view space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Nom de la région</label>
+                        <input type="text" id="edit-region-name" value="${region.name}" placeholder="Nom de la région" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <div class="flex items-start space-x-2">
+                            <textarea id="edit-region-desc" rows="4" placeholder="Description" class="flex-1 bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.description || ''}</textarea>
+                            <button id="generate-edit-region-desc" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-md" title="Générer une description"><span class="gemini-icon">✨</span></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('generate-edit-region-desc').addEventListener('click', handleGenerateRegionDescription);
+        }
+
+        function updateRumeursTabForRegionEdit(region) {
+            const rumeursTab = document.getElementById('rumeurs-tab');
+            rumeursTab.innerHTML = `
+                <div class="text-view space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
+                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.Rumeur || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateTraditionTabForRegionEdit(region) {
+            const traditionTab = document.getElementById('tradition-tab');
+            traditionTab.innerHTML = `
+                <div class="text-view space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tradition Ancienne</label>
+                        <textarea id="edit-region-tradition" rows="6" placeholder="Tradition Ancienne" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.Tradition_Ancienne || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addRegionEditControls() {
+            // Add save/cancel buttons at the bottom of the scroll wrapper
+            const scrollWrapper = document.getElementById('info-box-scroll-wrapper');
+            let editControls = document.getElementById('edit-controls');
+
+            if (!editControls) {
+                editControls = document.createElement('div');
+                editControls.id = 'edit-controls';
+                editControls.className = 'mt-4 pt-4 border-t border-gray-600 flex justify-end space-x-2 bg-gray-900 sticky bottom-0';
+                scrollWrapper.appendChild(editControls);
+            }
+
+            editControls.innerHTML = `
+                <button id="cancel-region-edit" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-sm">Annuler</button>
+                <button id="save-region-edit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm">Sauver</button>
+            `;
+
+            document.getElementById('save-region-edit').addEventListener('click', saveRegionEdit);
+            document.getElementById('cancel-region-edit').addEventListener('click', cancelRegionEdit);
+        }
+
+        function setupRegionColorPickerListeners() {
+            document.getElementById('edit-region-color-picker').querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', () => {
+                    document.querySelector('#edit-region-color-picker .color-swatch.selected').classList.remove('selected');
+                    swatch.classList.add('selected');
+                });
+            });
+        }
+
+        function saveRegionEdit() {
+            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
+            if (!region) return;
+
+            region.name = document.getElementById('edit-region-name').value;
+            region.description = document.getElementById('edit-region-desc').value;
+            region.Rumeur = document.getElementById('edit-region-rumeur').value || 'A définir';
+            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value || 'A définir';
+            region.color = document.querySelector('#edit-region-color-picker .color-swatch.selected').dataset.color;
+
+            // Handle images
+            const images = collectImagesFromEdit();
+            if (images.length > 0) {
+                region.images = images;
+            } else {
+                delete region.images;
+            }
+
+            saveRegionsToLocal();
+            renderRegions();
+            hideInfoBox();
+        }
+
+        function cancelRegionEdit() {
+            // Remove edit mode flag
+            delete infoBox.dataset.editMode;
+            delete infoBox.dataset.editType;
+
+            // Remove edit controls
+            const editControls = document.getElementById('edit-controls');
+            if (editControls) {
+                editControls.remove();
+            }
+
+            // Re-show the region info without edit mode
+            const region = regionsData.regions.find(reg => reg.id === activeLocationId);
+            if (region) {
+                showRegionContent(region);
+            }
+        }
+
+        function showRegionContent(region) {
+            // Update image tab content
+            const imageTab = document.getElementById('image-tab');
+            const images = getRegionImages(region);
+
+            if (images.length > 0) {
+                if (infoBox.classList.contains('expanded') && images.length > 1) {
+                    // Multi-tab view for expanded mode with multiple images
+                    const imageTabs = images.map((img, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Image ${index + 1}</button>`
                     ).join('');
 
-                    const jsonTableContents = jsonTables.map((table, index) =>
+                    const imageContents = images.map((img, index) =>
                         `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
-                            <div class="json-table-container">
-                                <div class="mb-3 flex justify-end">
-                                    <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="${index}">
-                                        <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
-                                    </button>
-                                </div>
-                                <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
-                                    <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
-                                    <div class="event-content text-yellow-100"></div>
-                                </div>
-                                ${formatJsonTableForDisplay(table)}
+                            <div class="image-view">
+                                <img src="${img}" alt="${region.name}" title="${img.split('/').pop()}" onerror="handleImageError(this)">
                             </div>
                         </div>`
                     ).join('');
 
-                    jsonTablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-tabs-container">
-                            <div class="image-tabs">${jsonTableTabs}</div>
-                            <div class="image-contents">${jsonTableContents}</div>
+                            <div class="image-tabs">${imageTabs}</div>
+                            <div class="image-contents">${imageContents}</div>
                         </div>
                     `;
 
                     setupImageTabSwitching();
-                    setupRandomEventButtons(location);
+                    setupImageClickHandlers();
                 } else {
-                    // Single json table view (compact mode or single table)
-                    const defaultJsonTable = getDefaultLocationJsonTable(location);
+                    // Single image view (compact mode or single image)
+                    const defaultImage = getDefaultRegionImage(region);
                     const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
-                                    <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                                    <span style="font-family: 'Merriweather', serif;">${region.name}</span>
                                 </div>` : '';
-                    jsonTablesTab.innerHTML = `
-                        <div class="json-table-container">
+                    imageTab.innerHTML = `
+                        <div class="image-view">
                             ${titleHtml}
-                            <div class="mb-3 flex justify-end">
-                                <button class="generate-random-event-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm" data-table-index="0">
-                                    <i class="fas fa-dice mr-1"></i>Générer un événement aléatoire
-                                </button>
-                            </div>
-                            <div class="random-event-display hidden mb-3 p-3 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg">
-                                <div class="font-bold text-yellow-300 mb-2">Événement aléatoire généré :</div>
-                                <div class="event-content text-yellow-100"></div>
-                            </div>
-                            ${formatJsonTableForDisplay(defaultJsonTable)}
+                            <img src="${defaultImage}" alt="${region.name}" title="${defaultImage.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
                         </div>
                     `;
-                    setupRandomEventButtons(location);
+                    setupImageClickHandlers();
                 }
             } else {
-                // No json tables - show placeholder
+                // No image - show title instead of placeholder in compact mode
                 if (!infoBox.classList.contains('expanded')) {
-                    jsonTablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-view">
                             <div class="compact-title">
-                                <span style="font-family: 'Merriweather', serif;">Tables texte - ${location.name}</span>
+                                <span style="font-family: 'Merriweather', serif;">${region.name}</span>
                             </div>
                         </div>
                     `;
                 } else {
-                    jsonTablesTab.innerHTML = `
+                    imageTab.innerHTML = `
                         <div class="image-view">
-                            <div class="image-placeholder">Aucune table texte disponible</div>
+                            <div class="image-placeholder">Aucune image disponible</div>
                         </div>
                     `;
                 }
             }
+
+            // Update text tab content
+            const textTab = document.getElementById('text-tab');
+            textTab.innerHTML = `
+                <div class="text-view">
+                    <h3>${region.name}</h3>
+                    <p>${region.description || 'Aucune description.'}</p>
+                </div>
+            `;
+
+            // Update rumeurs tab content
+            const rumeursTab = document.getElementById('rumeurs-tab');
+            rumeursTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Rumeurs</h3>
+                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
+                </div>
+            `;
+
+            // Update tradition tab content
+            const traditionTab = document.getElementById('tradition-tab');
+            traditionTab.innerHTML = `
+                <div class="text-view">
+                    <h3>Tradition Ancienne</h3>
+                    <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
+                </div>
+            `;
         }
 
         function deleteLocation(locationId) {
@@ -2254,7 +2538,7 @@
                     description: descInput.value,
                     color: selectedColor,
                     points: [...currentRegionPoints],
-                    Rumeurs: [], // Initialize Rumeurs as an empty array
+                    Rumeur: "A définir",
                     Tradition_Ancienne: "A définir"
                 };
 
@@ -2290,17 +2574,6 @@
             if (saved) {
                 try {
                     regionsData = JSON.parse(saved);
-                    // Ensure Rumeurs is an array for all regions
-                    regionsData.regions.forEach(region => {
-                        if (!Array.isArray(region.Rumeurs)) {
-                            if (region.Rumeur && region.Rumeur !== "A définir") {
-                                region.Rumeurs = [region.Rumeur];
-                            } else {
-                                region.Rumeurs = [];
-                            }
-                            delete region.Rumeur; // Remove the old Rumeur property
-                        }
-                    });
                 } catch (e) {
                     console.error('Failed to load regions from localStorage:', e);
                     regionsData = getDefaultRegions();
@@ -2655,7 +2928,7 @@
                 mapSwitchBtn.title = "Vue Joueurs";
             }
         });
-        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeurs: [], Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
+        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
         function saveLocationsToLocal() {
@@ -2665,77 +2938,42 @@
         // === FONCTIONS UNIFIÉES D'IMPORT/EXPORT ===
 
         function exportUnifiedData() {
+            // Fusionner les lieux et les régions dans un seul tableau locations
             const allLocations = [];
 
-            // Ajouter les lieux normaux
+            // Ajouter tous les lieux normaux
             if (locationsData.locations) {
                 locationsData.locations.forEach(location => {
-                    const exportLocation = {
-                        id: location.id,
-                        name: location.name,
-                        description: location.description || "",
-                        imageUrl: location.imageUrl || "",
-                        images: location.images || [],
-                        color: location.color,
-                        known: location.known !== undefined ? location.known : true,
-                        visited: location.visited !== undefined ? location.visited : false,
-                        type: location.type || "custom",
-                        coordinates: location.coordinates || { x: 0, y: 0 }
-                    };
-
-                    // Ajouter les rumeurs multiples si elles existent
-                    if (location.Rumeurs && location.Rumeurs.length > 0) {
-                        location.Rumeurs.forEach(rumeur => {
-                            exportLocation.Rumeur = rumeur;
-                        });
-                    }
-                    // Support de l'ancienne structure avec Rumeur simple
-                    else if (location.Rumeur) {
-                        exportLocation.Rumeur = location.Rumeur;
-                    }
-
-                    if (location.Tradition_Ancienne) {
-                        exportLocation.Tradition_Ancienne = location.Tradition_Ancienne;
-                    }
-
-                    allLocations.push(exportLocation);
+                    allLocations.push({
+                        ...location,
+                        type: location.type || "custom" // S'assurer qu'il y a un type
+                    });
                 });
             }
 
-            // Ajouter les régions converties en format unifié
+            // Ajouter toutes les régions (converties en format location avec type="region")
             if (regionsData.regions) {
                 regionsData.regions.forEach(region => {
-                    const exportRegion = {
+                    // Convertir la structure de région en format location unifié
+                    const regionAsLocation = {
                         id: region.id,
                         name: region.name,
                         description: region.description || "",
                         imageUrl: region.imageUrl || "",
-                        images: region.images || [],
                         color: region.color,
                         known: region.known !== undefined ? region.known : true,
                         visited: region.visited !== undefined ? region.visited : false,
                         type: "region",
                         coordinates: {
-                            points: region.points || []
+                            points: region.points || [] // Les points du polygone de la région
                         }
                     };
 
-                    // Ajouter les rumeurs multiples si elles existent
-                    if (region.Rumeurs && region.Rumeurs.length > 0) {
-                        region.Rumeurs.forEach(rumeur => {
-                            exportRegion.Rumeur = rumeur;
-                        });
-                    }
-                    // Support de l'ancienne structure avec Rumeur simple
-                    else if (region.Rumeur) {
-                        exportRegion.Rumeur = region.Rumeur;
-                    }
+                    // Ajouter les propriétés additionnelles si elles existent
+                    if (region.Rumeur) regionAsLocation.Rumeur = region.Rumeur;
+                    if (region.Tradition_Ancienne) regionAsLocation.Tradition_Ancienne = region.Tradition_Ancienne;
 
-                    if (region.Tradition_Ancienne) {
-                        exportRegion.Tradition_Ancienne = region.Tradition_Ancienne;
-                    }
-
-                    allLocations.push(exportRegion);
+                    allLocations.push(regionAsLocation);
                 });
             }
 
@@ -2787,7 +3025,7 @@
                             coordinates: {
                                 points: region.points || []
                             },
-                            ...(region.Rumeur && { Rumeur: region.Rumeur }), // Ancienne structure Rumeur simple
+                            ...(region.Rumeur && { Rumeur: region.Rumeur }),
                             ...(region.Tradition_Ancienne && { Tradition_Ancienne: region.Tradition_Ancienne })
                         }));
                     }
@@ -2816,27 +3054,14 @@
                                 name: item.name,
                                 description: item.description || "",
                                 imageUrl: item.imageUrl || "",
-                                images: item.images || [], // Conserver les images pour les régions aussi
                                 color: item.color,
                                 known: item.known !== undefined ? item.known : true,
                                 visited: item.visited !== undefined ? item.visited : false,
-                                type: item.type || "region",
                                 points: item.coordinates?.points || []
                             };
 
-                            // Fonction pour extraire les rumeurs multiples
-                            const extractRumeurs = (item) => {
-                                const rumeurs = [];
-                                // Parcourir toutes les propriétés pour trouver les rumeurs
-                                for (const key in item) {
-                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
-                                        rumeurs.push(item[key]);
-                                    }
-                                }
-                                return rumeurs;
-                            };
-
-                            region.Rumeurs = extractRumeurs(item);
+                            // Ajouter les propriétés additionnelles si elles existent
+                            if (item.Rumeur) region.Rumeur = item.Rumeur;
                             if (item.Tradition_Ancienne) region.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             regionLocations.push(region);
@@ -2853,24 +3078,7 @@
                                     x: item.coordinates.x,
                                     y: item.coordinates.y
                                 };
-                            } else {
-                                location.coordinates = { x: 0, y: 0 }; // Coordonnées par défaut si manquantes
                             }
-
-                            // Fonction pour extraire les rumeurs multiples
-                            const extractRumeurs = (item) => {
-                                const rumeurs = [];
-                                // Parcourir toutes les propriétés pour trouver les rumeurs
-                                for (const key in item) {
-                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
-                                        rumeurs.push(item[key]);
-                                    }
-                                }
-                                return rumeurs;
-                            };
-
-                            location.Rumeurs = extractRumeurs(item);
-                            if (item.Tradition_Ancienne) location.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             normalLocations.push(location);
                         }
@@ -2998,137 +3206,226 @@
             importUnifiedData(event); // Rediriger vers la fonction unifiée
         }
 
+        function getCanvasCoordinates(event) { const rect = mapContainer.getBoundingClientRect(); const x = (event.clientX - rect.left) / scale; const y = (event.clientY - rect.top) / scale; return { x, y }; }
+        function updateDistanceDisplay() {
+            const voyageBtn = document.getElementById('voyage-segments-btn');
 
-
-
-
-
-
-
-
-
-        // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
-        // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
-        document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
-
-        // The journey button will be updated when the voyage manager is initialized
-
-        // --- Gemini API Functions ---
-        async function callGemini(prompt, button) {
-            const buttonIcon = button.querySelector('.gemini-icon') || button;
-            const originalContent = buttonIcon.innerHTML;
-            buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
-            button.disabled = true;
-
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const payload = { contents: chatHistory };
-
-            try {
-                // Récupérer la clé API depuis le serveur
-                const configResponse = await fetch('/api/gemini/config');
-                const config = await configResponse.json();
-
-                if (!config.api_key_configured || !config.api_key) {
-                    console.error("Gemini API key not configured on server.");
-                    buttonIcon.innerHTML = originalContent;
-                    button.disabled = false;
-                    return "Erreur: Clé API Gemini non configurée sur le serveur.";
-                }
-
-                const apiModel = 'gemini-2.0-flash-exp';
-                const apiVersion = 'v1beta';
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${config.api_key}`;
-
-                // Logs pour debug
-                console.log("🤖 [GEMINI API] Version:", apiVersion);
-                console.log("🤖 [GEMINI API] Modèle:", apiModel);
-                console.log("🤖 [GEMINI API] Prompt envoyé:");
-                console.log("📝", prompt);
-                console.log("🤖 [GEMINI API] URL complète:", apiUrl.replace(config.api_key, '[API_KEY_HIDDEN]'));
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                console.log("🤖 [GEMINI API] Statut de réponse:", response.status);
-
-                if (!response.ok) {
-                    // Try to get more details from the response body if available
-                    let errorMsg = `API request failed with status ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        console.error("🤖 [GEMINI API] Erreur détaillée:", errorData);
-                        errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
-                    } catch (jsonError) {
-                        // Ignore JSON parsing errors
-                    }
-                    throw new Error(errorMsg);
-                }
-
-                const result = await response.json();
-                console.log("🤖 [GEMINI API] Réponse reçue:", result);
-
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                    const responseText = result.candidates[0].content.parts[0].text;
-                    console.log("✅ [GEMINI API] Texte généré (longueur: " + responseText.length + " caractères)");
-                    return responseText;
-                } else {
-                    // Handle cases where the response might be empty or malformed
-                    console.warn("🤖 [GEMINI API] Réponse vide ou malformée:", result);
-                    throw new Error("Invalid response structure from API");
-                }
-            } catch (error) {
-                console.error("❌ [GEMINI API] Échec de l'appel:", error);
-                return `Désolé, une erreur est survenue lors de la génération du texte: ${error.message}`;
-            } finally {
-                buttonIcon.innerHTML = originalContent;
-                button.disabled = false;
-            }
-        }
-
-        function findNearestLocation(point) {
-            if (!point) return { name: 'un lieu sauvage' };
-            let nearest = null;
-            let minDistance = Infinity;
-            locationsData.locations.forEach(loc => {
-                // Ensure location has valid coordinates before calculating distance
-                if (loc.coordinates && typeof loc.coordinates.x !== 'undefined' && typeof loc.coordinates.y !== 'undefined') {
-                    const distance = Math.sqrt(Math.pow(loc.coordinates.x - point.x, 2) + Math.pow(loc.coordinates.y - point.y, 2));
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearest = loc;
-                    }
-                }
-            });
-            return nearest || { name: 'un lieu inconnu' };
-        }
-
-        async function handleGenerateJourneyLog(event) {
-            const button = event.currentTarget;
-            if (!startPoint || !lastPoint) {
-                alert("Vous devez commencer un tracé sur la carte pour générer une chronique de voyage.");
+            if (totalPathPixels === 0 || MAP_WIDTH === 0) {
+                distanceContainer.classList.add('hidden');
+                if (voyageBtn) voyageBtn.classList.add('hidden');
                 return;
             }
+            distanceContainer.classList.remove('hidden');
+            if (voyageBtn) voyageBtn.classList.remove('hidden');
 
-            const startLocation = findNearestLocation(startPoint);
-            const endLocation = findNearestLocation(lastPoint);
-            const miles = Math.round(totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH));
-            const days = (Math.ceil((miles / 20) * 2) / 2).toFixed(1);
+            const miles = totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+            const days = miles / 20;
+            const roundedDays = Math.ceil(days * 2) / 2;
+            distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${roundedDays.toFixed(1)}</strong> jours`;
+            updateJourneyInfo();
+        }
 
-            // Générer la liste des découvertes chronologiques pour le prompt
-            let journeyDetails = '';
-            if (journeyDiscoveries && journeyDiscoveries.length > 0) {
-                // Trier par ordre de découverte
-                const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+        function updateJourneyInfo() {
+            updateDiscoveriesChronologically();
+            displayJourneyInfo();
+        }
 
-                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
+        function updateDiscoveriesChronologically() {
+            // Track region segments for duration calculation
+            let regionSegments = new Map(); // region name -> {entryIndex, exitIndex}
+            let currentRegions = new Set(); // regions currently being traversed
+
+            // Track location proximity types
+            let locationProximityTypes = new Map(); // location name -> 'traversed' or 'nearby'
+
+            // Process each point in the journey path to maintain chronological order
+            for (let i = 0; i < journeyPath.length; i++) {
+                const currentPoint = journeyPath[i];
+
+                // Check which regions this point is in
+                let pointRegions = new Set();
+                regionsData.regions.forEach(region => {
+                    if (region.points && region.points.length >= 3) {
+                        if (isPointInPolygon(currentPoint, region.points)) {
+                            pointRegions.add(region.name);
+
+                            if (!traversedRegions.has(region.name)) {
+                                traversedRegions.add(region.name);
+                                // Add to chronological discoveries if not already present
+                                if (!journeyDiscoveries.some(d => d.name === region.name && d.type === 'region')) {
+                                    journeyDiscoveries.push({
+                                        name: region.name,
+                                        type: 'region',
+                                        discoveryIndex: i
+                                    });
+                                }
+                                // Mark entry point for this region
+                                regionSegments.set(region.name, {entryIndex: i, exitIndex: i});
+                            } else {
+                                // Update exit point for this region
+                                let segment = regionSegments.get(region.name);
+                                if (segment) {
+                                    segment.exitIndex = i;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Check for regions we're exiting
+                currentRegions.forEach(regionName => {
+                    if (!pointRegions.has(regionName)) {
+                        // We've exited this region, finalize its segment
+                        let segment = regionSegments.get(regionName);
+                        if (segment) {
+                            segment.exitIndex = i - 1; // Previous point was the last point in region
+                        }
+                    }
+                });
+
+                currentRegions = pointRegions;
+
+                // Check locations at this point
+                locationsData.locations.forEach(location => {
+                    if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
+                        return;
+                    }
+
+                    const distance = Math.sqrt(
+                        Math.pow(location.coordinates.x - currentPoint.x, 2) +
+                        Math.pow(location.coordinates.y - currentPoint.y, 2)
+                    );
+
+                    if (distance <= PROXIMITY_DISTANCE) {
+                        if (!nearbyLocations.has(location.name)) {
+                            nearbyLocations.add(location.name);
+
+                            // Determine proximity type based on distance
+                            let proximityType = 'nearby'; // default for 11-50 pixels
+                            if (distance <= 10) {
+                                proximityType = 'traversed'; // 0-10 pixels
+                            }
+
+                            // If location already exists with 'nearby', upgrade to 'traversed' if applicable
+                            const existingType = locationProximityTypes.get(location.name);
+                            if (!existingType || (existingType === 'nearby' && proximityType === 'traversed')) {
+                                locationProximityTypes.set(location.name, proximityType);
+                            }
+
+                            // Add to chronological discoveries if not already present
+                            if (!journeyDiscoveries.some(d => d.name === location.name && d.type === 'location')) {
+                                journeyDiscoveries.push({
+                                    name: location.name,
+                                    type: 'location',
+                                    discoveryIndex: i,
+                                    proximityType: locationProximityTypes.get(location.name)
+                                });
+                            } else {
+                                // Update existing discovery with new proximity type if better
+                                const existingDiscovery = journeyDiscoveries.find(d => d.name === location.name && d.type === 'location');
+                                if (existingDiscovery) {
+                                    existingDiscovery.proximityType = locationProximityTypes.get(location.name);
+                                }
+                            }
+                        } else {
+                            // Location already discovered, but check if we need to upgrade proximity type
+                            let proximityType = 'nearby';
+                            if (distance <= 10) {
+                                proximityType = 'traversed';
+                            }
+
+                            const existingType = locationProximityTypes.get(location.name);
+                            if (existingType === 'nearby' && proximityType === 'traversed') {
+                                locationProximityTypes.set(location.name, proximityType);
+                                // Update existing discovery
+                                const existingDiscovery = journeyDiscoveries.find(d => d.name === location.name && d.type === 'location');
+                                if (existingDiscovery) {
+                                    existingDiscovery.proximityType = proximityType;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Store region segments and location proximity types for duration calculation
+            window.regionSegments = regionSegments;
+            window.locationProximityTypes = locationProximityTypes;
+        }
+
+        function isPointInPolygon(point, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                if (((polygon[i].y > point.y) !== (polygon[j].y > point.y)) &&
+                    (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function calculatePathDistance(startIndex, endIndex) {
+            if (startIndex >= endIndex || startIndex < 0 || endIndex >= journeyPath.length) {
+                return 0;
+            }
+
+            let distance = 0;
+            for (let i = startIndex; i < endIndex; i++) {
+                const point1 = journeyPath[i];
+                const point2 = journeyPath[i + 1];
+                distance += Math.sqrt(
+                    Math.pow(point2.x - point1.x, 2) +
+                    Math.pow(point2.y - point1.y, 2)
+                );
+            }
+            return distance;
+        }
+
+        function pixelsToMiles(pixels) {
+            return pixels * (MAP_DISTANCE_MILES / MAP_WIDTH);
+        }
+
+        function milesToDays(miles) {
+            const days = miles / 20; // 20 miles per day
+            return Math.round(days * 2) / 2; // Round to nearest half day
+        }
+
+        function getDiscoveryTooltipContent(discoveryName, type) {
+            let data;
+            if (type === 'location') {
+                data = locationsData.locations.find(loc => loc.name === discoveryName);
+            } else if (type === 'region') {
+                data = regionsData.regions.find(reg => reg.name === discoveryName);
+            }
+
+            if (!data) return '';
+
+            let content = '';
+            if (data.description) {
+                content += `<div><strong>Description :</strong><br>${data.description}</div>`;
+            }
+
+            return content;
+        }
+
+        function displayJourneyInfo() {
+            const traversedRegionsInfo = document.getElementById('traversed-regions-info');
+            const traversedRegionsList = document.getElementById('traversed-regions-list');
+            const nearbyLocationsInfo = document.getElementById('nearby-locations-info');
+            const nearbyLocationsList = document.getElementById('nearby-locations-list');
+
+            // Sort discoveries by discovery order, keeping them mixed
+            const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+
+            if (chronologicalDiscoveries.length > 0) {
+                // Calculate travel times for each discovery
+                const discoveryElements = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
 
                     // Calculate reach time for this discovery
                     let startIndex = 0;
                     if (index > 0) {
+                        // Find the end point of the previous discovery
                         const prevDiscovery = chronologicalDiscoveries[index - 1];
                         if (prevDiscovery.type === 'region' && window.regionSegments) {
                             const segment = window.regionSegments.get(prevDiscovery.name);
@@ -3198,6 +3495,396 @@
                             const regionDays = milesToDays(regionMiles);
 
                             // Replace travelInfo for regions to include duration
+                            if (travelInfo === "(point de départ)") {
+                                displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            } else {
+                                displayText = `${icon} ${discovery.name} (atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
+                            }
+                        }
+                    }
+
+                    // Get tooltip content
+                    const tooltipContent = getDiscoveryTooltipContent(discovery.name, discovery.type);
+
+                    // Create span sans tooltip par défaut
+                    return `<span class="discovery-item clickable-discovery" data-discovery-name="${discovery.name}" data-discovery-type="region">${displayText}</span>`;
+                });
+
+                // Join with line breaks instead of commas
+                const discoveryListHTML = discoveryElements.join('<br>');
+
+                // Show only one section with all discoveries
+                traversedRegionsInfo.classList.remove('hidden');
+                traversedRegionsList.innerHTML = discoveryListHTML;
+                nearbyLocationsInfo.classList.add('hidden');
+
+                // Update the title to reflect mixed content
+                const regionsTitle = traversedRegionsInfo.querySelector('.font-semibold');
+                if (regionsTitle) {
+                    regionsTitle.textContent = 'Découvertes du voyage :';
+                    regionsTitle.className = 'font-semibold text-blue-400 mb-1';
+                }
+
+                // Setup enhanced tooltips
+                setupDiscoveryTooltips();
+
+                console.log("🌟 Journey discoveries (chronological):", chronologicalDiscoveries.map(d => `${d.type}: ${d.name}`));
+            } else {
+                traversedRegionsInfo.classList.add('hidden');
+                nearbyLocationsInfo.classList.add('hidden');
+                console.log("🌟 No discoveries made");
+            }
+        }
+
+        function setupDiscoveryTooltips() {
+            // Remove existing tooltips
+            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            const discoveryItems = document.querySelectorAll('.discovery-item');
+
+            discoveryItems.forEach(item => {
+                const discoveryName = item.dataset.discoveryName;
+                const discoveryType = item.dataset.discoveryType;
+
+                item.addEventListener('mouseenter', (e) => {
+                    // Highlight the corresponding location or region on the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+
+                    const tooltipContent = getDiscoveryTooltipContent(discoveryName, discoveryType);
+
+                    if (tooltipContent) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'discovery-tooltip';
+                        tooltip.innerHTML = tooltipContent;
+                        tooltip.style.cssText = `
+                            position: absolute;
+                            background: rgba(17, 24, 39, 0.95);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 8px;
+                            border: 1px solid #4b5563;
+                            font-size: 14px;
+                            max-width: 320px;
+                            z-index: 1000;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                            line-height: 1.4;
+                        `;
+
+                        document.body.appendChild(tooltip);
+
+                        // Position tooltip à gauche de l'élément
+                        const rect = item.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
+
+                        let left = rect.left + window.scrollX - tooltipRect.width - 10;
+                        let top = rect.top + window.scrollY;
+
+                        // Si le tooltip déborde à gauche, le placer à droite
+                        if (left < 10) {
+                            left = rect.right + window.scrollX + 10;
+                        }
+
+                        // Ajuster si le tooltip déborde en haut
+                        if (top < window.scrollY + 10) {
+                            top = window.scrollY + 10;
+                        }
+
+                        // Ajuster si le tooltip déborde en bas
+                        if (top + tooltipRect.height > window.innerHeight + window.scrollY - 10) {
+                            top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+                        }
+
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
+                    }
+                });
+
+                item.addEventListener('mouseleave', () => {
+                    // Remove highlight from the map
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, false);
+
+                    const tooltips = document.querySelectorAll('.discovery-tooltip');
+                    tooltips.forEach(tooltip => tooltip.remove());
+                });
+
+                // Add click event listener to open modal
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (discoveryType === 'location') {
+                        const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                        if (location) {
+                            // Simulate a click event on the location marker to open its info box
+                            const fakeEvent = {
+                                currentTarget: { dataset: { id: location.id.toString() } },
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+
+                            showInfoBox(fakeEvent);
+
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    } else if (discoveryType === 'region') {
+                        const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                        if (region) {
+                            // Simulate a click event on the region to open its info box
+                            const fakeEvent = {
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+
+                            showRegionInfo(fakeEvent, region);
+
+                            // Force expand the info box
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function highlightDiscoveryOnMap(discoveryName, discoveryType, highlight) {
+            if (discoveryType === 'location') {
+                // Find and highlight location marker
+                const locationMarkers = document.querySelectorAll('.location-marker');
+                locationMarkers.forEach(marker => {
+                    const locationId = parseInt(marker.dataset.id, 10);
+                    const location = locationsData.locations.find(loc => loc.id === locationId);
+
+                    if (location && location.name === discoveryName) {
+                        if (highlight) {
+                            marker.style.borderColor = '#60a5fa'; // Light blue
+                            marker.style.borderWidth = '6px';
+                            marker.style.zIndex = '1000';
+                        } else {
+                            // Restore original border
+                            marker.style.borderColor = location.visited ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                            marker.style.borderWidth = '4px';
+                            marker.style.zIndex = '';
+                        }
+                    }
+                });
+            } else if (discoveryType === 'region') {
+                // Find and highlight region path
+                const regionPaths = regionsLayer.querySelectorAll('.region');
+                regionPaths.forEach(path => {
+                    const regionId = parseInt(path.dataset.regionId, 10);
+                    const region = regionsData.regions.find(reg => reg.id === regionId);
+
+                    if (region && region.name === discoveryName) {
+                        if (highlight) {
+                            path.style.stroke = '#1e40af'; // Dark blue
+                            path.style.strokeWidth = '6'; // Thicker border
+                            path.style.zIndex = '1000';
+                        } else {
+                            // Restore original stroke
+                            path.style.stroke = colorMap[region.color] || colorMap.green;
+                            path.style.strokeWidth = '2';
+                            path.style.zIndex = '';
+                        }
+                    }
+                });
+            }
+        }
+        // Le bouton generate-journey-log a été supprimé - la fonctionnalité est maintenant intégrée dans voyage-manager.js
+        // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
+        document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
+
+        // Mettre à jour le titre du bouton après qu'il soit créé
+        updateJourneyButtonTitle();
+
+        // --- Gemini API Functions ---
+        async function callGemini(prompt, button) {
+            const buttonIcon = button.querySelector('.gemini-icon') || button;
+            const originalContent = buttonIcon.innerHTML;
+            buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
+            button.disabled = true;
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+
+            try {
+                // Récupérer la clé API depuis le serveur
+                const configResponse = await fetch('/api/gemini/config');
+                const config = await configResponse.json();
+
+                if (!config.api_key_configured || !config.api_key) {
+                    console.error("Gemini API key not configured on server.");
+                    buttonIcon.innerHTML = originalContent;
+                    button.disabled = false;
+                    return "Erreur: Clé API Gemini non configurée sur le serveur.";
+                }
+
+                const apiModel = 'gemini-2.0-flash-exp';
+                const apiVersion = 'v1beta';
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${config.api_key}`;
+
+                // Logs pour debug
+                console.log("🤖 [GEMINI API] Version:", apiVersion);
+                console.log("🤖 [GEMINI API] Modèle:", apiModel);
+                console.log("🤖 [GEMINI API] Prompt envoyé:");
+                console.log("📝", prompt);
+                console.log("🤖 [GEMINI API] URL complète:", apiUrl.replace(config.api_key, '[API_KEY_HIDDEN]'));
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log("🤖 [GEMINI API] Statut de réponse:", response.status);
+
+                if (!response.ok) {
+                    // Try to get more details from the response body if available
+                    let errorMsg = `API request failed with status ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        console.error("🤖 [GEMINI API] Erreur détaillée:", errorData);
+                        errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
+                    } catch (jsonError) {
+                        // Ignore JSON parsing errors
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+                console.log("🤖 [GEMINI API] Réponse reçue:", result);
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                    const responseText = result.candidates[0].content.parts[0].text;
+                    console.log("✅ [GEMINI API] Texte généré (longueur: " + responseText.length + " caractères)");
+                    return responseText;
+                } else {
+                    // Handle cases where the response might be empty or malformed
+                    console.warn("🤖 [GEMINI API] Réponse vide ou malformée:", result);
+                    throw new Error("Invalid response structure from API");
+                }
+            } catch (error) {
+                console.error("❌ [GEMINI API] Échec de l'appel:", error);
+                return `Désolé, une erreur est survenue lors de la génération du texte: ${error.message}`;
+            } finally {
+                buttonIcon.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        function findNearestLocation(point) {
+            if (!point) return { name: 'un lieu sauvage' };
+            let nearest = null;
+            let minDistance = Infinity;
+            locationsData.locations.forEach(loc => {
+                // Ensure location has valid coordinates before calculating distance
+                if (loc.coordinates && typeof loc.coordinates.x !== 'undefined' && typeof loc.coordinates.y !== 'undefined') {
+                    const distance = Math.sqrt(Math.pow(loc.coordinates.x - point.x, 2) + Math.pow(loc.coordinates.y - point.y, 2));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearest = loc;
+                    }
+                }
+            });
+            return nearest || { name: 'un lieu inconnu' };
+        }
+
+        async function handleGenerateJourneyLog(event) {
+            const button = event.currentTarget;
+            if (!startPoint || !lastPoint) {
+                alert("Vous devez commencer un tracé sur la carte pour générer une chronique de voyage.");
+                return;
+            }
+
+            const startLocation = findNearestLocation(startPoint);
+            const endLocation = findNearestLocation(lastPoint);
+            const miles = Math.round(totalPathPixels * (MAP_DISTANCE_MILES / MAP_WIDTH));
+            const days = (Math.ceil((miles / 20) * 2) / 2).toFixed(1);
+
+            // Générer la liste des découvertes chronologiques pour le prompt
+            let journeyDetails = '';
+            if (journeyDiscoveries && journeyDiscoveries.length > 0) {
+                // Trier par ordre de découverte
+                const chronologicalDiscoveries = journeyDiscoveries.sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+
+                const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
+                    const icon = discovery.type === 'region' ? '🗺️' : '📍';
+
+                    // Calculer le temps pour atteindre cette découverte
+                    let startIndex = 0;
+                    if (index > 0) {
+                        const prevDiscovery = chronologicalDiscoveries[index - 1];
+                        if (prevDiscovery.type === 'region' && window.regionSegments) {
+                            const segment = window.regionSegments.get(prevDiscovery.name);
+                            startIndex = segment ? segment.exitIndex : prevDiscovery.discoveryIndex;
+                        } else {
+                            startIndex = prevDiscovery.discoveryIndex;
+                        }
+                    }
+
+                    const reachDistance = calculatePathDistance(startIndex, discovery.discoveryIndex);
+                    const reachMiles = pixelsToMiles(reachDistance);
+                    const reachDays = milesToDays(reachMiles);
+
+                    // Vérifier si c'est un point de départ
+                    let travelInfo;
+                    if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
+                        // Find the actual location to check distance from start point
+                        const location = locationsData.locations.find(loc => loc.name === discovery.name);
+                        if (location && location.coordinates) {
+                            const distanceFromStart = Math.sqrt(
+                                Math.pow(location.coordinates.x - startPoint.x, 2) +
+                                Math.pow(location.coordinates.y - startPoint.y, 2)
+                            );
+                            if (distanceFromStart <= 20) {
+                                travelInfo = "(point de départ)";
+                            } else {
+                                // Add proximity information for locations
+                                let proximityText = '';
+                                if (discovery.proximityType === 'traversed') {
+                                    proximityText = ', traversé';
+                                } else if (discovery.proximityType === 'nearby') {
+                                    proximityText = ', passage à proximité';
+                                }
+                                travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                            }
+                        } else {
+                            // Add proximity information for locations
+                            let proximityText = '';
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                            travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                        }
+                    } else {
+                        // Add proximity information for locations
+                        let proximityText = '';
+                        if (discovery.type === 'location') {
+                            if (discovery.proximityType === 'traversed') {
+                                proximityText = ', traversé';
+                            } else if (discovery.proximityType === 'nearby') {
+                                proximityText = ', passage à proximité';
+                            }
+                        }
+                        travelInfo = `(atteint en ${reachDays} jour${reachDays !== 1 ? 's' : ''}${proximityText})`;
+                    }
+
+                    let displayText = `${icon} ${discovery.name} ${travelInfo}`;
+
+                    // Pour les régions, ajouter la durée de traversée
+                    if (discovery.type === 'region' && window.regionSegments) {
+                        const segment = window.regionSegments.get(discovery.name);
+                        if (segment) {
+                            const regionDistance = calculatePathDistance(segment.entryIndex, segment.exitIndex);
+                            const regionMiles = pixelsToMiles(regionDistance);
+                            const regionDays = milesToDays(regionMiles);
+
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -3400,678 +4087,1376 @@
             }
         }
 
-        function setupSettingsEventListeners() {
-            // Settings modal event listeners
-            const settingsBtn = document.getElementById('settings-btn');
-            const settingsModal = document.getElementById('settings-modal');
-            const closeSettingsModalBtn = document.getElementById('close-settings-modal');
-
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', () => {
-                    settingsModal.classList.remove('hidden');
-                });
-                console.log("🔐 [AUTH] Bouton paramètres trouvé et configuré");
-            }
-
-            if (closeSettingsModalBtn) {
-                closeSettingsModalBtn.addEventListener('click', () => {
-                    settingsModal.classList.add('hidden');
-                });
-            }
-
-            // Settings tabs
-            const settingsTabs = document.querySelectorAll('.settings-tab-button');
-            const settingsTabContents = document.querySelectorAll('.settings-tab-content');
-
-            settingsTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetTab = tab.dataset.tab;
-                    activateTab(targetTab);
-                });
-            });
-
-            // Setup edit mode listeners
-            setupEditModeListeners();
-        }
-
-        function setupEditModeListeners() {
-            // Adventurers edit listeners
-            const editAdventurersBtn = document.getElementById('edit-adventurers-btn');
-            const cancelAdventurersEdit = document.getElementById('cancel-adventurers-edit');
-            const saveAdventurersEdit = document.getElementById('save-adventurers-edit');
-            const adventurersReadMode = document.getElementById('adventurers-read-mode');
-            const adventurersEditMode = document.getElementById('adventurers-edit-mode');
-            const adventurersTextarea = document.getElementById('adventurers-group');
-
-            if (editAdventurersBtn) {
-                editAdventurersBtn.addEventListener('click', () => {
-                    adventurersReadMode.classList.add('hidden');
-                    adventurersEditMode.classList.remove('hidden');
-                });
-            }
-
-            if (cancelAdventurersEdit) {
-                cancelAdventurersEdit.addEventListener('click', () => {
-                    adventurersEditMode.classList.add('hidden');
-                    adventurersReadMode.classList.remove('hidden');
-                    // Reload original content
-                    const saved = localStorage.getItem('adventurersGroup');
-                    if (saved) {
-                        try {
-                            const adventurersData = JSON.parse(saved);
-                            adventurersTextarea.value = adventurersData;
-                        } catch (e) {
-                            console.error('Failed to load adventurers data:', e);
-                        }
-                    }
-                });
-            }
-
-            if (saveAdventurersEdit) {
-                saveAdventurersEdit.addEventListener('click', () => {
-                    const adventurersData = adventurersTextarea.value;
-                    localStorage.setItem('adventurersGroup', JSON.stringify(adventurersData));
-                    updateAdventurersDisplay();
-                    adventurersEditMode.classList.add('hidden');
-                    adventurersReadMode.classList.remove('hidden');
-                    scheduleAutoSync();
-                });
-            }
-
-            // Quest edit listeners
-            const editQuestBtn = document.getElementById('edit-quest-btn');
-            const cancelQuestEdit = document.getElementById('cancel-quest-edit');
-            const saveQuestEdit = document.getElementById('save-quest-edit');
-            const questReadMode = document.getElementById('quest-read-mode');
-            const questEditMode = document.getElementById('quest-edit-mode');
-            const questTextarea = document.getElementById('adventurers-quest');
-
-            if (editQuestBtn) {
-                editQuestBtn.addEventListener('click', () => {
-                    questReadMode.classList.add('hidden');
-                    questEditMode.classList.remove('hidden');
-                });
-            }
-
-            if (cancelQuestEdit) {
-                cancelQuestEdit.addEventListener('click', () => {
-                    questEditMode.classList.add('hidden');
-                    questReadMode.classList.remove('hidden');
-                    // Reload original content
-                    const saved = localStorage.getItem('adventurersQuest');
-                    if (saved) {
-                        try {
-                            const questData = JSON.parse(saved);
-                            questTextarea.value = questData;
-                        } catch (e) {
-                            console.error('Failed to load quest data:', e);
-                        }
-                    }
-                });
-            }
-
-            if (saveQuestEdit) {
-                saveQuestEdit.addEventListener('click', () => {
-                    const questData = questTextarea.value;
-                    localStorage.setItem('adventurersQuest', JSON.stringify(questData));
-                    updateQuestDisplay();
-                    questEditMode.classList.add('hidden');
-                    questReadMode.classList.remove('hidden');
-                    scheduleAutoSync();
-                });
-            }
-
-            // Season radio button listeners
-            const seasonRadios = document.querySelectorAll('input[name="season"]');
-            seasonRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        currentSeason = e.target.value;
-                        updateSeasonDisplay();
-                        localStorage.setItem('currentSeason', currentSeason);
-                        scheduleAutoSync();
-                    }
-                });
-            });
-
-            // Generate adventurers wizard
-            const generateAdventurersWizard = document.getElementById('generate-adventurers-wizard');
-            if (generateAdventurersWizard) {
-                generateAdventurersWizard.addEventListener('click', handleGenerateAdventurersWizard);
-            }
-
-            // Calendar event listeners
-            setupCalendarEventListeners();
-        }
-
-        function updateAdventurersDisplay() {
-            const adventurersContent = document.getElementById('adventurers-content');
-            const saved = localStorage.getItem('adventurersGroup');
-
-            if (saved && saved !== '""' && saved !== 'null') {
-                try {
-                    const adventurersData = JSON.parse(saved);
-                    if (adventurersData && adventurersData.trim()) {
-                        adventurersContent.innerHTML = parseMarkdown(adventurersData);
-                    } else {
-                        adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
-                    }
-                } catch (e) {
-                    adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
-                }
-            } else {
-                adventurersContent.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
-            }
-        }
-
-        function updateQuestDisplay() {
-            const questContent = document.getElementById('quest-content');
-            const saved = localStorage.getItem('adventurersQuest');
-
-            if (saved && saved !== '""' && saved !== 'null') {
-                try {
-                    const questData = JSON.parse(saved);
-                    if (questData && questData.trim()) {
-                        questContent.innerHTML = parseMarkdown(questData);
-                    } else {
-                        questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
-                    }
-                } catch (e) {
-                    questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
-                }
-            } else {
-                questContent.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
-            }
-        }
-
-        function parseMarkdown(text) {
-            return text
-                .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
-                .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mb-3">$1</h2>')
-                .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mb-2">$1</h3>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/^- (.*$)/gim, '<li class="ml-4">• $1</li>')
-                .replace(/\n\n/g, '</p><p class="mb-3">')
-                .replace(/\n/g, '<br>')
-                .replace(/^(.*)/, '<p class="mb-3">$1')
-                .concat('</p>');
-        }
-
-        async function handleGenerateAdventurersWizard(event) {
-            const button = event.currentTarget;
-            const adventurersTextarea = document.getElementById('adventurers-group');
-
-            const prompt = `Génère un groupe de 2 à 5 aventuriers pour un jeu de rôle en Terre du Milieu (fin du Troisième Âge). Pour chaque personnage, indique :
-- Nom et prénom
-- Peuple (Hommes de l\'Eriador, Hobbits, Elfes, Nains, etc.)
-- Occupation/Classe
-- Brève description de personnalité
-- Motivation pour participer à l\'aventure
-
-Unite-les par un objectif commun crédible et évocateur. Style J.R.R. Tolkien, format Markdown.`;
-
-            const result = await callGemini(prompt, button);
-            adventurersTextarea.value = result;
-        }
-
-        function updateSeasonDisplay() {
-            const seasonIndicator = document.getElementById('season-indicator');
-            const currentSeasonText = document.getElementById('current-season-text');
-            const currentSeasonSymbol = document.getElementById('current-season-symbol');
-
-            const season = currentSeason.split('-')[0];
-            const symbol = seasonSymbols[season] || '🌱';
-
-            if (seasonIndicator) seasonIndicator.textContent = symbol;
-            if (currentSeasonText) currentSeasonText.textContent = seasonNames[currentSeason] || 'Printemps-début';
-            if (currentSeasonSymbol) currentSeasonSymbol.textContent = symbol;
-        }
-
-        function setupCalendarEventListeners() {
-            const uploadBtn = document.getElementById('upload-calendar-btn');
-            const fileInput = document.getElementById('calendar-file-input');
-            const exportBtn = document.getElementById('export-calendar-btn');
-            const monthSelect = document.getElementById('calendar-month-select');
-            const daySelect = document.getElementById('calendar-day-select');
-
-            if (uploadBtn && fileInput) {
-                uploadBtn.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', handleCalendarUpload);
-            }
-
-            if (exportBtn) {
-                exportBtn.addEventListener('click', exportCalendar);
-            }
-
-            if (monthSelect) {
-                monthSelect.addEventListener('change', handleMonthChange);
-            }
-
-            if (daySelect) {
-                daySelect.addEventListener('change', handleDayChange);
-            }
-
-            // Season and calendar indicator click listeners
-            const seasonIndicator = document.getElementById('season-indicator');
-            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
-
-            if (seasonIndicator) {
-                seasonIndicator.addEventListener('click', () => {
-                    const settingsModal = document.getElementById('settings-modal');
-                    settingsModal.classList.remove('hidden');
-                    activateTab('season');
-                });
-            }
-
-            if (calendarDateIndicator) {
-                calendarDateIndicator.addEventListener('click', () => {
-                    const settingsModal = document.getElementById('settings-modal');
-                    settingsModal.classList.remove('hidden');
-                    activateTab('season');
-                });
-            }
-        }
-
-        function handleCalendarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvContent = e.target.result;
-                    const calendar = parseCalendarCSV(csvContent);
-
-                    calendarData = calendar;
-                    localStorage.setItem('calendarData', JSON.stringify(calendar));
-
-                    updateCalendarUI();
-                    updateCalendarStatusDisplay();
-
-                    alert(`Calendrier importé avec succès ! ${calendar.length} entrées.`);
-                    scheduleAutoSync();
-                } catch (error) {
-                    alert(`Erreur lors de l'import du calendrier: ${error.message}`);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function parseCalendarCSV(csvContent) {
-            const lines = csvContent.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim());
-
-            const calendar = [];
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(v => v.trim());
-                if (values.length >= headers.length) {
-                    const entry = {};
-                    headers.forEach((header, index) => {
-                        entry[header] = values[index];
-                    });
-                    calendar.push(entry);
-                }
-            }
-
-            return calendar;
-        }
-
-        function updateCalendarUI() {
-            const monthSelect = document.getElementById('calendar-month-select');
-            const dateSelector = document.getElementById('calendar-date-selector');
-
-            if (calendarData && calendarData.length > 0) {
-                // Extract unique months
-                const months = [...new Set(calendarData.map(entry => entry.Month || entry.Mois))].filter(Boolean);
-
-                monthSelect.innerHTML = '<option value="">Sélectionner un mois</option>';
-                months.forEach(month => {
-                    monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
-                });
-
-                dateSelector.classList.remove('hidden');
-            } else {
-                dateSelector.classList.add('hidden');
-            }
-        }
-
-        function updateCalendarStatusDisplay() {
-            const statusText = document.getElementById('calendar-status-text');
-            const modeInfo = document.getElementById('season-mode-info');
-
-            if (calendarData && calendarData.length > 0) {
-                statusText.textContent = `Calendrier chargé : ${calendarData.length} entrées`;
-                statusText.className = 'text-green-400';
-                modeInfo.textContent = 'Mode calendrier : les saisons sont synchronisées avec les dates du calendrier importé.';
-            } else {
-                statusText.textContent = 'Aucun calendrier chargé';
-                statusText.className = 'text-gray-400';
-                modeInfo.textContent = 'Mode manuel : sélectionnez une saison. Importez un calendrier CSV pour synchroniser automatiquement les saisons avec les dates.';
-            }
-        }
-
-        function handleMonthChange(event) {
-            const selectedMonth = event.target.value;
-            const daySelect = document.getElementById('calendar-day-select');
-
-            if (selectedMonth && calendarData) {
-                const daysInMonth = calendarData
-                    .filter(entry => (entry.Month || entry.Mois) === selectedMonth)
-                    .map(entry => entry.Day || entry.Jour)
-                    .filter(Boolean);
-
-                daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
-                daysInMonth.forEach(day => {
-                    daySelect.innerHTML += `<option value="${day}">${day}</option>`;
-                });
-            } else {
-                daySelect.innerHTML = '<option value="">Sélectionner un jour</option>';
-            }
-        }
-
-        function handleDayChange(event) {
-            const selectedDay = event.target.value;
-            const monthSelect = document.getElementById('calendar-month-select');
-            const selectedMonth = monthSelect.value;
-
-            if (selectedMonth && selectedDay && calendarData) {
-                const calendarEntry = calendarData.find(entry => 
-                    (entry.Month || entry.Mois) === selectedMonth && 
-                    (entry.Day || entry.Jour) === selectedDay
-                );
-
-                if (calendarEntry) {
-                    currentCalendarDate = { month: selectedMonth, day: selectedDay };
-                    localStorage.setItem('currentCalendarDate', JSON.stringify(currentCalendarDate));
-
-                    // Update season based on calendar entry if available
-                    const season = calendarEntry.Season || calendarEntry.Saison;
-                    if (season) {
-                        currentSeason = season;
-                        localStorage.setItem('currentSeason', currentSeason);
-                    }
-
-                    updateCalendarDateDisplay();
-                    updateSeasonDisplay();
-                    scheduleAutoSync();
-                }
-            }
-        }
-
-        function updateCalendarDateDisplay() {
-            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
-            const currentCalendarDateDisplay = document.getElementById('current-calendar-date');
-
-            if (currentCalendarDate) {
-                const dateText = `${currentCalendarDate.day} ${currentCalendarDate.month}`;
-                if (calendarDateIndicator) calendarDateIndicator.textContent = dateText;
-                if (currentCalendarDateDisplay) currentCalendarDateDisplay.textContent = dateText;
-            }
-        }
-
-        function exportCalendar() {
-            if (!calendarData || calendarData.length === 0) {
-                alert('Aucun calendrier à exporter.');
+        function displaySavedContexts(contexts) {
+            savedContextsDiv.innerHTML = ''; // Clear previous content
+            if (!contexts || contexts.length === 0) {
+                savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Aucun contexte sauvegardé.</p>';
                 return;
             }
 
-            const csvContent = convertCalendarToCSV(calendarData);
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'calendrier-terre-du-milieu.csv';
-            a.click();
-
-            URL.revokeObjectURL(url);
-        }
-
-        function convertCalendarToCSV(calendar) {
-            if (calendar.length === 0) return '';
-
-            const headers = Object.keys(calendar[0]);
-            const csvRows = [headers.join(',')];
-
-            calendar.forEach(entry => {
-                const values = headers.map(header => entry[header] || '');
-                csvRows.push(values.join(','));
+            contexts.forEach(context => {
+                const contextEl = document.createElement('div');
+                contextEl.className = 'flex justify-between items-center bg-gray-700 p-2 rounded mb-1';
+                contextEl.innerHTML = `
+                    <span class="text-sm">${context.name}</span>
+                    <div class="flex space-x-2">
+                        <button class="load-context-btn text-blue-400 hover:text-blue-300" data-context-id="${context.id}">Charger</button>
+                        <button class="delete-context-btn text-red-400 hover:text-red-300" data-context-id="${context.id}">Supprimer</button>
+                    </div>
+                `;
+                savedContextsDiv.appendChild(contextEl);
             });
 
-            return csvRows.join('\n');
+            // Add event listeners for load and delete buttons
+            savedContextsDiv.querySelectorAll('.load-context-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => loadContext(e.target.dataset.contextId));
+            });
+            savedContextsDiv.querySelectorAll('.delete-context-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => deleteContext(e.target.dataset.contextId));
+            });
         }
 
-        function loadSavedSettings() {
-            // Load adventurers
-            updateAdventurersDisplay();
+        async function loadContext(contextId) {
+            try {
+                const response = await fetch(`/api/contexts/${contextId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load context: ${response.status}`);
+                }
 
-            // Load quest
-            updateQuestDisplay();
+                const context = await response.json();
 
-            // Load season
-            const savedSeason = localStorage.getItem('currentSeason');
-            if (savedSeason) {
-                currentSeason = savedSeason;
-                // Update radio button
+                // Load data
+                locationsData = context.data.locations || { locations: [] };
+                regionsData = context.data.regions || { regions: [] };
+                scale = context.data.scale || 1;
+                panX = context.data.panX || 0;
+                panY = context.data.panY || 0;
+                activeFilters = context.data.activeFilters || context.data.filters || { known: false, visited: false, colors: [] };
+
+                // Load journey data
+                journeyPath = context.data.journeyPath || [];
+                totalPathPixels = context.data.totalPathPixels || 0;
+                startPoint = context.data.startPoint || null;
+                lastPoint = context.data.lastPoint || null;
+                journeyDiscoveries = context.data.journeyDiscoveries || []; // Load journey discoveries
+
+                // Load season data
+                if (context.data.currentSeason && seasonNames[context.data.currentSeason]) {
+                    currentSeason = context.data.currentSeason;
+                    localStorage.setItem('currentSeason', currentSeason);
+                }
+
+                // Load calendar data
+                if (context.data.calendarData) {
+                    calendarData = context.data.calendarData;
+                }
+                if (context.data.currentCalendarDate) {
+                    currentCalendarDate = context.data.currentCalendarDate;
+                }
+                if (context.data.isCalendarMode !== undefined) {
+                    isCalendarMode = context.data.isCalendarMode;
+                }
+
+                // Save calendar data locally
+                saveCalendarToLocal();
+
+                // Redraw journey path if it exists
+                if (journeyPath.length > 0) {
+                    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    ctx.beginPath();
+                    ctx.moveTo(journeyPath[0].x, journeyPath[0].y);
+
+                    for (let i = 1; i < journeyPath.length; i++) {
+                        ctx.lineTo(journeyPath[i].x, journeyPath[i].y);
+                    }
+                    ctx.stroke();
+
+                    // Update distance display
+                    updateDistanceDisplay();
+                    updateJourneyInfo();
+                } else {
+                    // Clear canvas if no journey path
+                    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    distanceContainer.classList.add('hidden');
+                }
+
+                // Re-render everything
+                renderLocations();
+                renderRegions();
+                applyTransform();
+                updateFilters(); // Apply loaded filters
+
+                // Update UI elements
+                document.getElementById('filter-known').checked = activeFilters.known;
+                document.getElementById('filter-visited').checked = activeFilters.visited;
+                document.getElementById('filter-show-regions').checked = true;
+                document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
+                    cb.checked = activeFilters.colors.includes(cb.dataset.color);
+                });
+
+                // Update season UI
                 const seasonRadio = document.querySelector(`input[name="season"][value="${currentSeason}"]`);
-                if (seasonRadio) seasonRadio.checked = true;
+                if (seasonRadio) {
+                    seasonRadio.checked = true;
+                }
+                updateSeasonDisplay();
+
+                alert(`Contexte "${context.name}" chargé.`);
+                authModal.classList.add('hidden'); // Close modal after loading
+            } catch (error) {
+                console.error("Error loading context:", error);
+                alert("Error loading context.");
             }
-            updateSeasonDisplay();
+        }
 
-            // Load calendar
-            const savedCalendar = localStorage.getItem('calendarData');
-            const savedCalendarDate = localStorage.getItem('currentCalendarDate');
+        async function deleteContext(contextId) {
+            if (!confirm("Êtes-vous sûr de vouloir supprimer ce contexte ?")) return;
 
-            if (savedCalendar) {
-                try {
-                    calendarData = JSON.parse(savedCalendar);
-                    updateCalendarUI();
-                } catch (e) {
-                    console.error('Failed to load calendar data:', e);
+            try {
+                const response = await fetch(`/api/contexts/${contextId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    savedContexts = savedContexts.filter(c => c.id !== contextId);
+                    displaySavedContexts(savedContexts);
+                    alert("Contexte supprimé.");
+                } else {
+                    throw new Error(`Failed to delete context: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("Error deleting context:", error);
+                alert("Erreur lors de la suppression du contexte.");
+            }
+        }
+
+        // Setup authentication event listeners
+        function setupAuthEventListeners() {
+            logAuth("Configuration des event listeners d'authentification...");
+
+            waitForElement('#auth-btn', (authBtn) => {
+                logAuth("Bouton d'authentification trouvé et configuré");
+                authBtn.addEventListener('click', (event) => {
+                    logAuth("Clic sur le bouton d'authentification détecté!");
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleAuthModal();
+                });
+            });
+
+            waitForElement('#close-auth-modal', (closeAuthModalBtn) => {
+                logAuth("Bouton de fermeture modal trouvé et configuré");
+                closeAuthModalBtn.addEventListener('click', (event) => {
+                    logAuth("Clic sur le bouton de fermeture modal détecté!");
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const authModal = document.getElementById('auth-modal');
+                    if (authModal) {
+                        authModal.classList.add('hidden');
+                    }
+                });
+            });
+
+            waitForElement('#save-context-btn', (saveContextBtn) => {
+                logAuth("Bouton de sauvegarde contexte trouvé et configuré");
+                saveContextBtn.addEventListener('click', saveCurrentContext);
+            });
+
+            waitForElement('#google-signin-btn', (googleSigninBtn) => {
+                logAuth("Bouton Google Sign-In trouvé et configuré");
+                googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            });
+        }
+
+        // Helper function to wait for an element and then execute a callback
+        function waitForElement(selector, callback, maxWait = 5000) {
+            const startTime = Date.now();
+
+            function check() {
+                const element = document.querySelector(selector);
+                if (element) {
+                    callback(element);
+                } else if (Date.now() - startTime < maxWait) {
+                    setTimeout(check, 100);
+                } else {
+                    logAuth("TIMEOUT: Élément non trouvé:", selector);
                 }
             }
 
-            if (savedCalendarDate) {
-                try {
-                    currentCalendarDate = JSON.parse(savedCalendarDate);
-                    updateCalendarDateDisplay();
-                } catch (e) {
-                    console.error('Failed to load calendar date:', e);
+            check();
+        }
+
+        // --- Voyage Segments Functions ---
+        function resetVoyageSegments() {
+            currentVoyage = null;
+            voyageSegments = [];
+            isVoyageActive = false;
+            currentSegmentIndex = 0;
+            activatedSegments.clear();
+            console.log("🧹 Segments de voyage réinitialisés");
+        }
+
+        function handleStartVoyage() {
+            if (journeyPath.length === 0 || journeyDiscoveries.length === 0) {
+                alert("Vous devez d'abord tracer un chemin sur la carte pour démarrer un voyage.");
+                return;
+            }
+
+            // Initialize voyage
+            currentVoyage = {
+                startPoint: startPoint,
+                journeyPath: [...journeyPath],
+                journeyDiscoveries: [...journeyDiscoveries],
+                totalDistance: totalPathPixels,
+                createdAt: new Date().toISOString()
+            };
+
+            // Générer automatiquement tous les segments basés sur les régions traversées
+            voyageSegments = generateVoyageSegments();
+
+            // Réinitialiser l'état d'activation
+            activatedSegments.clear();
+
+            isVoyageActive = true;
+            currentSegmentIndex = 0;
+
+            console.log("🚢 Voyage démarré:", currentVoyage);
+            console.log("🗺️ Segments générés:", voyageSegments);
+            console.log("🎯 Index initial:", currentSegmentIndex);
+            console.log("📊 État voyage:", {
+                isVoyageActive: isVoyageActive,
+                totalSegments: voyageSegments.length,
+                currentIndex: currentSegmentIndex,
+                activatedSegments: Array.from(activatedSegments)
+            });
+            updateVoyageSegmentsDisplay();
+            scheduleAutoSync();
+        }
+
+        function generateVoyageSegments() {
+            const segments = [];
+
+            // Extraire les régions dans l'ordre chronologique
+            const regionDiscoveries = journeyDiscoveries
+                .filter(d => d.type === 'region')
+                .sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+
+            if (regionDiscoveries.length === 0) {
+                // Pas de régions, créer un segment simple
+                return [{
+                    id: 1,
+                    duration: 1, // Par défaut 1 jour
+                    startLocation: 'Point de départ',
+                    endLocation: 'Point d\'arrivée',
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                }];
+            }
+
+            // Créer des segments basés sur les transitions entre régions
+            for (let i = 0; i < regionDiscoveries.length; i++) {
+                const currentRegion = regionDiscoveries[i];
+                const nextRegion = regionDiscoveries[i + 1];
+
+                segments.push({
+                    id: i + 1,
+                    duration: 1, // Par défaut 1 jour
+                    startLocation: currentRegion.name,
+                    endLocation: nextRegion ? nextRegion.name : findEndLocation(),
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                });
+            }
+
+            return segments;
+        }
+
+        function findEndLocation() {
+            // Trouver le dernier lieu ou région significatif
+            const lastDiscoveries = journeyDiscoveries
+                .sort((a, b) => b.discoveryIndex - a.discoveryIndex)
+                .slice(0, 3);
+
+            for (const discovery of lastDiscoveries) {
+                if (discovery.type === 'region') {
+                    return discovery.name;
                 }
             }
 
-            updateCalendarStatusDisplay();
-
-            // Load narration style
-            const savedNarrationStyle = localStorage.getItem('narrationStyle');
-            if (savedNarrationStyle) {
-                const narrationRadio = document.querySelector(`input[name="narration-style"][value="${savedNarrationStyle}"]`);
-                if (narrationRadio) narrationRadio.checked = true;
+            for (const discovery of lastDiscoveries) {
+                if (discovery.type === 'location') {
+                    return discovery.name;
+                }
             }
 
-            // Load narration style listeners
-            const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
-            narrationRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        localStorage.setItem('narrationStyle', e.target.value);
-                        scheduleAutoSync();
+            return 'Point d\'arrivée';
+        }
+
+        function generateSegmentName(segmentIndex) {
+            console.log("🏷️ Génération nom segment:", {
+                segmentIndex: segmentIndex,
+                hasVoyage: !!currentVoyage,
+                segmentsLength: voyageSegments.length,
+                segmentExists: !!voyageSegments[segmentIndex]
+            });
+
+            if (!currentVoyage || voyageSegments.length === 0 || !voyageSegments[segmentIndex]) {
+                console.log("⚠️ Segment par défaut utilisé");
+                return "Segment de voyage";
+            }
+
+            const segment = voyageSegments[segmentIndex];
+            const name = segment.startLocation;
+            console.log("✅ Nom généré:", name);
+            return name;
+        }
+
+        function findLocationAtDay(dayTarget) {
+            if (!currentVoyage || !journeyPath.length) return "lieu inconnu";
+
+            const totalDays = getTotalJourneyDays();
+            const targetRatio = Math.min(dayTarget / totalDays, 1);
+            const targetPathIndex = Math.floor(targetRatio * (journeyPath.length - 1));
+            const targetPoint = journeyPath[targetPathIndex];
+
+            // Chercher le lieu le plus proche
+            let nearestLocation = null;
+            let minDistance = Infinity;
+
+            locationsData.locations.forEach(location => {
+                if (!location.coordinates) return;
+
+                const distance = Math.sqrt(Math.pow(location.coordinates.x - targetPoint.x, 2) + Math.pow(location.coordinates.y - targetPoint.y, 2));
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestLocation = location;
+                }
+            });
+
+            return nearestLocation ? nearestLocation.name : "lieu inconnu";
+        }
+
+        function calculateSegmentDailyContent(segmentIndex) {
+            if (!currentVoyage || !voyageSegments[segmentIndex]) return [];
+
+            // Ne calculer que si le segment est activé
+            if (!activatedSegments.has(segmentIndex)) {
+                return [{
+                    day: 1,
+                    chronologicalItems: [],
+                    activities: ["🚶 Voyage le long du chemin tracé"],
+                    calendarDate: getCalendarDateForSegmentDay(segmentIndex, 1)
+                }];
+            }
+
+            const segment = voyageSegments[segmentIndex];
+            const dailyContent = [];
+
+            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
+            let segmentStartDays = 0;
+            for (let i = 0; i < segmentIndex; i++) {
+                segmentStartDays += voyageSegments[i].duration;
+            }
+
+            // Calculer les indices de chemin pour ce segment
+            const totalDays = getTotalJourneyDays();
+            const segmentStartRatio = segmentStartDays / totalDays;
+            const segmentEndRatio = (segmentStartDays + segment.duration) / totalDays;
+
+            const segmentStartIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
+            const segmentEndIndex = Math.min(
+                Math.floor(segmentEndRatio * (journeyPath.length - 1)),
+                journeyPath.length - 1
+            );
+
+            // Créer le contenu journalier
+            for (let day = 1; day <= segment.duration; day++) {
+                const currentDay = segmentStartDays + day;
+                const dayContent = {
+                    day: day,
+                    chronologicalItems: [],
+                    activities: []
+                };
+
+                // Calculer la plage d'indices de chemin pour ce jour
+                const dayStartRatio = (currentDay - 1) / totalDays;
+                const dayEndRatio = currentDay / totalDays;
+                const dayStartIndex = Math.floor(dayStartRatio * (journeyPath.length - 1));
+                const dayEndIndex = Math.floor(dayEndRatio * (journeyPath.length - 1));
+
+                // Collecter toutes les découvertes pour ce jour avec leur index de découverte
+                const dayDiscoveries = [];
+
+                // Ajouter les découvertes de régions
+                journeyDiscoveries.forEach(discovery => {
+                    if (discovery.type === 'region' && window.regionSegments) {
+                        const regionSegment = window.regionSegments.get(discovery.name);
+                        if (regionSegment) {
+                            // Vérifier si cette région est traversée pendant ce jour
+                            const regionOverlapsDay = (
+                                regionSegment.entryIndex <= dayEndIndex &&
+                                regionSegment.exitIndex >= dayStartIndex
+                            );
+
+                            if (regionOverlapsDay) {
+                                dayDiscoveries.push({
+                                    ...discovery,
+                                    sortIndex: discovery.discoveryIndex,
+                                    content: `🗺️ ${escapeHtml(discovery.name)}`,
+                                    isEntry: discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex,
+                                    isExit: regionSegment.exitIndex >= dayStartIndex && regionSegment.exitIndex <= dayEndIndex
+                                });
+                            }
+                        }
+                    }
+                });
+
+                // Ajouter les découvertes de lieux
+                journeyDiscoveries.forEach(discovery => {
+                    if (discovery.type === 'location') {
+                        // Vérifier si ce lieu est découvert pendant ce jour
+                        if (discovery.discoveryIndex >= dayStartIndex && discovery.discoveryIndex <= dayEndIndex) {
+                            dayDiscoveries.push({
+                                ...discovery,
+                                sortIndex: discovery.discoveryIndex,
+                                content: `📍 ${escapeHtml(discovery.name)}`
+                            });
+                        }
+                    }
+                });
+
+                // Trier toutes les découvertes par ordre chronologique (index de découverte)
+                dayDiscoveries.sort((a, b) => a.sortIndex - b.sortIndex);
+
+                // Ajouter au contenu du jour
+                dayContent.chronologicalItems = dayDiscoveries.map(item => item.content);
+
+                // Ajouter des activités génériques si nécessaire
+                if (dayContent.chronologicalItems.length === 0) {
+                    dayContent.activities.push("🚶 Voyage le long du chemin tracé");
+                }
+
+                dailyContent.push(dayContent);
+            }
+
+            return dailyContent;
+        }
+
+        function getCalendarDateForSegmentDay(segmentIndex, dayInSegment) {
+            if (!isCalendarMode || !currentCalendarDate || !calendarData) {
+                return null;
+            }
+
+            // Calculer le jour absolu depuis le début du voyage
+            let absoluteDay = dayInSegment;
+            for (let i = 0; i < segmentIndex; i++) {
+                absoluteDay += voyageSegments[i].duration;
+            }
+
+            // Trouver le mois et jour actuels dans le calendrier
+            const currentMonthIndex = calendarData.findIndex(m => m.name === currentCalendarDate.month);
+            if (currentMonthIndex === -1) return null;
+
+            let monthIndex = currentMonthIndex;
+            let day = currentCalendarDate.day + absoluteDay - 1;
+
+            // Naviguer à travers les mois si nécessaire
+            while (day > calendarData[monthIndex].days.length) {
+                day -= calendarData[monthIndex].days.length;
+                monthIndex = (monthIndex + 1) % calendarData.length;
+            }
+
+            return {
+                month: calendarData[monthIndex].name,
+                day: day
+            };
+        }
+
+        function renderSegmentContent(segmentIndex) {
+            const segmentContentDiv = document.getElementById('segment-content');
+            const dailyContent = calculateSegmentDailyContent(segmentIndex);
+
+            if (dailyContent.length === 0) {
+                segmentContentDiv.innerHTML = '<div class="text-gray-500 text-center">Aucun contenu pour ce segment</div>';
+                return;
+            }
+
+            const contentHtml = dailyContent.map(dayData => {
+                let dayTitle = `Jour ${dayData.day}`;
+
+                // Ajouter la date du calendrier si disponible
+                const calendarDate = getCalendarDateForSegmentDay(segmentIndex, dayData.day);
+                if (calendarDate) {
+                    dayTitle += ` (${calendarDate.day} ${calendarDate.month})`;
+                }
+
+                let dayActivities = [];
+
+                // Ajouter les découvertes dans l'ordre chronologique
+                if (dayData.chronologicalItems && dayData.chronologicalItems.length > 0) {
+                    dayActivities = [...dayData.chronologicalItems];
+                }
+
+                // Ajouter les activités génériques
+                if (dayData.activities && dayData.activities.length > 0) {
+                    dayActivities = dayActivities.concat(dayData.activities);
+                }
+
+                return `
+                    <div class="day-section">
+                        <h5 class="font-semibold text-blue-300 mb-2">${dayTitle}</h5>
+                        <div class="ml-4 text-sm text-gray-300 space-y-1">
+                            ${dayActivities.map(activity => {
+                                // Analyser l'activité pour détecter les lieux et régions
+                                const processedActivity = processActivityForHighlight(activity);
+                                return `<p class="leading-relaxed">${processedActivity}</p>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Use innerHTML to properly render HTML content
+            segmentContentDiv.innerHTML = contentHtml;
+            setupSegmentDiscoveryHighlight();
+        }
+
+        function updateCurrentSegmentDisplay() {
+            console.log("🔄 Mise à jour segment:", {
+                currentSegmentIndex: currentSegmentIndex,
+                totalSegments: voyageSegments.length,
+                isVoyageActive: isVoyageActive,
+                currentSegment: voyageSegments[currentSegmentIndex],
+                activatedSegments: Array.from(activatedSegments)
+            });
+
+            const currentSegmentDiv = document.getElementById('current-segment-display');
+            const noVoyageMessage = document.getElementById('no-voyage-message');
+            const progressBar = document.getElementById('voyage-progress-bar');
+            const endMessage = document.getElementById('voyage-end-message');
+            const modalTitle = document.getElementById('voyage-modal-title');
+
+            if (!isVoyageActive || voyageSegments.length === 0) {
+                console.log("❌ Pas de voyage actif oupas de segments");
+                currentSegmentDiv.classList.add('hidden');
+                noVoyageMessage.classList.remove('hidden');
+                progressBar.classList.add('hidden');
+                endMessage.classList.add('hidden');
+                modalTitle.textContent = "Segments de Voyage";
+                return;
+            }
+
+            // Vérifier que l'index est valide
+            if (currentSegmentIndex < 0 || currentSegmentIndex >= voyageSegments.length) {
+                console.error("❌ Index de segment invalide:", currentSegmentIndex, "segments disponibles:", voyageSegments.length);
+                currentSegmentIndex = Math.max(0, Math.min(currentSegmentIndex, voyageSegments.length - 1));
+                console.log("🔧 Index corrigé à:", currentSegmentIndex);
+            }
+
+            // Activer automatiquement le premier segment
+            if (currentSegmentIndex === 0) {
+                activatedSegments.add(0);
+            }
+
+            noVoyageMessage.classList.add('hidden');
+            currentSegmentDiv.classList.remove('hidden');
+
+            // Mettre à jour le titre du segment avec indicateur d'activation
+            const segmentTitle = document.getElementById('segment-title');
+            const segmentName = generateSegmentName(currentSegmentIndex);
+            const isActivated = activatedSegments.has(currentSegmentIndex);
+            segmentTitle.innerHTML = isActivated ? segmentName : `${segmentName} <span class="text-gray-500">(non activé)</span>`;
+
+            console.log("📝 Titre du segment mis à jour:", segmentName, "Activé:", isActivated);
+
+            // Mettre à jour les boutons de navigation
+            const prevBtn = document.getElementById('prev-segment-btn');
+            const nextBtn = document.getElementById('next-segment-btn');
+
+            // Bouton précédent : masqué si premier segment
+            if (currentSegmentIndex === 0) {
+                prevBtn.style.visibility = 'hidden';
+            } else {
+                prevBtn.style.visibility = 'visible';
+            }
+
+            // Bouton suivant : vérifier s'il peut y avoir un segment suivant
+            const canHaveNextSegment = checkIfMoreSegmentsNeeded() || currentSegmentIndex < voyageSegments.length - 1;
+
+            if (!canHaveNextSegment) {
+                nextBtn.style.visibility = 'hidden';
+            } else {
+                nextBtn.style.visibility = 'visible';
+                const nextSegmentExists = currentSegmentIndex + 1 < voyageSegments.length;
+                if (nextSegmentExists) {
+                    const nextSegmentActivated = activatedSegments.has(currentSegmentIndex + 1);
+                    nextBtn.title = nextSegmentActivated ? "Segment suivant" : "Activer le segment suivant";
+                    nextBtn.innerHTML = nextSegmentActivated ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-play"></i>';
+                } else {
+                    // Le segment suivant n'existe pas encore mais peut être créé
+                    nextBtn.title = "Créer et activer le segment suivant";
+                    nextBtn.innerHTML = '<i class="fas fa-plus"></i>';
+                }
+            }
+
+            // Vérifier si c'est la fin du voyage (plus de segments possibles et on est au dernier segment)
+            if (!canHaveNextSegment && currentSegmentIndex === voyageSegments.length - 1) {
+                endMessage.classList.remove('hidden');
+            } else {
+                endMessage.classList.add('hidden');
+            }
+
+            // Mettre à jour le slider de durée
+            const durationSlider = document.getElementById('current-segment-duration');
+            const durationValue = document.getElementById('current-segment-duration-value');
+            const currentSegment = voyageSegments[currentSegmentIndex];
+
+            durationSlider.value = currentSegment.duration;
+            durationValue.textContent = currentSegment.duration;
+
+            // Mettre à jour le contenu du segment
+            renderSegmentContent(currentSegmentIndex);
+
+            // Mettre à jour la barre de progression basée sur le segment
+            updateSegmentProgressBar();
+            progressBar.classList.remove('hidden');
+        }
+
+        function updateSegmentProgressBar() {
+            if (!voyageSegments[currentSegmentIndex]) return;
+
+            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
+            let cumulativeDays = 0;
+            for (let i = 0; i <= currentSegmentIndex; i++) {
+                cumulativeDays += voyageSegments[i].duration;
+            }
+
+            // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
+            const totalVoyageDays = getTotalJourneyDays();
+
+            // Calculer le pourcentage de progression
+            const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
+
+            const progressFill = document.getElementById('progress-fill');
+            const progressMarker = document.getElementById('progress-marker');
+            const progressIndicator = document.getElementById('progress-indicator');
+            const totalDaysSpan = document.getElementById('total-days');
+
+            progressFill.style.width = `${progressPercent}%`;
+            progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
+            progressMarker.querySelector('span').textContent = cumulativeDays;
+
+            progressIndicator.textContent = `Progression : ${cumulativeDays} / ${totalVoyageDays} jours`;
+            totalDaysSpan.textContent = totalVoyageDays;
+        }
+
+        function navigateToSegment(direction) {
+            console.log("🧭 Navigation segment:", {
+                direction: direction,
+                currentIndex: currentSegmentIndex,
+                totalSegments: voyageSegments.length,
+                activatedSegments: Array.from(activatedSegments),
+                segmentNames: voyageSegments.map((s, i) => `${i}: ${s.startLocation} -> ${s.endLocation}`)
+            });
+
+            if (direction === 'prev' && currentSegmentIndex > 0) {
+                currentSegmentIndex--;
+                console.log("⬅️ Navigation précédente vers segment", currentSegmentIndex);
+            } else if (direction === 'next') {
+                const nextIndex = currentSegmentIndex + 1;
+
+                // Si le segment suivant n'existe pas, le créer dynamiquement
+                if (nextIndex >= voyageSegments.length) {
+                    const needsMoreSegments = checkIfMoreSegmentsNeeded();
+                    if (needsMoreSegments) {
+                        createNextSegment();
+                        console.log("🆕 Nouveau segment créé:", voyageSegments.length - 1);
+                    } else {
+                        console.log("🏁 Voyage terminé, pas de segment suivant nécessaire");
+                        return; // Pas de segment suivant possible
+                    }
+                }
+
+                // Si le segment suivant n'est pas activé, l'activer
+                if (!activatedSegments.has(nextIndex)) {
+                    activatedSegments.add(nextIndex);
+                    console.log("🎬 Activation du segment", nextIndex);
+                }
+
+                currentSegmentIndex = nextIndex;
+                console.log("➡️ Navigation suivante vers segment", currentSegmentIndex);
+            } else {
+                console.log("🚫 Navigation impossible:", direction, "currentIndex:", currentSegmentIndex, "totalSegments:", voyageSegments.length);
+                return; // Arrêter ici si la navigation n'est pas possible
+            }
+
+            updateCurrentSegmentDisplay();
+            scheduleAutoSync();
+        }
+
+        function handleSegmentDurationChange() {
+            const newDuration = parseInt(document.getElementById('current-segment-duration').value);
+            const durationValue = document.getElementById('current-segment-duration-value');
+
+            durationValue.textContent = newDuration;
+
+            if (voyageSegments[currentSegmentIndex]) {
+                voyageSegments[currentSegmentIndex].duration = newDuration;
+
+                // Supprimer tous les segments suivants
+                removeFollowingSegments();
+
+                // Recalculer le contenu du segment actuel
+                renderSegmentContent(currentSegmentIndex);
+
+                // Mettre à jour l'affichage complet (y compris le message de fin)
+                updateCurrentSegmentDisplay();
+                scheduleAutoSync();
+            }
+        }
+
+        function removeFollowingSegments() {
+            // Supprimer tous les segments après le segment actuel
+            voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
+
+            // Supprimer les activations des segments supprimés
+            const segmentsToRemove = [];
+            activatedSegments.forEach(index => {
+                if (index > currentSegmentIndex) {
+                    segmentsToRemove.push(index);
+                }
+            });
+            segmentsToRemove.forEach(index => {
+                activatedSegments.delete(index);
+            });
+
+            console.log("🗑️ Segments suivants supprimés. Nouveaux segments:", voyageSegments.length);
+            console.log("🗑️ Segments activés restants:", Array.from(activatedSegments));
+        }
+
+        function updateVoyageSegmentsDisplay() {
+            // Cette fonction est maintenant simplifiée car on utilise updateCurrentSegmentDisplay
+            if (isVoyageActive) {
+                updateCurrentSegmentDisplay();
+            } else {
+                // Cacher tous les éléments du voyage
+                document.getElementById('current-segment-display').classList.add('hidden');
+                document.getElementById('voyage-progress-bar').classList.add('hidden');
+                document.getElementById('voyage-end-message').classList.add('hidden');
+                document.getElementById('no-voyage-message').classList.remove('hidden');
+            }
+        }
+
+        function getTotalJourneyDays() {
+            // Utiliser la distance totale du tracé actuel ou sauvegardé
+            let distanceToUse = totalPathPixels;
+            if (currentVoyage && currentVoyage.totalDistance) {
+                distanceToUse = currentVoyage.totalDistance;
+            }
+
+            if (distanceToUse === 0) {
+                return 0;
+            }
+
+            const totalMiles = pixelsToMiles(distanceToUse);
+            return milesToDays(totalMiles);
+        }
+
+
+
+        function getRemainingJourneyDays() {
+            const totalJourneyDays = getTotalJourneyDays();
+            const segmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            return Math.max(0, totalJourneyDays - segmentDays);
+        }
+
+        function checkIfMoreSegmentsNeeded() {
+            const totalJourneyDays = getTotalJourneyDays();
+            const currentSegmentDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+
+            // Il faut plus de segments si on n'a pas encore couvert toute la durée du voyage
+            return currentSegmentDays < totalJourneyDays;
+        }
+
+        function createNextSegment() {
+            if (!currentVoyage || !journeyDiscoveries) return;
+
+            const nextSegmentIndex = voyageSegments.length;
+
+            // Calculer les jours déjà couverts
+            const coveredDays = voyageSegments.reduce((total, segment) => total + segment.duration, 0);
+            const totalJourneyDays = getTotalJourneyDays();
+
+            // Calculer la position dans le voyage pour ce nouveau segment
+            const segmentStartRatio = coveredDays / totalJourneyDays;
+            const segmentStartPathIndex = Math.floor(segmentStartRatio * (journeyPath.length - 1));
+
+            // Trouver la prochaine découverte significative après le point actuel
+            const remainingDiscoveries = journeyDiscoveries.filter(discovery =>
+                discovery.discoveryIndex > segmentStartPathIndex
+            ).sort((a, b) => a.discoveryIndex - b.discoveryIndex);
+
+            let startLocation, endLocation;
+
+            // Déterminer le point de départ (fin du segment précédent)
+            if (voyageSegments.length > 0) {
+                const prevSegment = voyageSegments[voyageSegments.length - 1];
+                startLocation = prevSegment.endLocation;
+            } else {
+                startLocation = 'Point de départ';
+            }
+
+            // Déterminer le point d'arrivée du nouveau segment
+            if (remainingDiscoveries.length > 0) {
+                // Utiliser la prochaine découverte comme destination
+                const nextDiscovery = remainingDiscoveries[0];
+                endLocation = nextDiscovery.name;
+            } else {
+                // Pas de découverte restante, utiliser la fin du voyage
+                endLocation = findEndLocation();
+            }
+
+            // Créer le nouveau segment
+            const newSegment = {
+                id: nextSegmentIndex + 1,
+                duration: 1, // Par défaut 1 jour
+                startLocation: startLocation,
+                endLocation: endLocation,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+
+            voyageSegments.push(newSegment);
+            console.log("🆕 Nouveau segment créé:", newSegment);
+        }
+
+        // Navigation globale pour les segments
+        window.navigateToSegment = navigateToSegment;
+
+        function processActivityForHighlight(activity) {
+            // Nettoyer d'abord le texte de tout HTML résiduel
+            const cleanActivity = activity.replace(/<[^>]*>/g, '');
+            let processedActivity = cleanActivity;
+
+            // Chercher les noms de lieux (en évitant les doublons)
+            locationsData.locations.forEach(location => {
+                const locationName = location.name;
+                // Échapper les caractères spéciaux pour la regex
+                const escapedName = locationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+
+                // Vérifier si le nom n'est pas déjà dans un span
+                if (!processedActivity.includes(`data-discovery-name="${locationName}"`)) {
+                    processedActivity = processedActivity.replace(regex, (match) => {
+                        return `<span class="segment-discovery-item" data-discovery-name="${escapeHtml(locationName)}" data-discovery-type="location">${escapeHtml(match)}</span>`;
+                    });
+                }
+            });
+
+            // Chercher les noms de régions (en évitant les doublons)
+            regionsData.regions.forEach(region => {
+                const regionName = region.name;
+                // Échapper les caractères spéciaux pour la regex
+                const escapedName = regionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+
+                // Vérifier si le nom n'est pas déjà dans un span
+                if (!processedActivity.includes(`data-discovery-name="${regionName}"`)) {
+                    processedActivity = processedActivity.replace(regex, (match) => {
+                        return `<span class="segment-discovery-item" data-discovery-name="${escapeHtml(regionName)}" data-discovery-type="region">${escapeHtml(match)}</span>`;
+                    });
+                }
+            });
+
+            return processedActivity;
+        }
+
+        function setupSegmentDiscoveryHighlight() {
+            // Remove existing tooltips
+            const existingTooltips = document.querySelectorAll('.discovery-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            const discoveryItems = document.querySelectorAll('.segment-discovery-item');
+
+            discoveryItems.forEach(item => {
+                const discoveryName = item.dataset.discoveryName;
+                const discoveryType = item.dataset.discoveryType;
+
+                item.addEventListener('mouseenter', () => {
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, true);
+                });
+
+                item.addEventListener('mouseleave', () => {
+                    highlightDiscoveryOnMap(discoveryName, discoveryType, false);
+                });
+
+                // Add click event listener to open modal
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (discoveryType === 'location') {
+                        const location = locationsData.locations.find(loc => loc.name === discoveryName);
+                        if (location) {
+                            const fakeEvent = {
+                                currentTarget: { dataset: { id: location.id.toString() } },
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+                            showInfoBox(fakeEvent);
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
+                    } else if (discoveryType === 'region') {
+                        const region = regionsData.regions.find(reg => reg.name === discoveryName);
+                        if (region) {
+                            const fakeEvent = {
+                                stopPropagation: () => {},
+                                preventDefault: () => {}
+                            };
+                            showRegionInfo(fakeEvent, region);
+                            if (!infoBox.classList.contains('expanded')) {
+                                toggleInfoBoxExpand();
+                            }
+                        }
                     }
                 });
             });
         }
 
-        function getNarrationPromptAddition() {
-            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+        // --- Event listeners pour les segments de voyage ---
+        // Les event listeners pour les segments de voyage sont maintenant gérés par VoyageManager
 
-            switch (narrationStyle) {
-                case 'detailed':
-                    return '\n\nStyle de narration : Rédige plusieurs paragraphes détaillés par jour dans un style littéraire évocateur et immersif.';
-                case 'keywords':
-                    return '\n\nStyle de narration : Fournis seulement des mots-clés évocateurs et des éléments d\'inspiration pour le Meneur de Jeu, pas de paragraphes complets.';
-                case 'brief':
-                default:
-                    return '\n\nStyle de narration : Rédige un paragraphe unique par jour dans un style concis mais évocateur.';
-            }
-        }
-
-        // --- Auto-sync Functions ---
-        function enableAutoSync() {
-            console.log("✅ Auto-sync activé");
-            autoSyncEnabled = true;
-            updateSyncStatus();
-        }
-
-        function disableAutoSync() {
-            console.log("❌ Auto-sync désactivé");
-            autoSyncEnabled = false;
-            updateSyncStatus();
-        }
-
-        function scheduleAutoSync() {
-            if (!autoSyncEnabled || !currentUser) return;
-
-            clearTimeout(window.autoSyncTimeout);
-            window.autoSyncTimeout = setTimeout(() => {
-                performAutoSync();
-            }, SYNC_DELAY);
-        }
-
-        async function performAutoSync() {
-            if (!autoSyncEnabled || !currentUser) return;
-
-            console.log("🔄 Auto-sync: Synchronisation automatique...");
-
-            const currentData = {
-                locations: locationsData,
-                regions: regionsData,
-                scale: scale,
-                panX: panX,
-                panY: panY,
-                activeFilters: activeFilters,
-                filters: activeFilters,
-                journeyPath: journeyPath,
-                totalPathPixels: totalPathPixels,
-                startPoint: startPoint,
-                lastPoint: lastPoint,
-                journeyDiscoveries: journeyDiscoveries,
-                currentSeason: currentSeason,
-                calendarData: calendarData,
-                currentCalendarDate: currentCalendarDate
-            };
-
+        // --- Settings Modal Functions ---
+        function openSettingsOnSeasonTab() {
             try {
-                const response = await fetch('/api/user/data', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(currentData)
+                settingsModal.classList.remove('hidden');
+                    loadSettings();
+                    setupSettingsTabSwitching();
+
+                    // Ouvrir directement l'onglet "Saisons"
+                    setTimeout(() => {
+                        const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
+                        if (seasonTabButton) {
+                            seasonTabButton.click();
+                        }
+                    }, 100);
+                } catch (error) {
+                    console.error('Erreur lors de l\'ouverture des paramètres:', error);
+                }
+            }
+
+            function setupSettingsEventListeners() {
+                waitForElement('#settings-btn', (settingsBtn) => {
+                    settingsBtn.addEventListener('click', () => {
+                        settingsModal.classList.remove('hidden');
+                        loadSettings();
+                        setupSettingsTabSwitching();
+                    });
                 });
 
-                if (response.ok) {
-                    lastSyncTime = Date.now();
-                    updateSyncStatus();
-                    console.log("✅ Auto-sync: Synchronisation réussie");
+                waitForElement('#close-settings-modal', (closeSettingsModalBtn) => {
+                    closeSettingsModalBtn.addEventListener('click', () => {
+                        settingsModal.classList.add('hidden');
+                    });
+                });
+
+                // Event listeners pour les styles de narration
+                setupNarrationStyleListeners();
+
+                // Event listener pour le bouton Wizard
+                waitForElement('#generate-adventurers-wizard', (wizardBtn) => {
+                    wizardBtn.addEventListener('click', handleGenerateAdventurers);
+                });
+
+                // Event listeners pour les indicateurs de saison dans le header
+                waitForElement('#season-indicator', (seasonIndicator) => {
+                    seasonIndicator.addEventListener('click', openSettingsOnSeasonTab);
+                });
+
+                waitForElement('#calendar-date-indicator', (calendarIndicator) => {
+                    calendarIndicator.addEventListener('click', openSettingsOnSeasonTab);
+                });
+
+                // Initialiser les événements des cartes
+                setupMapsEventListeners();
+            }
+
+            function setupSettingsTabSwitching() {
+                // Attendre que le DOM soit complètement chargé
+                setTimeout(() => {
+                    const tabButtons = document.querySelectorAll('.settings-tab-button');
+                    const tabContents = document.querySelectorAll('.settings-tab-content');
+
+                    console.log('🔧 Setup tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
+
+                    tabButtons.forEach((button, index) => {
+                        // Supprimer les anciens event listeners en clonant
+                        const newButton = button.cloneNode(true);
+                        button.parentNode.replaceChild(newButton, button);
+
+                        // Ajouter le nouvel event listener
+                        newButton.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const targetTab = newButton.dataset.tab;
+                            console.log('🔧 Tab clicked:', targetTab);
+
+                            // Mettre à jour les références après le clonage
+                            const currentTabButtons = document.querySelectorAll('.settings-tab-button');
+                            const currentTabContents = document.querySelectorAll('.settings-tab-content');
+
+                            // Update active tab button
+                            currentTabButtons.forEach(btn => {
+                                btn.classList.remove('active', 'border-blue-500', 'text-white');
+                                btn.classList.add('border-transparent', 'text-gray-400');
+                            });
+                            newButton.classList.add('active', 'border-blue-500', 'text-white');
+                            newButton.classList.remove('border-transparent', 'text-gray-400');
+
+                            // Update active tab content
+                            currentTabContents.forEach(content => {
+                                content.classList.remove('active');
+                                content.classList.add('hidden');
+                            });
+
+                            const targetContent = document.getElementById(`${targetTab}-tab`);
+                            console.log('🔧 Target content:', targetContent);
+                            if (targetContent) {
+                                targetContent.classList.add('active');
+                                targetContent.classList.remove('hidden');
+                            }
+                        });
+                    });
+
+                    // Setup edit mode listeners
+                    setupEditModeListeners();
+                }, 100);
+            }
+
+            function setupEditModeListeners() {
+                // Adventurers edit listeners
+                const editAdventurersBtn = document.getElementById('edit-adventurers-btn');
+                const cancelAdventurersEdit = document.getElementById('cancel-adventurers-edit');
+                const saveAdventurersEdit = document.getElementById('save-adventurers-edit');
+                const adventurersReadMode = document.getElementById('adventurers-read-mode');
+                const adventurersEditMode = document.getElementById('adventurers-edit-mode');
+                const adventurersTextarea = document.getElementById('adventurers-group');
+
+                if (editAdventurersBtn) {
+                    editAdventurersBtn.addEventListener('click', () => {
+                        adventurersReadMode.classList.add('hidden');
+                        adventurersEditMode.classList.remove('hidden');
+                    });
+                }
+
+                if (cancelAdventurersEdit) {
+                    cancelAdventurersEdit.addEventListener('click', () => {
+                        adventurersEditMode.classList.add('hidden');
+                        adventurersReadMode.classList.remove('hidden');
+                        // Reload original content
+                        const saved = localStorage.getItem('adventurersGroup');
+                        if (adventurersTextarea) {
+                            adventurersTextarea.value = saved || '';
+                        }
+                    });
+                }
+
+                if (saveAdventurersEdit) {
+                    saveAdventurersEdit.addEventListener('click', () => {
+                        const content = adventurersTextarea.value;
+                        localStorage.setItem('adventurersGroup', content);
+                        updateMarkdownContent('adventurers-content', content);
+                        adventurersEditMode.classList.add('hidden');
+                        adventurersReadMode.classList.remove('hidden');
+                        scheduleAutoSync();
+                    });
+                }
+
+                // Quest edit listeners
+                const editQuestBtn = document.getElementById('edit-quest-btn');
+                const cancelQuestEdit = document.getElementById('cancel-quest-edit');
+                const saveQuestEdit = document.getElementById('save-quest-edit');
+                const questReadMode = document.getElementById('quest-read-mode');
+                const questEditMode = document.getElementById('quest-edit-mode');
+                const questTextarea = document.getElementById('adventurers-quest');
+
+                if (editQuestBtn) {
+                    editQuestBtn.addEventListener('click', () => {
+                        questReadMode.classList.add('hidden');
+                        questEditMode.classList.remove('hidden');
+                    });
+                }
+
+                if (cancelQuestEdit) {
+                    cancelQuestEdit.addEventListener('click', () => {
+                        questEditMode.classList.add('hidden');
+                        questReadMode.classList.remove('hidden');
+                        // Reload original content
+                        const saved = localStorage.getItem('adventurersQuest');
+                        if (questTextarea) {
+                            questTextarea.value = saved || '';
+                        }
+                    });
+                }
+
+                if (saveQuestEdit) {
+                    saveQuestEdit.addEventListener('click', () => {
+                        const content = questTextarea.value;
+                        localStorage.setItem('adventurersQuest', content);
+                        updateMarkdownContent('quest-content', content);
+                        questEditMode.classList.add('hidden');
+                        questReadMode.classList.remove('hidden');
+                        scheduleAutoSync();
+                    });
+                }
+            }
+
+            function loadSettings() {
+                // Charger les données sauvegardées des aventuriers et quête
+                const adventurersGroup = localStorage.getItem('adventurersGroup');
+                const adventurersQuest = localStorage.getItem('adventurersQuest');
+
+                // Charger le style de narration (par défaut: brief)
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+
+                // Update textareas
+                const groupTextarea = document.getElementById('adventurers-group');
+                const questTextarea = document.getElementById('adventurers-quest');
+
+                if (groupTextarea && adventurersGroup) {
+                    groupTextarea.value = adventurersGroup;
+                }
+
+                if (questTextarea && adventurersQuest) {
+                    questTextarea.value = adventurersQuest;
+                }
+
+                // Update markdown content displays
+                updateMarkdownContent('adventurers-content', adventurersGroup);
+                updateMarkdownContent('quest-content', adventurersQuest);
+
+                // Charger le style de narration sélectionné
+                const narrationRadio = document.querySelector(`input[name="narration-style"][value="${narrationStyle}"]`);
+                if (narrationRadio) {
+                    narrationRadio.checked = true;
+                }
+
+                // Mettre à jour le titre du bouton de génération de voyage
+                updateJourneyButtonTitle();
+
+                // Load season settings
+                loadSavedSeason();
+                setupSeasonListeners();
+
+                // Load and render maps
+                renderMapsGrid();
+            }
+
+            function updateMarkdownContent(elementId, content) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                if (!content || content.trim() === '') {
+                    if (elementId === 'adventurers-content') {
+                        element.innerHTML = '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                    } else {
+                        element.innerHTML = '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    }
+                    return;
+                }
+
+                // Simple Markdown parsing
+                let html = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                    .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                    .replace(/`(.*?)`/g, '<code>$1</code>')
+                    .replace(/^- (.*$)/gim, '<li>$1</li>')
+                    .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+
+                // Wrap with paragraph tags and handle lists
+                html = '<p>' + html + '</p>';
+                html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+                html = html.replace(/<\/ul><ul>/g, '');
+                html = html.replace(/<p><\/p>/g, '');
+                html = html.replace(/<p>(<h[123]>)/g, '$1').replace(/(<\/h[123]>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<ul>)/g, '$1').replace(/(<\/ul>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<blockquote>)/g, '$1').replace(/(<\/blockquote>)<\/p>/g, '$1');
+
+                element.innerHTML = html;
+            }
+
+            // === FONCTIONS POUR LE STYLE DE NARRATION ===
+
+            function setupNarrationStyleListeners() {
+                console.log('📖 Configuration des listeners de narration...');
+
+                // Utiliser waitForElement pour s'assurer que les éléments existent
+                waitForElement('input[name="narration-style"]', () => {
+                    const narrationRadios = document.querySelectorAll('input[name="narration-style"]');
+                    console.log('📖 Radio buttons de narration trouvés:', narrationRadios.length);
+
+                    narrationRadios.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            if (radio.checked) {
+                                console.log('📖 Style de narration changé:', radio.value);
+                                localStorage.setItem('narrationStyle', radio.value);
+                                updateJourneyButtonTitle();
+                            }
+                        });
+                    });
+                });
+            }
+
+            function updateJourneyButtonTitle() {
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+                const journeyButton = document.getElementById('generate-journey-log');
+                const styleLabel = document.getElementById('journey-style-label');
+
+                console.log('📖 Mise à jour du titre du bouton:', narrationStyle, journeyButton ? 'Bouton trouvé' : 'Bouton non trouvé');
+
+                if (!journeyButton) return;
+
+                let styleText = '';
+                let shortStyleText = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        styleText = '(Narration détaillée)';
+                        shortStyleText = 'Voyage – Détaillée';
+                        break;
+                    case 'brief':
+                        styleText = '(Narration brève)';
+                        shortStyleText = 'Voyage – Brève';
+                        break;
+                    case 'keywords':
+                        styleText = '(Points clés seulement)';
+                        shortStyleText = 'Voyage – Points clés';
+                        break;
+                    default:
+                        styleText = '(Narration brève)';
+                        shortStyleText = 'Voyage – Brève';
+                }
+
+                // Mettre à jour l'infobulle (title) et aria-label
+                journeyButton.title = `Générer une chronique de voyage ${styleText}`;
+                journeyButton.setAttribute('aria-label', `Générer une chronique de voyage ${styleText}`);
+
+                // Mettre à jour le texte visible du bouton
+                if (styleLabel) {
+                    styleLabel.textContent = shortStyleText;
+                }
+
+                console.log('📖 Nouveau titre du bouton:', journeyButton.title);
+                console.log('📖 Nouveau texte du bouton:', shortStyleText);
+            }
+
+            function getNarrationPromptAddition() {
+                const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+                console.log('📖 Style de narration pour le prompt:', narrationStyle);
+
+                let addition = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        addition = ' Organise le récit jour par jour. Pour chaque journée, rédige plusieurs paragraphes dans un style littéraire évocateur et riche. Décris l\'atmosphère, les sensations, les conversations entre les personnages, les détails du paysage et les émotions ressenties avec un style narratif immersif et poétique.';
+                        break;
+
+                    case 'keywords':
+                        addition = ' Organise le récit jour par jour. Pour chaque journée, plutôt que des phrases complètes, présente une liste structurée de mots-clés et expressions évocateurs organisés par thèmes (Météo/Climat, Ambiance du groupe, Paysages traversés, Événements marquants, Sensations/Émotions). Utilise un vocabulaire riche et évocateur que le Meneur de Jeu pourra utiliser pour créer ses propres descriptions.';
+                        break;
+
+                    case 'brief':
+                    default:
+                        addition = ' Organise le récit par étapes journalières, en décrivant brièvement l\'ambiance et les paysages rencontrés dans un style concis mais évocateur, avec un paragraphe par jour.';
+                        break;
+                }
+
+                console.log('📖 Addition au prompt:', addition.substring(0, 100) + '...');
+                return addition;
+            }
+
+            async function handleGenerateAdventurers(event) {
+                const button = event.currentTarget;
+
+                const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
+
+Voici la procédure à suivre :
+
+a- Choisis aléatoirement un nombre d'aventurier entre 2 et 5
+b- Pour chaque individu du nombre d'aventurier fais les choses suivantes dans l'ordre :
+- Choisis un peuple aléatoirement (parmi : "Hobbits de la Comté", "Hommes de Bree", "Rôdeur du Nord", "Elfes du Lindon", "Nains des Montagnes Bleues"). Il faut que cette sélection soit réellement aléatoire.
+- Choisis un Nom (dans le style des noms utilisés parmi les races de Tolkien, mais sans utiliser de noms trop connus comme Aragorn, Legolas, Frodo, etc)
+- Choisis Occupation/rôle (garde-forestier, marchand, érudit, guerrier, etc.)
+- Choisis un lien cohérent (famille, ami, collègue, redevable, etc) entre les aventuriers, en faisant en sorte que les aventuriers de races différentes ne soient pas de la même famille.
+
+Puis décris leur quête ou objectif commun qui les unit dans cette aventure, sans préciser ce qu'ils devront faire pour l'atteindre. Explique pourquoi ce sont eux et pas d'autres aventuriers qui poursuivent cette quête.
+
+Format de réponse en Markdown:
+## Groupe d'aventuriers
+[Description de chaque membre avec nom (en gras), peuple (en italique), occupation, lien avec les autres aventuriers]
+
+## Quête
+[Description de leur mission commune]
+
+Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eriador.`;
+
+                // Appeler Gemini pour générer le contenu
+                const result = await callGemini(prompt, button);
+
+                // Analyser le résultat pour séparer groupe et quête
+                const parts = result.split('## Quête');
+                if (parts.length === 2) {
+                    const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
+                    const questPart = parts[1].trim();
+
+                    // Update textareas
+                    const groupTextarea = document.getElementById('adventurers-group');
+                    const questTextarea = document.getElementById('adventurers-quest');
+
+                    if (groupTextarea) groupTextarea.value = groupPart;
+                    if (questTextarea) questTextarea.value = questPart;
+
+                    // Update displays
+                    updateMarkdownContent('adventurers-content', groupPart);
+                    updateMarkdownContent('quest-content', questPart);
+
+                    // Sauvegarder
+                    localStorage.setItem('adventurersGroup', groupPart);
+                    localStorage.setItem('adventurersQuest', questPart);
+                    scheduleAutoSync();
                 } else {
-                    console.warn("⚠️ Auto-sync: Échec de la synchronisation");
-                }
-            } catch (error) {
-                console.error("❌ Auto-sync: Erreur de synchronisation:", error);
-            }
-        }
-
-        function updateSyncStatus() {
-            // Update UI to show sync status if needed
-            const syncStatusText = autoSyncEnabled ? 
-                `Synchronisation automatique activée. Dernière sync: ${lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'jamais'}` :
-                'Synchronisation automatique désactivée.';
-
-            console.log(`🔄 Sync Status: ${syncStatusText}`);
-        }
-
-        function activateTab(tabName) {
-            // For settings tabs
-            const settingsTabButtons = document.querySelectorAll('.settings-tab-button');
-            const settingsTabContents = document.querySelectorAll('.settings-tab-content');
-
-            if (settingsTabButtons.length > 0) {
-                settingsTabButtons.forEach(btn => btn.classList.remove('active'));
-                settingsTabContents.forEach(content => content.style.display = 'none');
-
-                const targetButton = document.querySelector(`[data-tab="${tabName}"].settings-tab-button`);
-                const targetContent = document.getElementById(`${tabName}-tab`);
-
-                if (targetButton && targetContent) {
-                    targetButton.classList.add('active');
-                    targetContent.style.display = 'flex';
+                    // Si le format n'est pas comme attendu, mettre tout dans le groupe
+                    const groupTextarea = document.getElementById('adventurers-group');
+                    if (groupTextarea) groupTextarea.value = result;
+                    updateMarkdownContent('adventurers-content', result);
+                    localStorage.setItem('adventurersGroup', result);
+                    scheduleAutoSync();
                 }
             }
 
-            // For info box tabs
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            if (tabButtons.length > 0) {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
-
-                const targetTabButton = document.querySelector(`[data-tab="${tabName}"].tab-button`);
-                const targetTabContent = document.getElementById(`${tabName}-tab`);
-
-                if (targetTabButton && targetTabContent) {
-                    targetTabButton.classList.add('active');
-                    targetTabContent.classList.add('active');
+            // --- Sync Status Display Function ---
+            function updateSyncStatus(message) {
+                console.log(`🔄 Sync Status: ${message}`);
+                // You can also display this message in the UI if there's a status element
+                const statusElement = document.getElementById('sync-status');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                    statusElement.style.opacity = '1';
+                    setTimeout(() => {
+                        statusElement.style.opacity = '0';
+                    }, 3000); // Hide after 3 seconds
                 }
             }
-        }
 
-        // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("🌍 Document loaded, initializing application...");
-            loadMapsData();
-            loadRegionsFromLocal();
-            loadFiltersFromLocal(); // Load filters early to set up UI correctly
-            setupMapsEventListeners();
-            setupFilters();
-            setupSettingsEventListeners(); // Setup settings listeners early
-
-            if (mapImage.complete) {
-                initializeMap();
+            // Démarrer l'application quand le DOM est prêt
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeApp);
             } else {
-                mapImage.addEventListener('load', initializeMap);
+                initializeApp();
             }
-            mapImage.addEventListener('error', handleImageError);
-
-            // Fetch and check authentication status on load
-            checkAuthStatus();
-            checkAuthError(); // Check for auth-related errors in the URL
-
-            // Setup button event listeners
-            saveContextBtn.addEventListener('click', saveCurrentContext);
-            googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            authBtn.addEventListener('click', toggleAuthModal);
-            closeAuthModalBtn.addEventListener('click', toggleAuthModal);
-
-            // Initialize the season display based on saved or default season
-            updateSeasonDisplay();
-            updateCalendarDateDisplay(); // Ensure calendar date is displayed if loaded
-
-            // Load saved data after initial setup
-            loadSavedSettings();
-
-            // Display initial map state
-            renderMapsGrid();
-
-            // Initial rendering of locations and regions based on loaded filters
-            renderLocations();
-            const showRegionsInitial = document.getElementById('filter-show-regions').checked;
-            if (showRegionsInitial) {
-                renderRegions();
-            } else {
-                regionsLayer.style.display = 'none';
-            }
-
-            console.log("✅ Application initialized successfully.");
-        });

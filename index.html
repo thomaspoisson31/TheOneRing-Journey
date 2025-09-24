@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voyages en Terre du Milieu v1.1.4</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"></link>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
@@ -97,8 +97,8 @@
                     <i class="fas fa-route"></i>
                 </button>
             </div>
-            <!-- Détail du voyage réactivé -->
-            <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2">
+            <!-- Détail du voyage masqué mais conservé pour réactivation ultérieure -->
+            <div id="journey-info" class="space-y-2 border-t border-gray-600 pt-2 hidden">
                 <div id="traversed-regions-info" class="hidden">
                     <div class="font-semibold text-blue-400 mb-1">Découvertes du voyage :</div>
                     <div id="traversed-regions-list" class="text-gray-300"></div>
@@ -126,8 +126,6 @@
                 <button class="tab-button" data-tab="text">Texte</button>
                 <button class="tab-button" data-tab="rumeurs">Rumeurs</button>
                 <button class="tab-button" data-tab="tradition">Tradition Ancienne</button>
-                <button class="tab-button hidden" data-tab="tables">Tables aléatoires</button>
-                <button class="tab-button" data-tab="json-tables">Tables - texte</button>
             </div>
             <div id="info-box-scroll-wrapper">
                 <div id="info-box-content">
@@ -152,18 +150,6 @@
                         <div class="text-view">
                             <h3>Tradition Ancienne</h3>
                             <p></p>
-                        </div>
-                    </div>
-                    <div id="tables-tab" class="tab-content hidden">
-                        <div class="text-view">
-                            <h3>Tables aléatoires</h3>
-                            <div class="image-placeholder">Aucune table disponible</div>
-                        </div>
-                    </div>
-                    <div id="json-tables-tab" class="tab-content">
-                        <div class="text-view">
-                            <h3>Tables aléatoires - Texte</h3>
-                            <div class="image-placeholder">Aucune table texte disponible</div>
                         </div>
                     </div>
                 </div>
@@ -580,7 +566,7 @@
                                 Supports Markdown : **gras**, *italique*, # Titres, - listes, etc.
                             </div>
                         </div>
-
+                        
                         <!-- Option Narration -->
                         <div class="mt-4 flex-shrink-0 bg-gray-900 rounded-lg p-4 border border-gray-600">
                             <h5 class="text-blue-400 font-semibold mb-3">📖 Style de narration</h5>
@@ -763,8 +749,6 @@
     </div>
 
 <script src="js/managers/voyage-manager.js"></script>
-<script src="js/journey.js"></script>
-<script src="js/modals.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
