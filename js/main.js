@@ -670,12 +670,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (location.Rumeurs && location.Rumeurs.length > 0) {
+                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (location.Rumeur && location.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${location.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -685,6 +721,67 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getLocationTables(location);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultLocationTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
 
             // Update header title
             updateInfoBoxHeaderTitle(location.name);
@@ -878,6 +975,36 @@
             return '';
         }
 
+        function getLocationTables(location) {
+            if (location.tables && Array.isArray(location.tables)) {
+                return location.tables.map(table => table.url).filter(url => url);
+            }
+            return [];
+        }
+
+        function getDefaultLocationTable(location) {
+            if (location.tables && Array.isArray(location.tables)) {
+                const defaultTable = location.tables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.url : (location.tables[0] ? location.tables[0].url : '');
+            }
+            return '';
+        }
+
+        function getRegionTables(region) {
+            if (region.tables && Array.isArray(region.tables)) {
+                return region.tables.map(table => table.url).filter(url => url);
+            }
+            return [];
+        }
+
+        function getDefaultRegionTable(region) {
+            if (region.tables && Array.isArray(region.tables)) {
+                const defaultTable = region.tables.find(table => table.isDefault);
+                return defaultTable ? defaultTable.url : (region.tables[0] ? region.tables[0].url : '');
+            }
+            return '';
+        }
+
         function startDrawingFromLocation(event, location) {
             console.log("🎯 Starting drawing from location:", location.name);
 
@@ -945,6 +1072,9 @@
             // Update tradition tab to show tradition editing interface
             updateTraditionTabForEdit(location);
 
+            // Update tables tab to show tables editing interface
+            updateTablesTabForEdit(location);
+
             // Add edit controls at the bottom
             addEditControls();
         }
@@ -1010,11 +1140,13 @@
 
         function updateRumeursTabForEdit(location) {
             const rumeursTab = document.getElementById('rumeurs-tab');
+            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
+            const rumeursString = Array.isArray(location.Rumeurs) ? location.Rumeurs.join('\n') : (location.Rumeur || '');
             rumeursTab.innerHTML = `
                 <div class="text-view space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${location.Rumeur || ''}</textarea>
+                        <textarea id="edit-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
                     </div>
                 </div>
             `;
@@ -1030,6 +1162,129 @@
                     </div>
                 </div>
             `;
+        }
+
+        function updateTablesTabForEdit(location) {
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = location.tables || [];
+            const tablesHtml = generateTablesEditHTML(tables);
+
+            tablesTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
+                        <div id="edit-tables-container">${tablesHtml}</div>
+                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
+                    </div>
+                </div>
+            `;
+
+            setupTablesEditListeners();
+        }
+
+        function generateTablesEditHTML(tables) {
+            if (!tables || tables.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune table</div>';
+            }
+
+            return tables.map((table, index) => `
+                <div class="table-edit-item flex items-center space-x-2 p-2 rounded">
+                    <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${table.url || ''}" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-table-checkbox mr-1" ${table.isDefault ? 'checked' : ''}>
+                        <span class="text-gray-300">Défaut</span>
+                    </label>
+                    <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function setupTablesEditListeners() {
+            const container = document.getElementById('edit-tables-container');
+            const addButton = document.getElementById('add-table-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewTableRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-table-btn')) {
+                        const button = e.target.closest('.remove-table-btn');
+                        const item = button.closest('.table-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateTableIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-table-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-table-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+            }
+        }
+
+        function addNewTableRow() {
+            const container = document.getElementById('edit-tables-container');
+            const currentTables = container.querySelectorAll('.table-edit-item');
+            
+            if (currentTables.length >= 5) {
+                alert('Maximum 5 tables autorisées');
+                return;
+            }
+
+            const newIndex = currentTables.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'table-edit-item flex items-center space-x-2 p-2 rounded';
+            newRow.innerHTML = `
+                <input type="url" class="table-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="Chemin vers la table (ex: images/Tables/Table-Bois-de-Chet.jpg)">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-table-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-table-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            `;
+            
+            container.appendChild(newRow);
+            updateTableIndices();
+        }
+
+        function updateTableIndices() {
+            const container = document.getElementById('edit-tables-container');
+            container.querySelectorAll('.remove-table-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
+            });
+        }
+
+        function collectTablesFromEdit() {
+            const container = document.getElementById('edit-tables-container');
+            const tables = [];
+
+            container.querySelectorAll('.table-edit-item').forEach(item => {
+                const url = item.querySelector('.table-url-input').value.trim();
+                const isDefault = item.querySelector('.default-table-checkbox').checked;
+
+                if (url) {
+                    tables.push({ url, isDefault });
+                }
+            });
+
+            // Ensure at least one default if tables exist
+            if (tables.length > 0 && !tables.some(table => table.isDefault)) {
+                tables[0].isDefault = true;
+            }
+
+            return tables;
         }
 
         function addEditControls() {
@@ -1059,6 +1314,90 @@
                     document.querySelector('#edit-color-picker .color-swatch.selected').classList.remove('selected');
                     swatch.classList.add('selected');
                 });
+            });
+        }
+
+        function generateImageEditHTML(images) {
+            if (!images || images.length === 0) {
+                return '<div class="text-gray-400 text-sm">Aucune image</div>';
+            }
+
+            return images.map((image, index) => `
+                <div class="image-edit-item flex items-center space-x-2 p-2 rounded">
+                    <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" value="${image.url || ''}" placeholder="URL de l'image">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="default-image-checkbox mr-1" ${image.isDefault ? 'checked' : ''}>
+                        <span class="text-gray-300">Défaut</span>
+                    </label>
+                    <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${index}">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function setupImageEditListeners() {
+            const container = document.getElementById('edit-images-container');
+            const addButton = document.getElementById('add-image-btn');
+
+            if (addButton) {
+                addButton.addEventListener('click', addNewImageRow);
+            }
+
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-image-btn')) {
+                        const button = e.target.closest('.remove-image-btn');
+                        const item = button.closest('.image-edit-item');
+                        if (item) {
+                            item.remove();
+                            updateImageIndices();
+                        }
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('default-image-checkbox') && e.target.checked) {
+                        // Uncheck other default checkboxes
+                        container.querySelectorAll('.default-image-checkbox').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                });
+            }
+        }
+
+        function addNewImageRow() {
+            const container = document.getElementById('edit-images-container');
+            const currentImages = container.querySelectorAll('.image-edit-item');
+            
+            if (currentImages.length >= 5) {
+                alert('Maximum 5 images autorisées');
+                return;
+            }
+
+            const newIndex = currentImages.length;
+            const newRow = document.createElement('div');
+            newRow.className = 'image-edit-item flex items-center space-x-2 p-2 rounded';
+            newRow.innerHTML = `
+                <input type="url" class="image-url-input flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" placeholder="URL de l'image">
+                <label class="flex items-center text-sm">
+                    <input type="checkbox" class="default-image-checkbox mr-1" ${newIndex === 0 ? 'checked' : ''}>
+                    <span class="text-gray-300">Défaut</span>
+                </label>
+                <button class="remove-image-btn text-red-400 hover:text-red-300 px-2 py-1" data-index="${newIndex}">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            `;
+            
+            container.appendChild(newRow);
+            updateImageIndices();
+        }
+
+        function updateImageIndices() {
+            const container = document.getElementById('edit-images-container');
+            container.querySelectorAll('.remove-image-btn').forEach((btn, index) => {
+                btn.dataset.index = index;
             });
         }
 
@@ -1097,8 +1436,8 @@
 
             location.name = document.getElementById('edit-name').value;
             location.description = document.getElementById('edit-desc').value;
-            location.Rumeur = document.getElementById('edit-rumeur').value || 'A définir';
-            location.Tradition_Ancienne = document.getElementById('edit-tradition').value || 'A définir';
+            location.Rumeurs = document.getElementById('edit-rumeur').value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
+            location.Tradition_Ancienne = document.getElementById('edit-tradition').value;
             location.color = document.querySelector('#edit-color-picker .color-swatch.selected').dataset.color;
             location.known = document.getElementById('edit-known').checked;
             location.visited = document.getElementById('edit-visited').checked;
@@ -1115,6 +1454,14 @@
                 delete location.imageUrl;
             }
 
+            // Handle tables
+            const tables = collectTablesFromEdit();
+            if (tables.length > 0) {
+                location.tables = tables;
+            } else {
+                delete location.tables;
+            }
+
             saveLocationsToLocal();
             renderLocations();
             hideInfoBox();
@@ -1123,14 +1470,13 @@
         function cancelEdit() {
             // Remove edit mode flag
             delete infoBox.dataset.editMode;
-
             // Remove edit controls
             const editControls = document.getElementById('edit-controls');
             if (editControls) {
                 editControls.remove();
             }
 
-            // Re-show the location info without edit mode
+            // Re-show the location info without edit mode - reload fresh content
             const location = locationsData.locations.find(loc => loc.id === activeLocationId);
             if (location) {
                 showLocationContent(location);
@@ -1210,12 +1556,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${location.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (location.Rumeurs && location.Rumeurs.length > 0) {
+                const rumeursValides = location.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (location.Rumeur && location.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${location.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -1225,6 +1607,67 @@
                     <p>${location.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content - FIX: Utiliser la même logique que dans showInfoBox
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getLocationTables(location);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${location.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultLocationTable(location);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${location.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${location.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         // --- Info box sizing/positioning ---
@@ -1550,6 +1993,77 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // --- Narration Functions ---
+        function updateJourneyButtonTitle() {
+            const button = document.getElementById('describe-journey-btn');
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            
+            if (button) {
+                let styleText = '';
+                switch (narrationStyle) {
+                    case 'detailed':
+                        styleText = ' (Détaillée)';
+                        break;
+                    case 'brief':
+                        styleText = ' (Brève)';
+                        break;
+                    case 'keywords':
+                        styleText = ' (Points clés)';
+                        break;
+                    default:
+                        styleText = ' (Brève)';
+                }
+                
+                const span = button.querySelector('span:last-child');
+                if (span) {
+                    span.textContent = `Décrire le voyage${styleText}`;
+                }
+                console.log("📖 Mise à jour du titre du bouton:", narrationStyle, "Titre mis à jour");
+            } else {
+                console.log("📖 Mise à jour du titre du bouton:", narrationStyle, "Bouton non trouvé");
+            }
+        }
+
+        function setupNarrationListeners() {
+            console.log("📖 Configuration des listeners de narration...");
+            
+            const radioButtons = document.querySelectorAll('input[name="narration-style"]');
+            console.log("📖 Radio buttons de narration trouvés:", radioButtons.length);
+            
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        localStorage.setItem('narrationStyle', e.target.value);
+                        updateJourneyButtonTitle();
+                        console.log("📖 Style de narration changé:", e.target.value);
+                        scheduleAutoSync();
+                    }
+                });
+            });
+
+            // Load saved narration style
+            const savedStyle = localStorage.getItem('narrationStyle') || 'brief';
+            const savedRadio = document.querySelector(`input[name="narration-style"][value="${savedStyle}"]`);
+            if (savedRadio) {
+                savedRadio.checked = true;
+            }
+        }
+
+        function getNarrationPromptAddition() {
+            const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
+            
+            switch (narrationStyle) {
+                case 'detailed':
+                    return '\n\nRédige une narration détaillée avec plusieurs paragraphes, dans un style littéraire évocateur digne des grands récits de fantasy.';
+                case 'brief':
+                    return '\n\nSois concis, un seul paragraphe par jour de voyage.';
+                case 'keywords':
+                    return '\n\nFournis seulement des mots-clés évocateurs séparés par des virgules, pour inspiration du Meneur de Jeu.';
+                default:
+                    return '\n\nSois concis, un seul paragraphe par jour de voyage.';
+            }
         }
 
         // --- Season Functions ---
@@ -1936,6 +2450,9 @@
 
                 // Setup settings event listeners
                 setupSettingsEventListeners();
+                
+                // Setup narration listeners
+                setupNarrationListeners();
 
                 // Test DOM elements after a delay
                 setTimeout(() => {
@@ -2100,12 +2617,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (region.Rumeurs && region.Rumeurs.length > 0) {
+                const rumeursValides = region.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (region.Rumeur && region.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${region.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -2115,6 +2668,67 @@
                     <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getRegionTables(region);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultRegionTable(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
 
             // Update header title
             updateInfoBoxHeaderTitle(region.name);
@@ -2170,6 +2784,9 @@
             // Update tradition tab to show tradition editing interface
             updateTraditionTabForRegionEdit(region);
 
+            // Update tables tab to show tables editing interface
+            updateTablesTabForRegionEdit(region);
+
             // Add edit controls at the bottom
             addRegionEditControls();
         }
@@ -2224,11 +2841,13 @@
 
         function updateRumeursTabForRegionEdit(region) {
             const rumeursTab = document.getElementById('rumeurs-tab');
+            // Utiliser un champ textarea pour les rumeurs multiples, séparées par des sauts de ligne
+            const rumeursString = Array.isArray(region.Rumeurs) ? region.Rumeurs.join('\n') : (region.Rumeur || '');
             rumeursTab.innerHTML = `
                 <div class="text-view space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Rumeurs</label>
-                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${region.Rumeur || ''}</textarea>
+                        <textarea id="edit-region-rumeur" rows="6" placeholder="Rumeur" class="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white">${rumeursString}</textarea>
                     </div>
                 </div>
             `;
@@ -2244,6 +2863,24 @@
                     </div>
                 </div>
             `;
+        }
+
+        function updateTablesTabForRegionEdit(region) {
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = region.tables || [];
+            const tablesHtml = generateTablesEditHTML(tables);
+
+            tablesTab.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tables aléatoires (max 5)</label>
+                        <div id="edit-tables-container">${tablesHtml}</div>
+                        <button id="add-table-btn" class="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm">Ajouter une table</button>
+                    </div>
+                </div>
+            `;
+
+            setupTablesEditListeners();
         }
 
         function addRegionEditControls() {
@@ -2282,8 +2919,8 @@
 
             region.name = document.getElementById('edit-region-name').value;
             region.description = document.getElementById('edit-region-desc').value;
-            region.Rumeur = document.getElementById('edit-region-rumeur').value || 'A définir';
-            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value || 'A définir';
+            region.Rumeurs = document.getElementById('edit-region-rumeur').value.split('\n').filter(r => r.trim() !== ''); // Split by newline for multiple rumors
+            region.Tradition_Ancienne = document.getElementById('edit-region-tradition').value;
             region.color = document.querySelector('#edit-region-color-picker .color-swatch.selected').dataset.color;
 
             // Handle images
@@ -2292,6 +2929,14 @@
                 region.images = images;
             } else {
                 delete region.images;
+            }
+
+            // Handle tables
+            const tables = collectTablesFromEdit();
+            if (tables.length > 0) {
+                region.tables = tables;
+            } else {
+                delete region.tables;
             }
 
             saveRegionsToLocal();
@@ -2390,12 +3035,48 @@
 
             // Update rumeurs tab content
             const rumeursTab = document.getElementById('rumeurs-tab');
-            rumeursTab.innerHTML = `
-                <div class="text-view">
-                    <h3>Rumeurs</h3>
-                    <p>${region.Rumeur || 'Aucune rumeur connue.'}</p>
-                </div>
-            `;
+            // Ajouter les sections Rumeurs (support multiple) et Tradition_Ancienne si elles existent
+            let rumeursContent = '';
+            if (region.Rumeurs && region.Rumeurs.length > 0) {
+                const rumeursValides = region.Rumeurs.filter(rumeur => rumeur && rumeur !== "A définir");
+
+                if (rumeursValides.length > 0) {
+                    rumeursContent += `
+                        <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                            <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                                <i class="fas fa-ear-listen mr-2"></i>
+                                ${rumeursValides.length > 1 ? 'Rumeurs' : 'Rumeur'}
+                            </div>
+                    `;
+
+                    rumeursValides.forEach((rumeur, index) => {
+                        const marginClass = index > 0 ? 'mt-3 pt-3 border-t border-yellow-600 border-opacity-50' : '';
+                        rumeursContent += `
+                            <div class="${marginClass} text-yellow-100 text-sm italic leading-relaxed">
+                                ${rumeur}
+                            </div>
+                        `;
+                    });
+
+                    rumeursContent += `</div>`;
+                }
+            }
+            // Support de l'ancienne structure avec Rumeur simple
+            else if (region.Rumeur && region.Rumeur !== "A définir") {
+                rumeursContent += `
+                    <div class="mt-4 bg-yellow-800 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                        <div class="font-bold text-yellow-300 mb-2 flex items-center">
+                            <i class="fas fa-ear-listen mr-2"></i>
+                            Rumeur
+                        </div>
+                        <div class="text-yellow-100 text-sm italic leading-relaxed">
+                            ${region.Rumeur}
+                        </div>
+                    </div>
+                `;
+            }
+            rumeursTab.innerHTML = `<div class="text-view">${rumeursContent || '<p class="text-gray-500 italic">Aucune rumeur connue.</p>'}</div>`;
+
 
             // Update tradition tab content
             const traditionTab = document.getElementById('tradition-tab');
@@ -2405,6 +3086,67 @@
                     <p>${region.Tradition_Ancienne || 'Aucune tradition ancienne connue.'}</p>
                 </div>
             `;
+
+            // Update tables tab content
+            const tablesTab = document.getElementById('tables-tab');
+            const tables = getRegionTables(region);
+
+            if (tables.length > 0) {
+                if (infoBox.classList.contains('expanded') && tables.length > 1) {
+                    // Multi-tab view for expanded mode with multiple tables
+                    const tableTabs = tables.map((table, index) =>
+                        `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">Table ${index + 1}</button>`
+                    ).join('');
+
+                    const tableContents = tables.map((table, index) =>
+                        `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}">
+                            <div class="image-view">
+                                <img src="${table}" alt="Table aléatoire ${region.name}" title="${table.split('/').pop()}" onerror="handleImageError(this)">
+                            </div>
+                        </div>`
+                    ).join('');
+
+                    tablesTab.innerHTML = `
+                        <div class="image-tabs-container">
+                            <div class="image-tabs">${tableTabs}</div>
+                            <div class="image-contents">${tableContents}</div>
+                        </div>
+                    `;
+
+                    setupImageTabSwitching();
+                    setupImageClickHandlers();
+                } else {
+                    // Single table view (compact mode or single table)
+                    const defaultTable = getDefaultRegionTable(region);
+                    const titleHtml = !infoBox.classList.contains('expanded') ? `<div class="compact-title">
+                                    <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                                </div>` : '';
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            ${titleHtml}
+                            <img src="${defaultTable}" alt="Table aléatoire ${region.name}" title="${defaultTable.split('/').pop()}" onerror="handleImageError(this)" class="modal-image">
+                        </div>
+                    `;
+                    setupImageClickHandlers();
+                }
+            } else {
+                // No tables - show placeholder
+                if (!infoBox.classList.contains('expanded')) {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="compact-title">
+                                <span style="font-family: 'Merriweather', serif;">Tables - ${region.name}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesTab.innerHTML = `
+                        <div class="image-view">
+                            <div class="image-placeholder">Aucune table disponible</div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         function deleteLocation(locationId) {
@@ -2538,7 +3280,7 @@
                     description: descInput.value,
                     color: selectedColor,
                     points: [...currentRegionPoints],
-                    Rumeur: "A définir",
+                    Rumeurs: [], // Initialize Rumeurs as an empty array
                     Tradition_Ancienne: "A définir"
                 };
 
@@ -2574,6 +3316,17 @@
             if (saved) {
                 try {
                     regionsData = JSON.parse(saved);
+                    // Ensure Rumeurs is an array for all regions
+                    regionsData.regions.forEach(region => {
+                        if (!Array.isArray(region.Rumeurs)) {
+                            if (region.Rumeur && region.Rumeur !== "A définir") {
+                                region.Rumeurs = [region.Rumeur];
+                            } else {
+                                region.Rumeurs = [];
+                            }
+                            delete region.Rumeur; // Remove the old Rumeur property
+                        }
+                    });
                 } catch (e) {
                     console.error('Failed to load regions from localStorage:', e);
                     regionsData = getDefaultRegions();
@@ -2928,7 +3681,7 @@
                 mapSwitchBtn.title = "Vue Joueurs";
             }
         });
-        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeur: "A définir", Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
+        document.getElementById('confirm-add-location').addEventListener('click', () => { const nameInput = document.getElementById('location-name-input'); const descInput = document.getElementById('location-desc-input'); const imageInput = document.getElementById('location-image-input'); const color = document.querySelector('#add-color-picker .selected').dataset.color; const known = document.getElementById('location-known-input').checked; const visited = document.getElementById('location-visited-input').checked; if (nameInput.value && newLocationCoords) { const newLocation = { id: Date.now(), name: nameInput.value, description: descInput.value, imageUrl: imageInput.value, color: color, known: known, visited: visited, type: "custom", coordinates: newLocationCoords, Rumeurs: [], Tradition_Ancienne: "A définir" }; locationsData.locations.push(newLocation); renderLocations(); saveLocationsToLocal(); } addLocationModal.classList.add('hidden'); nameInput.value = ''; descInput.value = ''; imageInput.value = ''; newLocationCoords = null; });
         document.getElementById('cancel-add-location').addEventListener('click', () => { addLocationModal.classList.add('hidden'); document.getElementById('location-name-input').value = ''; document.getElementById('location-desc-input').value = ''; document.getElementById('location-image-input').value = ''; newLocationCoords = null; });
         function addLocation(event) { newLocationCoords = getCanvasCoordinates(event); addLocationModal.classList.remove('hidden'); document.getElementById('location-name-input').focus(); isAddingLocationMode = false; viewport.classList.remove('adding-location'); document.getElementById('add-location-mode').classList.remove('btn-active'); const addColorPicker = document.getElementById('add-color-picker'); addColorPicker.innerHTML = Object.keys(colorMap).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${colorMap[color]}"></div>`).join(''); addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => { swatch.addEventListener('click', () => { addColorPicker.querySelector('.color-swatch.selected').classList.remove('selected'); swatch.classList.add('selected'); }); }); document.getElementById('generate-add-desc').addEventListener('click', handleGenerateDescription); document.getElementById('location-known-input').checked = true; document.getElementById('location-visited-input').checked = false; const addVisitedCheckbox = document.getElementById('location-visited-input'); const addKnownCheckbox = document.getElementById('location-known-input'); if(addVisitedCheckbox && addKnownCheckbox) { addVisitedCheckbox.addEventListener('change', () => { if (addVisitedCheckbox.checked) { addKnownCheckbox.checked = true; } }); } }
         function saveLocationsToLocal() {
@@ -2938,42 +3691,77 @@
         // === FONCTIONS UNIFIÉES D'IMPORT/EXPORT ===
 
         function exportUnifiedData() {
-            // Fusionner les lieux et les régions dans un seul tableau locations
             const allLocations = [];
 
-            // Ajouter tous les lieux normaux
+            // Ajouter les lieux normaux
             if (locationsData.locations) {
                 locationsData.locations.forEach(location => {
-                    allLocations.push({
-                        ...location,
-                        type: location.type || "custom" // S'assurer qu'il y a un type
-                    });
+                    const exportLocation = {
+                        id: location.id,
+                        name: location.name,
+                        description: location.description || "",
+                        imageUrl: location.imageUrl || "",
+                        images: location.images || [],
+                        color: location.color,
+                        known: location.known !== undefined ? location.known : true,
+                        visited: location.visited !== undefined ? location.visited : false,
+                        type: location.type || "custom",
+                        coordinates: location.coordinates || { x: 0, y: 0 }
+                    };
+
+                    // Ajouter les rumeurs multiples si elles existent
+                    if (location.Rumeurs && location.Rumeurs.length > 0) {
+                        location.Rumeurs.forEach(rumeur => {
+                            exportLocation.Rumeur = rumeur;
+                        });
+                    }
+                    // Support de l'ancienne structure avec Rumeur simple
+                    else if (location.Rumeur) {
+                        exportLocation.Rumeur = location.Rumeur;
+                    }
+
+                    if (location.Tradition_Ancienne) {
+                        exportLocation.Tradition_Ancienne = location.Tradition_Ancienne;
+                    }
+
+                    allLocations.push(exportLocation);
                 });
             }
 
-            // Ajouter toutes les régions (converties en format location avec type="region")
+            // Ajouter les régions converties en format unifié
             if (regionsData.regions) {
                 regionsData.regions.forEach(region => {
-                    // Convertir la structure de région en format location unifié
-                    const regionAsLocation = {
+                    const exportRegion = {
                         id: region.id,
                         name: region.name,
                         description: region.description || "",
                         imageUrl: region.imageUrl || "",
+                        images: region.images || [],
                         color: region.color,
                         known: region.known !== undefined ? region.known : true,
                         visited: region.visited !== undefined ? region.visited : false,
                         type: "region",
                         coordinates: {
-                            points: region.points || [] // Les points du polygone de la région
+                            points: region.points || []
                         }
                     };
 
-                    // Ajouter les propriétés additionnelles si elles existent
-                    if (region.Rumeur) regionAsLocation.Rumeur = region.Rumeur;
-                    if (region.Tradition_Ancienne) regionAsLocation.Tradition_Ancienne = region.Tradition_Ancienne;
+                    // Ajouter les rumeurs multiples si elles existent
+                    if (region.Rumeurs && region.Rumeurs.length > 0) {
+                        region.Rumeurs.forEach(rumeur => {
+                            exportRegion.Rumeur = rumeur;
+                        });
+                    }
+                    // Support de l'ancienne structure avec Rumeur simple
+                    else if (region.Rumeur) {
+                        exportRegion.Rumeur = region.Rumeur;
+                    }
 
-                    allLocations.push(regionAsLocation);
+                    if (region.Tradition_Ancienne) {
+                        exportRegion.Tradition_Ancienne = region.Tradition_Ancienne;
+                    }
+
+                    allLocations.push(exportRegion);
                 });
             }
 
@@ -3025,7 +3813,7 @@
                             coordinates: {
                                 points: region.points || []
                             },
-                            ...(region.Rumeur && { Rumeur: region.Rumeur }),
+                            ...(region.Rumeur && { Rumeur: region.Rumeur }), // Ancienne structure Rumeur simple
                             ...(region.Tradition_Ancienne && { Tradition_Ancienne: region.Tradition_Ancienne })
                         }));
                     }
@@ -3054,14 +3842,27 @@
                                 name: item.name,
                                 description: item.description || "",
                                 imageUrl: item.imageUrl || "",
+                                images: item.images || [], // Conserver les images pour les régions aussi
                                 color: item.color,
                                 known: item.known !== undefined ? item.known : true,
                                 visited: item.visited !== undefined ? item.visited : false,
+                                type: item.type || "region",
                                 points: item.coordinates?.points || []
                             };
 
-                            // Ajouter les propriétés additionnelles si elles existent
-                            if (item.Rumeur) region.Rumeur = item.Rumeur;
+                            // Fonction pour extraire les rumeurs multiples
+                            const extractRumeurs = (item) => {
+                                const rumeurs = [];
+                                // Parcourir toutes les propriétés pour trouver les rumeurs
+                                for (const key in item) {
+                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
+                                        rumeurs.push(item[key]);
+                                    }
+                                }
+                                return rumeurs;
+                            };
+
+                            region.Rumeurs = extractRumeurs(item);
                             if (item.Tradition_Ancienne) region.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             regionLocations.push(region);
@@ -3078,7 +3879,24 @@
                                     x: item.coordinates.x,
                                     y: item.coordinates.y
                                 };
+                            } else {
+                                location.coordinates = { x: 0, y: 0 }; // Coordonnées par défaut si manquantes
                             }
+
+                            // Fonction pour extraire les rumeurs multiples
+                            const extractRumeurs = (item) => {
+                                const rumeurs = [];
+                                // Parcourir toutes les propriétés pour trouver les rumeurs
+                                for (const key in item) {
+                                    if (key.startsWith('Rumeur') && item[key] !== "A définir") { // Check for Rumeur, Rumeur1, Rumeur2 etc.
+                                        rumeurs.push(item[key]);
+                                    }
+                                }
+                                return rumeurs;
+                            };
+
+                            location.Rumeurs = extractRumeurs(item);
+                            if (item.Tradition_Ancienne) location.Tradition_Ancienne = item.Tradition_Ancienne;
 
                             normalLocations.push(location);
                         }
@@ -3698,8 +4516,7 @@
         // document.getElementById('generate-journey-log').addEventListener('click', handleGenerateJourneyLog);
         document.getElementById('close-journey-log').addEventListener('click', () => journeyLogModal.classList.add('hidden'));
 
-        // Mettre à jour le titre du bouton après qu'il soit créé
-        updateJourneyButtonTitle();
+        // The journey button will be updated when the voyage manager is initialized
 
         // --- Gemini API Functions ---
         async function callGemini(prompt, button) {
@@ -3757,7 +4574,7 @@
 
                 const result = await response.json();
                 console.log("🤖 [GEMINI API] Réponse reçue:", result);
-                
+
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
                     const responseText = result.candidates[0].content.parts[0].text;
                     console.log("✅ [GEMINI API] Texte généré (longueur: " + responseText.length + " caractères)");
@@ -3814,7 +4631,7 @@
                 const discoveryList = chronologicalDiscoveries.map((discovery, index) => {
                     const icon = discovery.type === 'region' ? '🗺️' : '📍';
 
-                    // Calculer le temps pour atteindre cette découverte
+                    // Calculate reach time for this discovery
                     let startIndex = 0;
                     if (index > 0) {
                         const prevDiscovery = chronologicalDiscoveries[index - 1];
@@ -3830,7 +4647,7 @@
                     const reachMiles = pixelsToMiles(reachDistance);
                     const reachDays = milesToDays(reachMiles);
 
-                    // Vérifier si c'est un point de départ
+                    // Check if this is a starting location (close to journey start)
                     let travelInfo;
                     if (discovery.type === 'location' && startPoint && discovery.discoveryIndex === 0) {
                         // Find the actual location to check distance from start point
@@ -3885,6 +4702,7 @@
                             const regionMiles = pixelsToMiles(regionDistance);
                             const regionDays = milesToDays(regionMiles);
 
+                            // Replace travelInfo for regions to include duration
                             if (travelInfo === "(point de départ)") {
                                 displayText = `${icon} ${discovery.name} (point de départ, durée ${regionDays} jour${regionDays !== 1 ? 's' : ''})`;
                             } else {
@@ -4085,6 +4903,188 @@
                 console.error('Erreur lors du chargement des contextes:', error.message || error);
                 savedContextsDiv.innerHTML = '<p class="text-red-500">Impossible de charger les contextes.</p>';
             }
+        }
+
+        function setupSettingsEventListeners() {
+            // Settings modal event listeners
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsBtn = document.getElementById('close-settings-modal');
+
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                });
+                console.log("🔐 [AUTH] Bouton paramètres trouvé et configuré");
+            }
+
+            if (closeSettingsBtn) {
+                closeSettingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            }
+
+            // Settings tabs
+            const settingsTabs = document.querySelectorAll('.settings-tab-button');
+            const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+                    
+                    // Update active tab
+                    settingsTabs.forEach(t => t.classList.remove('active', 'text-white', 'border-blue-500'));
+                    settingsTabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
+                    tab.classList.remove('text-gray-400', 'border-transparent');
+                    tab.classList.add('active', 'text-white', 'border-blue-500');
+                    
+                    // Update active content
+                    settingsTabContents.forEach(content => {
+                        content.classList.remove('active');
+                        content.style.display = 'none';
+                    });
+                    
+                    const targetContent = document.getElementById(`${targetTab}-tab`);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        targetContent.style.display = 'flex';
+                    }
+                });
+            });
+
+            // Maps management listeners
+            setupMapsEventListeners();
+            
+            // Season indicator click
+            const seasonIndicator = document.getElementById('season-indicator');
+            const calendarDateIndicator = document.getElementById('calendar-date-indicator');
+            
+            if (seasonIndicator) {
+                seasonIndicator.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    // Switch to season tab
+                    const seasonTab = document.querySelector('[data-tab="season"]');
+                    if (seasonTab) {
+                        seasonTab.click();
+                    }
+                });
+            }
+            
+            if (calendarDateIndicator) {
+                calendarDateIndicator.addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                    // Switch to season tab
+                    const seasonTab = document.querySelector('[data-tab="season"]');
+                    if (seasonTab) {
+                        seasonTab.click();
+                    }
+                });
+            }
+
+            // Adventurers tab functionality
+            setupAdventurersTab();
+            
+            // Quest tab functionality
+            setupQuestTab();
+        }
+
+        function setupAdventurersTab() {
+            const editBtn = document.getElementById('edit-adventurers-btn');
+            const readMode = document.getElementById('adventurers-read-mode');
+            const editMode = document.getElementById('adventurers-edit-mode');
+            const textarea = document.getElementById('adventurers-group');
+            const content = document.getElementById('adventurers-content');
+            const saveBtn = document.getElementById('save-adventurers-edit');
+            const cancelBtn = document.getElementById('cancel-adventurers-edit');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    readMode.classList.add('hidden');
+                    editMode.classList.remove('hidden');
+                    textarea.focus();
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const adventurersData = textarea.value;
+                    localStorage.setItem('adventurersGroup', adventurersData);
+                    content.innerHTML = adventurersData ? marked(adventurersData) : '<p class="text-gray-400 italic">Aucune description d\'aventuriers définie.</p>';
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                });
+            }
+
+            // Load saved data
+            const savedAdventurers = localStorage.getItem('adventurersGroup');
+            if (savedAdventurers && textarea) {
+                textarea.value = savedAdventurers;
+                content.innerHTML = marked(savedAdventurers);
+            }
+        }
+
+        function setupQuestTab() {
+            const editBtn = document.getElementById('edit-quest-btn');
+            const readMode = document.getElementById('quest-read-mode');
+            const editMode = document.getElementById('quest-edit-mode');
+            const textarea = document.getElementById('adventurers-quest');
+            const content = document.getElementById('quest-content');
+            const saveBtn = document.getElementById('save-quest-edit');
+            const cancelBtn = document.getElementById('cancel-quest-edit');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    readMode.classList.add('hidden');
+                    editMode.classList.remove('hidden');
+                    textarea.focus();
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const questData = textarea.value;
+                    localStorage.setItem('adventurersQuest', questData);
+                    content.innerHTML = questData ? marked(questData) : '<p class="text-gray-400 italic">Aucune description de quête définie.</p>';
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                    scheduleAutoSync();
+                });
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    editMode.classList.add('hidden');
+                    readMode.classList.remove('hidden');
+                });
+            }
+
+            // Load saved data
+            const savedQuest = localStorage.getItem('adventurersQuest');
+            if (savedQuest && textarea) {
+                textarea.value = savedQuest;
+                content.innerHTML = marked(savedQuest);
+            }
+        }
+
+        // Simple markdown parser for basic formatting
+        function marked(text) {
+            return text
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/g, '<em>$1</em>')
+                .replace(/^- (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                .replace(/\n/g, '<br>');
         }
 
         function displaySavedContexts(contexts) {
@@ -4723,34 +5723,6 @@
             progressBar.classList.remove('hidden');
         }
 
-        function updateSegmentProgressBar() {
-            if (!voyageSegments[currentSegmentIndex]) return;
-
-            // Calculer les jours cumulés jusqu'au segment actuel (inclus)
-            let cumulativeDays = 0;
-            for (let i = 0; i <= currentSegmentIndex; i++) {
-                cumulativeDays += voyageSegments[i].duration;
-            }
-
-            // Calculer le total de jours basé sur la distance du tracé (valeur fixe)
-            const totalVoyageDays = getTotalJourneyDays();
-
-            // Calculer le pourcentage de progression
-            const progressPercent = totalVoyageDays > 0 ? (cumulativeDays / totalVoyageDays) * 100 : 0;
-
-            const progressFill = document.getElementById('progress-fill');
-            const progressMarker = document.getElementById('progress-marker');
-            const progressIndicator = document.getElementById('progress-indicator');
-            const totalDaysSpan = document.getElementById('total-days');
-
-            progressFill.style.width = `${progressPercent}%`;
-            progressMarker.style.left = `calc(${progressPercent}% - 12px)`;
-            progressMarker.querySelector('span').textContent = cumulativeDays;
-
-            progressIndicator.textContent = `Progression : ${cumulativeDays} / ${totalVoyageDays} jours`;
-            totalDaysSpan.textContent = totalVoyageDays;
-        }
-
         function navigateToSegment(direction) {
             console.log("🧭 Navigation segment:", {
                 direction: direction,
@@ -4814,9 +5786,7 @@
                 updateCurrentSegmentDisplay();
                 scheduleAutoSync();
             }
-        }
-
-        function removeFollowingSegments() {
+        }        function removeFollowingSegments() {
             // Supprimer tous les segments après le segment actuel
             voyageSegments = voyageSegments.slice(0, currentSegmentIndex + 1);
 
