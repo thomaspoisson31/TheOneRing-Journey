@@ -316,8 +316,11 @@ function initializeMap() {
     requestAnimationFrame(() => {
         resetView();
         mapImage.classList.remove('opacity-0');
-        loaderOverlay.style.opacity = '0';
-        setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
+        const loaderOverlay = document.getElementById('loader-overlay');
+        if (loaderOverlay) {
+            loaderOverlay.style.opacity = '0';
+            setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
+        }
     });
     preloadLoremasterMap();
 

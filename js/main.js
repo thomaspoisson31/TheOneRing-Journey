@@ -191,7 +191,6 @@
         
         // Make DOM elements and variables globally available
         window.viewport = viewport;
-        window.loaderOverlay = document.getElementById('loader-overlay');
         window.mapSwitchBtn = mapSwitchBtn;
         window.mapImage = mapImage;
         window.infoBoxClose = infoBoxClose;

@@ -18,9 +18,10 @@
 
             // Global timeout for the application startup
             const startTimeout = setTimeout(() => {
-                if (window.loaderOverlay && window.loaderOverlay.style.display !== 'none') {
+                const loaderOverlay = document.getElementById('loader-overlay');
+                if (loaderOverlay && loaderOverlay.style.display !== 'none') {
                     console.error("❌ Application startup timed out");
-                    window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
                         <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
                         Temps de chargement dépassé.<br>
                         <span class="text-sm text-gray-400 mt-2">Vérifiez votre connexion et les fichiers requis.</span><br>
@@ -133,8 +134,9 @@
             }).catch(error => {
                 clearTimeout(startTimeout);
                 console.error("❌ Error during app startup:", error);
-                if (window.loaderOverlay) {
-                    window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
+                const loaderOverlay = document.getElementById('loader-overlay');
+                if (loaderOverlay) {
+                    loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4">
                         <i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>
                         Erreur lors du démarrage.<br>
                         <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Recharger</button>
@@ -1000,8 +1002,9 @@
 
         function handleImageError() {
             console.error("❌ Erreur de chargement de l'image de carte");
-            if (window.loaderOverlay) {
-                window.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
+            const loaderOverlay = document.getElementById('loader-overlay');
+            if (loaderOverlay) {
+                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500 text-center p-4"><i class="fas fa-exclamation-triangle mb-4 text-4xl"></i><br>Erreur de chargement de la carte.<br><span class="text-sm text-gray-400 mt-2">Vérifiez que les fichiers de carte sont disponibles.</span></div>`;
             }
         }
         function startDragMarker(e) { e.stopPropagation(); draggedMarker = e.target; dragStartX = e.clientX; dragStartY = e.clientY; document.addEventListener('mousemove', dragMarker); document.addEventListener('mouseup', stopDragMarker); }
