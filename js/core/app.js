@@ -1,5 +1,20 @@
 // js/core/app.js
 
+function preloadImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            console.log(`✅ Image preloaded: ${url}`);
+            resolve();
+        };
+        img.onerror = () => {
+            console.error(`❌ Failed to preload image: ${url}`);
+            reject(new Error(`Failed to load image: ${url}`));
+        };
+        img.src = url;
+    });
+}
+
 function initializeApp() {
     window.addEventListener('unhandledrejection', (event) => {
         console.error('⚠️ Unhandled promise rejection:', event.reason);
@@ -19,23 +34,24 @@ function initializeApp() {
 
     checkAuthError();
 
-    Promise.all([loadInitialLocations(), loadRegionsFromLocal(), loadSavedSeason(), loadMapsData()])
-        .then(() => {
+    Promise.all([
+        loadInitialLocations(),
+        loadRegionsFromLocal(),
+        loadSavedSeason(),
+        loadMapsData(),
+        preloadImage(AppConfig.PLAYER_MAP_URL)
+    ]).then(() => {
             setupFilters();
             checkAuthStatus();
 
+            // L'image est déjà pré-chargée, on peut l'assigner directement
+            DOM.mapImage.src = AppConfig.PLAYER_MAP_URL;
+
+            // Attendre que l'image soit effectivement dessinée par le navigateur
             DOM.mapImage.onload = () => {
                 clearTimeout(startTimeout);
                 initializeMap();
             };
-            DOM.mapImage.onerror = () => {
-                clearTimeout(startTimeout);
-                console.error("❌ Map image failed to load.");
-                DOM.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500">Map failed to load.</div>`;
-            };
-
-            console.log("🗺️ Loading map image:", AppConfig.PLAYER_MAP_URL);
-            DOM.mapImage.src = AppConfig.PLAYER_MAP_URL;
 
             setupMainUIEventListeners();
             setupModalEventListeners();
