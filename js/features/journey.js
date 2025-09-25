@@ -3,18 +3,19 @@
 App.features.journey = (function() {
 
     function updateDistanceDisplay() {
-        const voyageBtn = DOM.getElementById('voyage-segments-btn');
+        const voyageBtn = DOM.get('voyage-segments-btn');
+        const distanceContainer = DOM.get('distanceContainer');
         if (AppState.totalPathPixels === 0 || AppState.mapWidth === 0) {
-            DOM.distanceContainer.classList.add('hidden');
+            distanceContainer.classList.add('hidden');
             if (voyageBtn) voyageBtn.classList.add('hidden');
             return;
         }
-        DOM.distanceContainer.classList.remove('hidden');
+        distanceContainer.classList.remove('hidden');
         if (voyageBtn) voyageBtn.classList.remove('hidden');
 
         const miles = App.utils.helpers.pixelsToMiles(AppState.totalPathPixels);
         const days = App.utils.helpers.milesToDays(miles);
-        DOM.distanceDisplay.innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${days.toFixed(1)}</strong> jours`;
+        DOM.get('distanceDisplay').innerHTML = `<strong>${Math.round(miles)}</strong> miles &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${days.toFixed(1)}</strong> jours`;
         updateJourneyInfo();
     }
 

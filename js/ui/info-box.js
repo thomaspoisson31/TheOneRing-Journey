@@ -5,7 +5,8 @@ App.ui.infoBox = (function() {
     // --- Private Functions ---
 
     function setupTabSwitching() {
-        const tabButtons = DOM.infoBox.querySelectorAll('.tab-button');
+        const infoBox = DOM.get('infoBox');
+        const tabButtons = infoBox.querySelectorAll('.tab-button');
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 activateTab(button.dataset.tab);
@@ -14,32 +15,35 @@ App.ui.infoBox = (function() {
     }
 
     function activateTab(tabName) {
-        const tabButtons = DOM.infoBox.querySelectorAll('.tab-button');
-        const tabContents = DOM.infoBox.querySelectorAll('.tab-content');
+        const infoBox = DOM.get('infoBox');
+        const tabButtons = infoBox.querySelectorAll('.tab-button');
+        const tabContents = infoBox.querySelectorAll('.tab-content');
         tabButtons.forEach(btn => btn.classList.remove('active'));
-        const activeButton = DOM.infoBox.querySelector(`[data-tab="${tabName}"]`);
+        const activeButton = infoBox.querySelector(`[data-tab="${tabName}"]`);
         if (activeButton) activeButton.classList.add('active');
         tabContents.forEach(content => content.classList.remove('active'));
-        const activeContent = DOM.getElementById(`${tabName}-tab`);
+        const activeContent = DOM.get(`${tabName}-tab`);
         if (activeContent) activeContent.classList.add('active');
     }
 
     function setupImageTabSwitching() {
-        const imageTabButtons = DOM.infoBox.querySelectorAll('.image-tab-button');
-        const imageContents = DOM.infoBox.querySelectorAll('.image-content');
+        const infoBox = DOM.get('infoBox');
+        const imageTabButtons = infoBox.querySelectorAll('.image-tab-button');
+        const imageContents = infoBox.querySelectorAll('.image-content');
         imageTabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const targetIndex = button.dataset.imageIndex;
                 imageTabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 imageContents.forEach(content => content.classList.remove('active'));
-                DOM.infoBox.querySelector(`.image-content[data-image-index="${targetIndex}"]`).classList.add('active');
+                infoBox.querySelector(`.image-content[data-image-index="${targetIndex}"]`).classList.add('active');
             });
         });
     }
 
     function setupImageClickHandlers() {
-        DOM.infoBox.querySelectorAll('.modal-image').forEach(img => {
+        const infoBox = DOM.get('infoBox');
+        infoBox.querySelectorAll('.modal-image').forEach(img => {
             img.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (document.fullscreenElement) {

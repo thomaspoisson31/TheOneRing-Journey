@@ -3,8 +3,8 @@
 App.ui.filters = (function() {
 
     function updateFilters() {
-        AppState.activeFilters.known = DOM.getElementById('filter-known').checked;
-        AppState.activeFilters.visited = DOM.getElementById('filter-visited').checked;
+        AppState.activeFilters.known = DOM.get('filter-known').checked;
+        AppState.activeFilters.visited = DOM.get('filter-visited').checked;
         AppState.activeFilters.colors = [];
         document.querySelectorAll('.filter-color-checkbox:checked').forEach(cb => {
             AppState.activeFilters.colors.push(cb.dataset.color);
@@ -12,25 +12,25 @@ App.ui.filters = (function() {
 
         App.features.locations.render();
 
-        const showRegions = DOM.getElementById('filter-show-regions').checked;
-        DOM.regionsLayer.style.display = showRegions ? 'block' : 'none';
+        const showRegions = DOM.get('filter-show-regions').checked;
+        DOM.get('regionsLayer').style.display = showRegions ? 'block' : 'none';
 
         App.api.dataStorage.saveFiltersToLocal();
         App.api.dataStorage.scheduleAutoSync();
     }
 
     function resetFilters() {
-        DOM.getElementById('filter-known').checked = false;
-        DOM.getElementById('filter-visited').checked = false;
+        DOM.get('filter-known').checked = false;
+        DOM.get('filter-visited').checked = false;
         document.querySelectorAll('.filter-color-checkbox').forEach(cb => cb.checked = false);
-        DOM.getElementById('filter-show-regions').checked = true;
+        DOM.get('filter-show-regions').checked = true;
         updateFilters();
     }
 
     // --- Public Functions ---
 
     function setup() {
-        const filterColorPicker = DOM.getElementById('filter-color-picker');
+        const filterColorPicker = DOM.get('filter-color-picker');
         filterColorPicker.innerHTML = Object.keys(AppConfig.COLOR_MAP).map(color => `
             <label title="${color.charAt(0).toUpperCase() + color.slice(1)}" class="relative cursor-pointer">
                 <input type="checkbox" data-color="${color}" class="filter-color-checkbox sr-only peer">
@@ -38,32 +38,36 @@ App.ui.filters = (function() {
             </label>
         `).join('');
 
-        DOM.getElementById('filter-toggle').addEventListener('click', (e) => {
+        DOM.get('filter-toggle').addEventListener('click', (e) => {
             e.stopPropagation();
-            DOM.filterPanel.classList.toggle('hidden');
+            DOM.get('filterPanel').classList.toggle('hidden');
         });
 
         document.addEventListener('click', (e) => {
-            if (!DOM.filterPanel.contains(e.target) && !DOM.getElementById('filter-toggle').contains(e.target)) {
-                DOM.filterPanel.classList.add('hidden');
+            const filterPanel = DOM.get('filterPanel');
+            if (filterPanel && !filterPanel.contains(e.target) && !DOM.get('filter-toggle').contains(e.target)) {
+                filterPanel.classList.add('hidden');
             }
         });
 
-        DOM.filterPanel.addEventListener('click', (e) => e.stopPropagation());
+        const filterPanel = DOM.get('filterPanel');
+        if(filterPanel) {
+            filterPanel.addEventListener('click', (e) => e.stopPropagation());
+        }
 
-        DOM.getElementById('filter-known').addEventListener('change', updateFilters);
-        DOM.getElementById('filter-visited').addEventListener('change', updateFilters);
+        DOM.get('filter-known').addEventListener('change', updateFilters);
+        DOM.get('filter-visited').addEventListener('change', updateFilters);
         document.querySelectorAll('.filter-color-checkbox').forEach(cb => cb.addEventListener('change', updateFilters));
-        DOM.getElementById('reset-filters').addEventListener('click', resetFilters);
-        DOM.getElementById('filter-show-regions').addEventListener('change', updateFilters);
+        DOM.get('reset-filters').addEventListener('click', resetFilters);
+        DOM.get('filter-show-regions').addEventListener('change', updateFilters);
 
         App.api.dataStorage.loadFiltersFromLocal();
     }
 
     function updateUI(showRegions = true) {
-        DOM.getElementById('filter-known').checked = AppState.activeFilters.known;
-        DOM.getElementById('filter-visited').checked = AppState.activeFilters.visited;
-        DOM.getElementById('filter-show-regions').checked = showRegions;
+        DOM.get('filter-known').checked = AppState.activeFilters.known;
+        DOM.get('filter-visited').checked = AppState.activeFilters.visited;
+        DOM.get('filter-show-regions').checked = showRegions;
         document.querySelectorAll('.filter-color-checkbox').forEach(cb => {
             cb.checked = AppState.activeFilters.colors.includes(cb.dataset.color);
         });

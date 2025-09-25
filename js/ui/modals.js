@@ -6,13 +6,13 @@ App.ui.modals = (function() {
 
     function openMapModal(editIndex = -1) {
         AppState.editingMapIndex = editIndex;
-        const modal = DOM.getElementById('map-modal');
-        const title = DOM.getElementById('map-modal-title');
-        const nameInput = DOM.getElementById('map-name-input');
-        const fileInput = DOM.getElementById('map-file-input');
-        const previewContainer = DOM.getElementById('map-preview-container');
-        const previewImage = DOM.getElementById('map-preview-image');
-        const saveText = DOM.getElementById('save-map-text');
+        const modal = DOM.get('map-modal');
+        const title = DOM.get('map-modal-title');
+        const nameInput = DOM.get('map-name-input');
+        const fileInput = DOM.get('map-file-input');
+        const previewContainer = DOM.get('map-preview-container');
+        const previewImage = DOM.get('map-preview-image');
+        const saveText = DOM.get('save-map-text');
 
         if (editIndex >= 0) {
             const map = AppState.availableMaps[editIndex];
