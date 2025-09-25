@@ -1,99 +1,101 @@
 // js/api/gemini.js
 
-async function callGemini(prompt, button) {
-    const buttonIcon = button.querySelector('.gemini-icon') || button;
-    const originalContent = buttonIcon.innerHTML;
-    buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
-    button.disabled = true;
+App.api.gemini = (function() {
 
-    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-    const payload = { contents: chatHistory };
+    async function call(prompt, button) {
+        const buttonIcon = button.querySelector('.gemini-icon') || button;
+        const originalContent = buttonIcon.innerHTML;
+        buttonIcon.innerHTML = `<i class="fas fa-spinner gemini-btn-spinner"></i>`;
+        button.disabled = true;
 
-    try {
-        const configResponse = await fetch('/api/gemini/config');
-        const config = await configResponse.json();
+        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+        const payload = { contents: chatHistory };
 
-        if (!config.api_key_configured || !config.api_key) {
-            console.error("Gemini API key not configured on server.");
-            return "Erreur: Clé API Gemini non configurée sur le serveur.";
-        }
+        try {
+            const configResponse = await fetch('/api/gemini/config');
+            const config = await configResponse.json();
 
-        const apiModel = 'gemini-2.0-flash-exp';
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${config.api_key}`;
-
-        console.log("🤖 [GEMINI API] Prompt:", prompt);
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            let errorMsg = `API request failed with status ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
-            } catch (jsonError) {
-                // Ignore
+            if (!config.api_key_configured || !config.api_key) {
+                console.error("Gemini API key not configured on server.");
+                return "Erreur: Clé API Gemini non configurée sur le serveur.";
             }
-            throw new Error(errorMsg);
+
+            const apiModel = 'gemini-2.0-flash-exp';
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${config.api_key}`;
+
+            console.log("🤖 [GEMINI API] Prompt:", prompt);
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                let errorMsg = `API request failed with status ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg += `: ${errorData.error?.message || JSON.stringify(errorData)}`;
+                } catch (jsonError) {
+                    // Ignore
+                }
+                throw new Error(errorMsg);
+            }
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Invalid response structure from API");
+            }
+        } catch (error) {
+            console.error("❌ [GEMINI API] Call failed:", error);
+            return `Désolé, une erreur est survenue: ${error.message}`;
+        } finally {
+            buttonIcon.innerHTML = originalContent;
+            button.disabled = false;
+        }
+    }
+
+    async function handleGenerateDescription(event) {
+        const button = event.currentTarget;
+        const modal = button.closest('.bg-gray-900');
+        const nameInput = modal.querySelector('input[type="text"]');
+        const descTextarea = modal.querySelector('textarea');
+        const locationName = nameInput.value;
+
+        if (!locationName) {
+            alert("Veuillez d'abord entrer un nom pour le lieu.");
+            return;
         }
 
-        const result = await response.json();
+        const prompt = `Rédige une courte description évocatrice pour un lieu de la Terre du Milieu nommé '${locationName}'. Décris son apparence, son atmosphère et son histoire possible, dans le style de J.R.R. Tolkien. Sois concis.`;
 
-        if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-            return result.candidates[0].content.parts[0].text;
-        } else {
-            throw new Error("Invalid response structure from API");
+        const result = await call(prompt, button);
+        descTextarea.value = result;
+    }
+
+    async function handleGenerateRegionDescription(event) {
+        const button = event.currentTarget;
+        const regionName = DOM.getElementById('edit-region-name').value;
+        const descTextarea = DOM.getElementById('edit-region-desc');
+
+        if (!regionName) {
+            alert("Veuillez d'abord entrer un nom pour la région.");
+            return;
         }
-    } catch (error) {
-        console.error("❌ [GEMINI API] Call failed:", error);
-        return `Désolé, une erreur est survenue: ${error.message}`;
-    } finally {
-        buttonIcon.innerHTML = originalContent;
-        button.disabled = false;
-    }
-}
 
-async function handleGenerateDescription(event) {
-    const button = event.currentTarget;
-    const modal = button.closest('.bg-gray-900');
-    const nameInput = modal.querySelector('input[type="text"]');
-    const descTextarea = modal.querySelector('textarea');
-    const locationName = nameInput.value;
+        const prompt = `Rédige une courte description évocatrice pour une région de la Terre du Milieu nommée '${regionName}'. Décris son apparence, son climat, sa géographie et son histoire possible, dans le style de J.R.R. Tolkien. Sois concis et évocateur.`;
 
-    if (!locationName) {
-        alert("Veuillez d'abord entrer un nom pour le lieu.");
-        return;
+        const result = await call(prompt, button);
+        descTextarea.value = result;
     }
 
-    const prompt = `Rédige une courte description évocatrice pour un lieu de la Terre du Milieu nommé '${locationName}'. Décris son apparence, son atmosphère et son histoire possible, dans le style de J.R.R. Tolkien. Sois concis.`;
+    async function handleGenerateAdventurers(event) {
+        const button = event.currentTarget;
 
-    const result = await callGemini(prompt, button);
-    descTextarea.value = result;
-}
-
-async function handleGenerateRegionDescription(event) {
-    const button = event.currentTarget;
-    const regionName = document.getElementById('edit-region-name').value;
-    const descTextarea = document.getElementById('edit-region-desc');
-
-    if (!regionName) {
-        alert("Veuillez d'abord entrer un nom pour la région.");
-        return;
-    }
-
-    const prompt = `Rédige une courte description évocatrice pour une région de la Terre du Milieu nommée '${regionName}'. Décris son apparence, son climat, sa géographie et son histoire possible, dans le style de J.R.R. Tolkien. Sois concis et évocateur.`;
-
-    const result = await callGemini(prompt, button);
-    descTextarea.value = result;
-}
-
-async function handleGenerateAdventurers(event) {
-    const button = event.currentTarget;
-
-    const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
+        const prompt = `Crée un groupe d'aventuriers pour les Terres du Milieu dans l'Eriador de la fin du Troisième Âge.
 
 Voici la procédure à suivre :
 
@@ -115,30 +117,38 @@ Format de réponse en Markdown:
 
 Reste fidèle à l'univers de Tolkien, à la géographie et l'histoire de l'Eriador.`;
 
-    const result = await callGemini(prompt, button);
+        const result = await call(prompt, button);
 
-    const parts = result.split('## Quête');
-    if (parts.length === 2) {
-        const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
-        const questPart = parts[1].trim();
+        const parts = result.split('## Quête');
+        if (parts.length === 2) {
+            const groupPart = parts[0].replace('## Groupe d\'aventuriers', '').trim();
+            const questPart = parts[1].trim();
 
-        const groupTextarea = document.getElementById('adventurers-group');
-        const questTextarea = document.getElementById('adventurers-quest');
+            const groupTextarea = DOM.getElementById('adventurers-group');
+            const questTextarea = DOM.getElementById('adventurers-quest');
 
-        if (groupTextarea) groupTextarea.value = groupPart;
-        if (questTextarea) questTextarea.value = questPart;
+            if (groupTextarea) groupTextarea.value = groupPart;
+            if (questTextarea) questTextarea.value = questPart;
 
-        updateMarkdownContent('adventurers-content', groupPart);
-        updateMarkdownContent('quest-content', questPart);
+            App.ui.main.updateMarkdownContent('adventurers-content', groupPart);
+            App.ui.main.updateMarkdownContent('quest-content', questPart);
 
-        localStorage.setItem('adventurersGroup', groupPart);
-        localStorage.setItem('adventurersQuest', questPart);
-        scheduleAutoSync();
-    } else {
-        const groupTextarea = document.getElementById('adventurers-group');
-        if (groupTextarea) groupTextarea.value = result;
-        updateMarkdownContent('adventurers-content', result);
-        localStorage.setItem('adventurersGroup', result);
-        scheduleAutoSync();
+            localStorage.setItem('adventurersGroup', groupPart);
+            localStorage.setItem('adventurersQuest', questPart);
+            App.api.dataStorage.scheduleAutoSync();
+        } else {
+            const groupTextarea = DOM.getElementById('adventurers-group');
+            if (groupTextarea) groupTextarea.value = result;
+            App.ui.main.updateMarkdownContent('adventurers-content', result);
+            localStorage.setItem('adventurersGroup', result);
+            App.api.dataStorage.scheduleAutoSync();
+        }
     }
-}
+
+    return {
+        call,
+        handleGenerateDescription,
+        handleGenerateRegionDescription,
+        handleGenerateAdventurers
+    };
+})();
