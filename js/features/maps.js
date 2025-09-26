@@ -1,0 +1,168 @@
+// js/features/maps.js
+
+App.features.maps = (function() {
+
+    // --- Public Functions ---
+
+    function loadData() {
+        const savedMaps = localStorage.getItem('availableMaps');
+        const savedConfig = localStorage.getItem('currentMapConfig');
+
+        if (savedMaps) {
+            try {
+                AppState.availableMaps = JSON.parse(savedMaps);
+            } catch (e) {
+                console.error('Error loading maps data:', e);
+                AppState.availableMaps = [];
+            }
+        }
+
+        if (savedConfig) {
+            try {
+                AppState.currentMapConfig = JSON.parse(savedConfig);
+            } catch (e) {
+                console.error('Error loading map config:', e);
+            }
+        }
+
+        if (AppState.availableMaps.length === 0) {
+            AppState.availableMaps = [
+                { id: 1, name: 'Carte Joueur - Eriador', filename: 'fr_tor_2nd_eriadors_map_page-0001.webp', type: 'player', isDefault: true },
+                { id: 2, name: 'Carte Gardien - Eriador', filename: 'fr_tor_2nd_eriadors_map_page_loremaster.webp', type: 'loremaster', isDefault: true }
+            ];
+            saveData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('availableMaps', JSON.stringify(AppState.availableMaps));
+        localStorage.setItem('currentMapConfig', JSON.stringify(AppState.currentMapConfig));
+        App.api.dataStorage.scheduleAutoSync();
+    }
+
+    function renderGrid() {
+        const mapsGrid = DOM.get('maps-grid');
+        if (!mapsGrid) return;
+
+        mapsGrid.innerHTML = AppState.availableMaps.map((map, index) => {
+            const isActive = (map.type === 'player' && AppState.currentMapConfig.playerMap === map.filename) ||
+                           (map.type === 'loremaster' && AppState.currentMapConfig.loremasterMap === map.filename);
+            return `
+                <div class="bg-gray-800 rounded-lg p-3 border ${isActive ? 'border-blue-500' : 'border-gray-600'} relative">
+                    ${isActive ? '<div class="absolute top-2 right-2 text-blue-400"><i class="fas fa-check-circle"></i></div>' : ''}
+                    <div class="aspect-video bg-gray-700 rounded-lg mb-2 overflow-hidden">
+                        <img src="${map.filename}" alt="${map.name}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                    </div>
+                    <div class="text-sm font-medium text-white mb-1">${App.utils.helpers.escapeHtml(map.name)}</div>
+                    <div class="text-xs text-gray-400 mb-2">${map.type === 'player' ? 'Carte Joueur' : 'Carte Gardien'}</div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs ${isActive ? 'opacity-50 cursor-not-allowed' : ''}"
+                                onclick="App.features.maps.setActive('${map.filename}', '${map.type}')" ${isActive ? 'disabled' : ''}>
+                            ${isActive ? 'Active' : 'Activer'}
+                        </button>
+                        <button class="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs" onclick="App.ui.modals.openMapModal(${index})"><i class="fas fa-edit"></i></button>
+                        ${!map.isDefault ? `<button class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs" onclick="App.features.maps.delete(${index})"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setActive(filename, type) {
+        if (type === 'player') {
+            AppState.currentMapConfig.playerMap = filename;
+            DOM.get('mapImage').src = filename;
+            DOM.get('active-player-map-preview').src = filename;
+        } else {
+            AppState.currentMapConfig.loremasterMap = filename;
+            DOM.get('loremasterMapImage').src = filename;
+            DOM.get('active-loremaster-map-preview').src = filename;
+        }
+        saveData();
+        renderGrid();
+    }
+
+    function deleteMap(index) {
+        if (AppState.availableMaps[index].isDefault) {
+            alert('Impossible de supprimer une carte par défaut.');
+            return;
+        }
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+            AppState.availableMaps.splice(index, 1);
+            saveData();
+            renderGrid();
+        }
+    }
+
+    function initialize() {
+        const mapImage = DOM.get('mapImage');
+        if (mapImage.naturalWidth === 0) {
+            console.warn("⚠️ Map image not loaded yet, retrying...");
+            return;
+        }
+        AppState.mapWidth = mapImage.naturalWidth;
+        AppState.mapHeight = mapImage.naturalHeight;
+        const mapContainer = DOM.get('mapContainer');
+        mapContainer.style.width = `${AppState.mapWidth}px`;
+        mapContainer.style.height = `${AppState.mapHeight}px`;
+        const drawingCanvas = DOM.get('drawingCanvas');
+        drawingCanvas.width = AppState.mapWidth;
+        drawingCanvas.height = AppState.mapHeight;
+        const regionsLayer = DOM.get('regionsLayer');
+        regionsLayer.setAttribute('viewBox', `0 0 ${AppState.mapWidth} ${AppState.mapHeight}`);
+
+        const ctx = DOM.getCtx();
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        App.features.locations.render();
+        App.features.regions.render();
+
+        requestAnimationFrame(() => {
+            resetView();
+            mapImage.classList.remove('opacity-0');
+            const loaderOverlay = DOM.get('loaderOverlay');
+            loaderOverlay.style.opacity = '0';
+            setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
+        });
+
+        preloadLoremasterMap();
+        console.log("✅ Map initialized successfully");
+    }
+
+    function preloadLoremasterMap() {
+        const lmImage = new Image();
+        lmImage.onload = () => {
+            DOM.get('loremasterMapImage').src = AppConfig.LOREMASTER_MAP_URL;
+            DOM.get('mapSwitchBtn').classList.remove('hidden');
+        };
+        lmImage.src = AppConfig.LOREMASTER_MAP_URL;
+    }
+
+    function applyTransform() {
+        DOM.get('mapContainer').style.transform = `translate(${AppState.panX}px, ${AppState.panY}px) scale(${AppState.scale})`;
+    }
+
+    function resetView() {
+        const viewportWidth = DOM.get('viewport').clientWidth;
+        if (viewportWidth === 0 || AppState.mapWidth === 0) return;
+        AppState.scale = viewportWidth / AppState.mapWidth;
+        AppState.panX = 0;
+        AppState.panY = 0;
+        applyTransform();
+    }
+
+    return {
+        loadData,
+        saveData,
+        renderGrid,
+        setActive,
+        delete: deleteMap,
+        initialize,
+        applyTransform,
+        resetView
+    };
+
+})();
