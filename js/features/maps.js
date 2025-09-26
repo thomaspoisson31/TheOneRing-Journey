@@ -41,7 +41,7 @@ App.features.maps = (function() {
     }
 
     function renderGrid() {
-        const mapsGrid = DOM.getElementById('maps-grid');
+        const mapsGrid = DOM.get('maps-grid');
         if (!mapsGrid) return;
 
         mapsGrid.innerHTML = AppState.availableMaps.map((map, index) => {

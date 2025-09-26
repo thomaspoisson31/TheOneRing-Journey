@@ -51,7 +51,7 @@ App.features.regions = (function() {
         circle.setAttribute('r', 4);
         circle.classList.add('region-point');
         circle.dataset.tempPoint = 'true';
-        DOM.regionsLayer.appendChild(circle);
+        DOM.get('regionsLayer').appendChild(circle);
     }
 
     function complete() {

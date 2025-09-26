@@ -107,13 +107,13 @@ App.features.locations = (function() {
 
     function add(event) {
         AppState.newLocationCoords = App.utils.helpers.getCanvasCoordinates(event);
-        DOM.addLocationModal.classList.remove('hidden');
-        DOM.getElementById('location-name-input').focus();
+        DOM.get('addLocationModal').classList.remove('hidden');
+        DOM.get('location-name-input').focus();
         AppState.isAddingLocationMode = false;
-        DOM.viewport.classList.remove('adding-location');
-        DOM.getElementById('add-location-mode').classList.remove('btn-active');
+        DOM.get('viewport').classList.remove('adding-location');
+        DOM.get('add-location-mode').classList.remove('btn-active');
 
-        const addColorPicker = DOM.getElementById('add-color-picker');
+        const addColorPicker = DOM.get('add-color-picker');
         addColorPicker.innerHTML = Object.keys(AppConfig.COLOR_MAP).map((color, index) => `<div class="color-swatch ${index === 0 ? 'selected' : ''}" data-color="${color}" style="background-color: ${AppConfig.COLOR_MAP[color]}"></div>`).join('');
 
         addColorPicker.querySelectorAll('.color-swatch').forEach(swatch => {
@@ -123,18 +123,18 @@ App.features.locations = (function() {
             });
         });
 
-        DOM.getElementById('generate-add-desc').addEventListener('click', App.api.gemini.handleGenerateDescription);
-        DOM.getElementById('location-known-input').checked = true;
-        DOM.getElementById('location-visited-input').checked = false;
+        DOM.get('generate-add-desc').addEventListener('click', App.api.gemini.handleGenerateDescription);
+        DOM.get('location-known-input').checked = true;
+        DOM.get('location-visited-input').checked = false;
     }
 
     function confirmAdd() {
-        const nameInput = DOM.getElementById('location-name-input');
-        const descInput = DOM.getElementById('location-desc-input');
-        const imageInput = DOM.getElementById('location-image-input');
+        const nameInput = DOM.get('location-name-input');
+        const descInput = DOM.get('location-desc-input');
+        const imageInput = DOM.get('location-image-input');
         const color = DOM.querySelector('#add-color-picker .selected').dataset.color;
-        const known = DOM.getElementById('location-known-input').checked;
-        const visited = DOM.getElementById('location-visited-input').checked;
+        const known = DOM.get('location-known-input').checked;
+        const visited = DOM.get('location-visited-input').checked;
 
         if (nameInput.value && AppState.newLocationCoords) {
             const newLocation = {

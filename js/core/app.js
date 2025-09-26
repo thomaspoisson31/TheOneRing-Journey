@@ -28,9 +28,10 @@ App.core = (function() {
         console.log('🚀 Starting application...');
 
         const startTimeout = setTimeout(() => {
-            if (DOM.loaderOverlay.style.display !== 'none') {
+            const loaderOverlay = DOM.get('loaderOverlay');
+            if (loaderOverlay && loaderOverlay.style.display !== 'none') {
                 console.error("❌ Application startup timed out");
-                DOM.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500">Timeout. <button onclick="location.reload()">Reload</button></div>`;
+                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500">Timeout. <button onclick="location.reload()">Reload</button></div>`;
             }
         }, 30000);
 
@@ -46,9 +47,10 @@ App.core = (function() {
             App.ui.filters.setup();
             App.api.auth.checkStatus();
 
-            DOM.mapImage.src = AppConfig.PLAYER_MAP_URL;
+            const mapImage = DOM.get('mapImage');
+            mapImage.src = AppConfig.PLAYER_MAP_URL;
 
-            DOM.mapImage.onload = () => {
+            mapImage.onload = () => {
                 clearTimeout(startTimeout);
                 App.features.maps.initialize();
             };
@@ -59,7 +61,10 @@ App.core = (function() {
         .catch(error => {
             clearTimeout(startTimeout);
             console.error("❌ Error during app startup:", error);
-            DOM.loaderOverlay.innerHTML = `<div class="text-2xl text-red-500">Startup Error.</div>`;
+            const loaderOverlay = DOM.get('loaderOverlay');
+            if (loaderOverlay) {
+                loaderOverlay.innerHTML = `<div class="text-2xl text-red-500">Startup Error.</div>`;
+            }
         });
     }
 

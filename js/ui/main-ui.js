@@ -19,13 +19,13 @@ App.ui.main = (function() {
     function toggleAddLocationMode(button) {
         AppState.isDrawingMode = false;
         AppState.isAddingRegionMode = false;
-        DOM.viewport.classList.remove('drawing', 'adding-region');
-        DOM.getElementById('draw-mode').classList.remove('btn-active');
-        DOM.getElementById('add-region-mode').classList.remove('btn-active');
+        DOM.get('viewport').classList.remove('drawing', 'adding-region');
+        DOM.get('draw-mode').classList.remove('btn-active');
+        DOM.get('add-region-mode').classList.remove('btn-active');
         App.features.regions.cancelCreation();
 
         AppState.isAddingLocationMode = !AppState.isAddingLocationMode;
-        DOM.viewport.classList.toggle('adding-location', AppState.isAddingLocationMode);
+        DOM.get('viewport').classList.toggle('adding-location', AppState.isAddingLocationMode);
         button.classList.toggle('btn-active', AppState.isAddingLocationMode);
         App.features.locations.render();
     }

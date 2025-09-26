@@ -173,13 +173,13 @@ App.features.seasons = (function() {
         const symbol = AppConfig.SEASON_SYMBOLS[seasonMainName] || '🌿';
         const fullName = AppConfig.SEASON_NAMES[AppState.currentSeason] || AppState.currentSeason;
 
-        const seasonIndicator = DOM.getElementById('season-indicator');
+        const seasonIndicator = DOM.get('season-indicator');
         if (seasonIndicator) {
             seasonIndicator.textContent = symbol;
             seasonIndicator.title = `Saison: ${fullName}`;
         }
 
-        const calendarDateIndicator = DOM.getElementById('calendar-date-indicator');
+        const calendarDateIndicator = DOM.get('calendar-date-indicator');
         if (calendarDateIndicator && AppState.currentCalendarDate && AppState.isCalendarMode) {
             calendarDateIndicator.textContent = `${AppState.currentCalendarDate.day} ${AppState.currentCalendarDate.month}`;
             calendarDateIndicator.classList.remove('hidden');
@@ -187,9 +187,9 @@ App.features.seasons = (function() {
             calendarDateIndicator.classList.add('hidden');
         }
 
-        const settingsSymbol = DOM.getElementById('current-season-symbol');
-        const settingsText = DOM.getElementById('current-season-text');
-        const settingsDate = DOM.getElementById('current-calendar-date');
+        const settingsSymbol = DOM.get('current-season-symbol');
+        const settingsText = DOM.get('current-season-text');
+        const settingsDate = DOM.get('current-calendar-date');
 
         if (settingsSymbol) settingsSymbol.textContent = symbol;
         if (settingsText) settingsText.textContent = fullName;
