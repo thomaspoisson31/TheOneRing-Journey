@@ -1,5 +1,7 @@
+ 
 // js/ui/main-ui.js
 
+ 
 App.ui.main = (function() {
 
     // --- Private Functions ---
@@ -7,6 +9,7 @@ App.ui.main = (function() {
     function toggleDrawingMode(button) {
         AppState.isAddingLocationMode = false;
         AppState.isAddingRegionMode = false;
+ 
         DOM.get('viewport').classList.remove('adding-location', 'adding-region');
         DOM.get('add-location-mode').classList.remove('btn-active');
         DOM.get('add-region-mode').classList.remove('btn-active');
@@ -14,6 +17,7 @@ App.ui.main = (function() {
 
         AppState.isDrawingMode = !AppState.isDrawingMode;
         DOM.get('viewport').classList.toggle('drawing', AppState.isDrawingMode);
+ 
         button.classList.toggle('btn-active', AppState.isDrawingMode);
         App.features.locations.render();
     }
@@ -35,12 +39,14 @@ App.ui.main = (function() {
     function toggleAddRegionMode(button) {
         AppState.isDrawingMode = false;
         AppState.isAddingLocationMode = false;
+ 
         DOM.get('viewport').classList.remove('drawing', 'adding-location');
         DOM.get('draw-mode').classList.remove('btn-active');
         DOM.get('add-location-mode').classList.remove('btn-active');
 
         AppState.isAddingRegionMode = !AppState.isAddingRegionMode;
         DOM.get('viewport').classList.toggle('adding-region', AppState.isAddingRegionMode);
+ 
         button.classList.toggle('btn-active', AppState.isAddingRegionMode);
         if (!AppState.isAddingRegionMode) {
             App.features.regions.cancelCreation();
@@ -56,7 +62,9 @@ App.ui.main = (function() {
         AppState.isPanning = true;
         AppState.startPanX = event.clientX - AppState.panX;
         AppState.startPanY = event.clientY - AppState.panY;
+ 
         DOM.get('viewport').classList.add('panning');
+ 
     }
 
     function handlePanMove(event) {
@@ -70,7 +78,9 @@ App.ui.main = (function() {
 
     function handlePanEnd() {
         AppState.isPanning = false;
+ 
         DOM.get('viewport').classList.remove('panning');
+ 
     }
 
     function handleZoom(event) {
@@ -78,7 +88,9 @@ App.ui.main = (function() {
         const zoomIntensity = 0.1;
         const wheel = event.deltaY < 0 ? 1 : -1;
         const zoom = Math.exp(wheel * zoomIntensity);
+ 
         const rect = DOM.get('viewport').getBoundingClientRect();
+ 
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
         AppState.panX = mouseX - (mouseX - AppState.panX) * zoom;
@@ -86,7 +98,7 @@ App.ui.main = (function() {
         AppState.scale = Math.max(0.1, Math.min(AppState.scale * zoom, 5));
         App.features.maps.applyTransform();
     }
-
+ 
     function updateMarkdownContent(elementId, content) {
         const element = DOM.get(elementId);
         if (element) {
@@ -188,6 +200,7 @@ App.ui.main = (function() {
             DOM.get('loggedInPanel').classList.remove('hidden');
             DOM.get('loggedOutPanel').classList.add('hidden');
             DOM.get('authUserName').textContent = AppState.currentUser.name || 'Utilisateur';
+ 
             if (AppState.currentUser.picture) {
                 userProfilePic.src = AppState.currentUser.picture;
                 userProfilePic.classList.remove('hidden');
@@ -195,6 +208,7 @@ App.ui.main = (function() {
             } else {
                 authIcon.className = 'fas fa-user-check text-green-400';
             }
+ 
             DOM.get('auth-btn').title = `Connecté: ${AppState.currentUser.name}`;
         } else {
             DOM.get('loggedInPanel').classList.add('hidden');
@@ -203,26 +217,32 @@ App.ui.main = (function() {
             authIcon.classList.remove('hidden');
             authIcon.className = 'fas fa-user';
             DOM.get('auth-btn').title = 'Authentification';
+ 
         }
     }
 
     function displaySavedContexts(contexts) {
+ 
         const savedContextsDiv = DOM.get('savedContexts');
         savedContextsDiv.innerHTML = '';
         if (!contexts || contexts.length === 0) {
             savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Aucun contexte.</p>';
+ 
             return;
         }
         contexts.forEach(context => {
             const contextEl = document.createElement('div');
             contextEl.className = 'flex justify-between items-center bg-gray-700 p-2 rounded mb-1';
             contextEl.innerHTML = `
+ 
                 <span class="text-sm">${App.utils.helpers.escapeHtml(context.name)}</span>
+ 
                 <div class="flex space-x-2">
                     <button class="load-context-btn text-blue-400 hover:text-blue-300" data-context-id="${context.id}">Charger</button>
                     <button class="delete-context-btn text-red-400 hover:text-red-300" data-context-id="${context.id}">Supprimer</button>
                 </div>
             `;
+ 
             savedContextsDiv.appendChild(contextEl);
         });
 
@@ -230,12 +250,15 @@ App.ui.main = (function() {
             btn.addEventListener('click', (e) => App.api.dataStorage.loadContext(e.target.dataset.contextId));
         });
         savedContextsDiv.querySelectorAll('.delete-context-btn').forEach(btn => {
+ 
             btn.addEventListener('click', (e) => App.api.dataStorage.deleteContext(e.target.dataset.contextId));
         });
     }
 
     function openSettingsOnSeasonTab() {
+ 
         DOM.get('settingsModal').classList.remove('hidden');
+ 
         loadSettings();
         const seasonTabButton = document.querySelector('.settings-tab-button[data-tab="season"]');
         if (seasonTabButton) {
@@ -248,8 +271,10 @@ App.ui.main = (function() {
         const adventurersQuest = localStorage.getItem('adventurersQuest');
         const narrationStyle = localStorage.getItem('narrationStyle') || 'brief';
 
+ 
         DOM.get('adventurers-group').value = adventurersGroup || '';
         DOM.get('adventurers-quest').value = adventurersQuest || '';
+ 
         updateMarkdownContent('adventurers-content', adventurersGroup);
         updateMarkdownContent('quest-content', adventurersQuest);
 
@@ -261,9 +286,11 @@ App.ui.main = (function() {
         App.features.maps.renderGrid();
     }
 
+ 
     return {
         setupEventListeners,
         setupInfoBoxEventListeners,
+ 
         updateAuthUI,
         displaySavedContexts,
         loadSettings,

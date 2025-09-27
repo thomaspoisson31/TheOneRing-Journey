@@ -87,24 +87,30 @@ App.features.journey = (function() {
     }
 
     function displayJourneyInfo() {
+
         const traversedRegionsInfo = DOM.get('traversed-regions-info');
         const traversedRegionsList = DOM.get('traversed-regions-list');
         const nearbyLocationsInfo = DOM.get('nearby-locations-info');
         const nearbyLocationsList = DOM.get('nearby-locations-list');
+
 
         const regions = AppState.journeyDiscoveries.filter(d => d.type === 'region');
         const locations = AppState.journeyDiscoveries.filter(d => d.type === 'location');
 
         if (regions.length > 0) {
             traversedRegionsInfo.classList.remove('hidden');
+
             traversedRegionsList.innerHTML = regions.map(r => `<div>${App.utils.helpers.escapeHtml(r.name)}</div>`).join('');
+
         } else {
             traversedRegionsInfo.classList.add('hidden');
         }
 
         if (locations.length > 0) {
             nearbyLocationsInfo.classList.remove('hidden');
+
             nearbyLocationsList.innerHTML = locations.map(l => `<div>${App.utils.helpers.escapeHtml(l.name)} <span class="text-gray-400 text-xs">(${l.proximityType})</span></div>`).join('');
+
         } else {
             nearbyLocationsInfo.classList.add('hidden');
         }
@@ -112,6 +118,7 @@ App.features.journey = (function() {
 
     function redraw() {
         if (AppState.journeyPath.length > 0) {
+
             const ctx = DOM.getCtx();
             const canvas = DOM.get('drawing-canvas');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -121,6 +128,7 @@ App.features.journey = (function() {
                 ctx.lineTo(AppState.journeyPath[i].x, AppState.journeyPath[i].y);
             }
             ctx.stroke();
+
         }
     }
 
@@ -135,6 +143,7 @@ App.features.journey = (function() {
         const ctx = DOM.getCtx();
         const canvas = DOM.get('drawing-canvas');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         AppState.isDrawing = true;
         AppState.totalPathPixels = 0;
         AppState.journeyPath = [];
@@ -152,6 +161,7 @@ App.features.journey = (function() {
         ctx.moveTo(AppState.lastPoint.x, AppState.lastPoint.y);
         updateDistanceDisplay();
         DOM.get('distanceContainer').classList.remove('hidden');
+
     }
 
     function draw(event) {
@@ -161,9 +171,11 @@ App.features.journey = (function() {
         AppState.totalPathPixels += segmentLength;
         AppState.journeyPath.push({ x: currentPoint.x, y: currentPoint.y });
         AppState.lastPoint = currentPoint;
+
         const ctx = DOM.getCtx();
         ctx.lineTo(currentPoint.x, currentPoint.y);
         ctx.stroke();
+
         updateDistanceDisplay();
     }
 
@@ -175,9 +187,11 @@ App.features.journey = (function() {
     }
 
     function erase() {
+
         const ctx = DOM.getCtx();
         const canvas = DOM.get('drawing-canvas');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         AppState.totalPathPixels = 0;
         AppState.startPoint = null;
         AppState.lastPoint = null;
@@ -186,8 +200,9 @@ App.features.journey = (function() {
         AppState.nearbyLocations.clear();
         AppState.journeyDiscoveries = [];
         resetVoyageSegments();
-
+ 
         const voyageBtn = DOM.get('voyage-segments-btn');
+
         if (voyageBtn) voyageBtn.classList.add('hidden');
 
         updateDistanceDisplay();

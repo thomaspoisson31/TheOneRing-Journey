@@ -53,7 +53,9 @@ App.features.maps = (function() {
                     <div class="aspect-video bg-gray-700 rounded-lg mb-2 overflow-hidden">
                         <img src="${map.filename}" alt="${map.name}" class="w-full h-full object-cover" onerror="this.style.display='none'">
                     </div>
+ 
                     <div class="text-sm font-medium text-white mb-1">${App.utils.helpers.escapeHtml(map.name)}</div>
+ 
                     <div class="text-xs text-gray-400 mb-2">${map.type === 'player' ? 'Carte Joueur' : 'Carte Gardien'}</div>
                     <div class="flex space-x-2">
                         <button class="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs ${isActive ? 'opacity-50 cursor-not-allowed' : ''}"
@@ -71,12 +73,14 @@ App.features.maps = (function() {
     function setActive(filename, type) {
         if (type === 'player') {
             AppState.currentMapConfig.playerMap = filename;
+ 
             DOM.get('mapImage').src = filename;
             DOM.get('active-player-map-preview').src = filename;
         } else {
             AppState.currentMapConfig.loremasterMap = filename;
             DOM.get('loremasterMapImage').src = filename;
             DOM.get('active-loremaster-map-preview').src = filename;
+ 
         }
         saveData();
         renderGrid();
@@ -95,6 +99,7 @@ App.features.maps = (function() {
     }
 
     function initialize() {
+ 
         const mapImage = DOM.get('mapImage');
         if (mapImage.naturalWidth === 0) {
             console.warn("⚠️ Map image not loaded yet, retrying...");
@@ -116,16 +121,19 @@ App.features.maps = (function() {
         ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+ 
 
         App.features.locations.render();
         App.features.regions.render();
 
         requestAnimationFrame(() => {
             resetView();
+ 
             mapImage.classList.remove('opacity-0');
             const loaderOverlay = DOM.get('loaderOverlay');
             loaderOverlay.style.opacity = '0';
             setTimeout(() => { loaderOverlay.style.display = 'none'; }, 500);
+ 
         });
 
         preloadLoremasterMap();
@@ -135,18 +143,22 @@ App.features.maps = (function() {
     function preloadLoremasterMap() {
         const lmImage = new Image();
         lmImage.onload = () => {
+ 
             DOM.get('loremasterMapImage').src = AppConfig.LOREMASTER_MAP_URL;
             DOM.get('mapSwitchBtn').classList.remove('hidden');
+ 
         };
         lmImage.src = AppConfig.LOREMASTER_MAP_URL;
     }
 
     function applyTransform() {
+ 
         DOM.get('mapContainer').style.transform = `translate(${AppState.panX}px, ${AppState.panY}px) scale(${AppState.scale})`;
     }
 
     function resetView() {
         const viewportWidth = DOM.get('viewport').clientWidth;
+ 
         if (viewportWidth === 0 || AppState.mapWidth === 0) return;
         AppState.scale = viewportWidth / AppState.mapWidth;
         AppState.panX = 0;

@@ -56,11 +56,13 @@ App.ui.infoBox = (function() {
     }
 
     function updateInfoBoxTab(tabId, items, title) {
+ 
         const tabElement = DOM.get(`${tabId}-tab`);
         const infoBox = DOM.get('infoBox');
         if (items.length > 0) {
             let content = '';
             if (infoBox.classList.contains('expanded') && items.length > 1) {
+ 
                 const tabs = items.map((item, index) => `<button class="image-tab-button ${index === 0 ? 'active' : ''}" data-image-index="${index}">${tabId === 'image' ? 'Image' : 'Table'} ${index + 1}</button>`).join('');
                 const itemHtml = items.map((item, index) => `<div class="image-content ${index === 0 ? 'active' : ''}" data-image-index="${index}"><div class="image-view"><img src="${item.url || item}" onerror="App.ui.infoBox.handleImageError(this)"></div></div>`).join('');
                 content = `<div class="image-tabs-container"><div class="image-tabs">${tabs}</div><div class="image-contents">${itemHtml}</div></div>`;
@@ -69,7 +71,9 @@ App.ui.infoBox = (function() {
                 content = `<div class="image-view"><img src="${defaultItem}" class="modal-image" onerror="App.ui.infoBox.handleImageError(this)"></div>`;
             }
             tabElement.innerHTML = content;
+ 
             if (infoBox.classList.contains('expanded') && items.length > 1) setupImageTabSwitching();
+ 
             setupImageClickHandlers();
         } else {
             tabElement.innerHTML = `<div class="image-view"><div class="image-placeholder">Aucun(e) ${tabId} disponible</div></div>`;
@@ -77,12 +81,15 @@ App.ui.infoBox = (function() {
     }
 
     function updateInfoBoxContent(type, data) {
+ 
         const images = App.features.locations.getImages(data);
         const tables = App.features.locations.getTables(data);
+ 
 
         updateInfoBoxTab('image', images, data.name);
         updateInfoBoxTab('tables', tables, `Tables - ${data.name}`);
 
+ 
         DOM.get('text-tab').innerHTML = `<div class="text-view"><h3>${data.name}</h3><p>${data.description || 'Aucune description.'}</p></div>`;
 
         let rumeursContent = '';
@@ -93,15 +100,18 @@ App.ui.infoBox = (function() {
         }
         DOM.get('rumeurs-tab').innerHTML = `<div class="text-view"><h3>Rumeurs</h3>${rumeursContent || '<p>Aucune rumeur connue.</p>'}</div>`;
         DOM.get('tradition-tab').innerHTML = `<div class="text-view"><h3>Tradition Ancienne</h3><p>${App.utils.helpers.escapeHtml(data.Tradition_Ancienne) || 'Aucune tradition ancienne connue.'}</p></div>`;
+ 
 
         updateInfoBoxHeaderTitle(data.name);
         setupTabSwitching();
     }
 
     function positionInfoBoxExpanded() {
+ 
         const infoBox = DOM.get('infoBox');
         const vpRect = DOM.get('viewport').getBoundingClientRect();
         const tbRect = DOM.get('toolbar').getBoundingClientRect();
+ 
         const margin = 16;
         const desiredWidth = Math.floor(vpRect.width * 0.9);
         const desiredHeight = Math.floor(vpRect.height * 0.9);
@@ -110,6 +120,7 @@ App.ui.infoBox = (function() {
         const left = Math.max(margin, tbRect.right - vpRect.left + margin);
         const top = Math.floor((vpRect.height - desiredHeight) / 2);
 
+ 
         infoBox.style.left = `${left}px`;
         infoBox.style.top = `${top}px`;
         infoBox.style.width = `${finalWidth}px`;
@@ -118,6 +129,7 @@ App.ui.infoBox = (function() {
 
     function updateInfoBoxHeaderTitle(title) {
         DOM.get('info-box-title').textContent = title;
+ 
     }
 
     // --- Public Functions ---
@@ -127,6 +139,7 @@ App.ui.infoBox = (function() {
         AppState.activeLocationId = parseInt(marker.dataset.id, 10);
         const location = AppState.locationsData.locations.find(loc => loc.id === AppState.activeLocationId);
         if (!location) return;
+ 
         const infoBox = DOM.get('infoBox');
 
         updateInfoBoxContent('location', location);
@@ -136,10 +149,12 @@ App.ui.infoBox = (function() {
         }
         positionInfoBoxExpanded();
         App.ui.main.setupInfoBoxEventListeners('location', location.id);
+ 
     }
 
     function showRegionInfo(event, region) {
         AppState.activeLocationId = region.id; // Using same var for active item
+ 
         const infoBox = DOM.get('infoBox');
         updateInfoBoxContent('region', region);
         infoBox.style.display = 'block';
@@ -153,15 +168,18 @@ App.ui.infoBox = (function() {
     function hideInfoBox() {
         const infoBox = DOM.get('infoBox');
         if(infoBox) infoBox.style.display = 'none';
+ 
         AppState.activeLocationId = null;
     }
 
     function toggleInfoBoxExpand() {
+ 
         const infoBox = DOM.get('infoBox');
         const isExpanded = infoBox.classList.toggle('expanded');
         const expandBtn = DOM.get('info-box-expand');
         const titleElement = DOM.get('info-box-title');
         const deleteBtn = DOM.get('info-box-delete');
+ 
 
         expandBtn.className = `fas ${isExpanded ? 'fa-compress' : 'fa-expand'}`;
         titleElement.classList.toggle('hidden', !isExpanded);

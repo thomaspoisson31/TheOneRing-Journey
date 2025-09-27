@@ -11,7 +11,9 @@ App.features.regions = (function() {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathData);
             path.classList.add('region-temp');
+ 
             DOM.get('regionsLayer').appendChild(path);
+ 
             AppState.tempRegionPath = path;
         }
     }
@@ -19,8 +21,10 @@ App.features.regions = (function() {
     // --- Public Functions ---
 
     function render() {
+ 
         const regionsLayer = DOM.get('regionsLayer');
         regionsLayer.innerHTML = '';
+ 
         AppState.regionsData.regions.forEach(region => {
             if (region.points && region.points.length >= 3) {
                 const pathData = `M ${region.points.map(p => `${p.x},${p.y}`).join(' L ')} Z`;
@@ -37,7 +41,9 @@ App.features.regions = (function() {
                         App.ui.infoBox.showRegionInfo(e, region);
                     }
                 });
+ 
                 regionsLayer.appendChild(path);
+ 
             }
         });
     }
@@ -65,12 +71,15 @@ App.features.regions = (function() {
 
     function cancelCreation() {
         AppState.currentRegionPoints = [];
+ 
         DOM.get('regionsLayer').querySelectorAll('[data-temp-point]').forEach(el => el.remove());
+ 
         if (AppState.tempRegionPath) {
             AppState.tempRegionPath.remove();
             AppState.tempRegionPath = null;
         }
         AppState.isAddingRegionMode = false;
+ 
         DOM.get('viewport').classList.remove('adding-region');
         DOM.get('add-region-mode').classList.remove('btn-active');
     }
@@ -78,6 +87,7 @@ App.features.regions = (function() {
     function save() {
         const nameInput = DOM.get('region-name-input');
         const descInput = DOM.get('region-desc-input');
+ 
         const selectedColor = DOM.querySelector('#region-color-picker .selected').dataset.color;
 
         if (nameInput.value && AppState.currentRegionPoints.length >= 3) {
@@ -95,7 +105,9 @@ App.features.regions = (function() {
             App.api.dataStorage.saveRegionsToLocal();
             render();
             cancelCreation();
+ 
             DOM.get('addRegionModal').classList.add('hidden');
+ 
             nameInput.value = '';
             descInput.value = '';
         }

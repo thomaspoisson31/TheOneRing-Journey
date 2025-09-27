@@ -111,6 +111,7 @@ App.ui.modals = (function() {
 
     function setupEventListeners() {
         // Auth Modal
+ 
         DOM.get('auth-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             DOM.get('authModal').classList.toggle('hidden');
@@ -127,10 +128,12 @@ App.ui.modals = (function() {
         DOM.get('confirm-add-region').addEventListener('click', App.features.regions.save);
         DOM.get('cancel-add-region').addEventListener('click', () => {
             DOM.get('addRegionModal').classList.add('hidden');
+ 
             App.features.regions.cancelCreation();
         });
 
         // Settings Modal
+ 
         DOM.get('settings-btn').addEventListener('click', () => {
             DOM.get('settingsModal').classList.remove('hidden');
             App.ui.main.loadSettings();
@@ -146,6 +149,7 @@ App.ui.modals = (function() {
         DOM.get('cancel-map-btn')?.addEventListener('click', closeMapModal);
         DOM.get('save-map-btn')?.addEventListener('click', saveMap);
         DOM.get('map-file-input')?.addEventListener('change', handleMapFileSelect);
+ 
     }
 
     return {

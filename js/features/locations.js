@@ -67,8 +67,10 @@ App.features.locations = (function() {
     }
 
     function render() {
+ 
         const locationsLayer = DOM.get('locationsLayer');
         locationsLayer.innerHTML = '';
+ 
         const filteredLocations = AppState.locationsData.locations.filter(location => {
             if (!location.coordinates || typeof location.coordinates.x === 'undefined' || typeof location.coordinates.y === 'undefined') {
                 return false;
@@ -102,7 +104,9 @@ App.features.locations = (function() {
                     }
                 });
             }
+ 
             locationsLayer.appendChild(marker);
+ 
         });
     }
 
@@ -133,8 +137,10 @@ App.features.locations = (function() {
         const nameInput = DOM.get('location-name-input');
         const descInput = DOM.get('location-desc-input');
         const imageInput = DOM.get('location-image-input');
+ 
         const colorPicker = DOM.get('add-color-picker');
         const color = colorPicker.querySelector('.selected').dataset.color;
+ 
         const known = DOM.get('location-known-input').checked;
         const visited = DOM.get('location-visited-input').checked;
 
@@ -157,7 +163,9 @@ App.features.locations = (function() {
             App.api.dataStorage.saveLocationsToLocal();
         }
 
+ 
         DOM.get('addLocationModal').classList.add('hidden');
+ 
         nameInput.value = '';
         descInput.value = '';
         imageInput.value = '';
@@ -165,10 +173,12 @@ App.features.locations = (function() {
     }
 
     function cancelAdd() {
+ 
         DOM.get('addLocationModal').classList.add('hidden');
         DOM.get('location-name-input').value = '';
         DOM.get('location-desc-input').value = '';
         DOM.get('location-image-input').value = '';
+ 
         AppState.newLocationCoords = null;
     }
 
