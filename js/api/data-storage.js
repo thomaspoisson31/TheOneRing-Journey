@@ -111,7 +111,10 @@ App.api.dataStorage = (function() {
     }
 
     async function saveCurrentContext() {
-        const contextName = DOM.contextNameInput.value.trim();
+
+        const contextNameInput = DOM.get('contextNameInput');
+        const contextName = contextNameInput.value.trim();
+
         if (!contextName) {
             alert("Veuillez entrer un nom pour le contexte.");
             return;
@@ -145,7 +148,9 @@ App.api.dataStorage = (function() {
 
             if (response.ok) {
                 alert(`Contexte "${contextName}" sauvegardé !`);
-                DOM.contextNameInput.value = '';
+
+                contextNameInput.value = '';
+
                 loadSavedContexts();
             } else {
                 const errorData = await response.json();
@@ -159,8 +164,10 @@ App.api.dataStorage = (function() {
 
     async function loadSavedContexts() {
         if (!AppState.currentUser) return;
+      
+        const savedContextsDiv = DOM.get('savedContexts');
+        savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Chargement...</p>';
 
-        DOM.savedContextsDiv.innerHTML = '<p class="text-gray-500 italic">Chargement...</p>';
         try {
             const response = await fetch('/api/contexts');
             if (response.ok) {
@@ -172,7 +179,9 @@ App.api.dataStorage = (function() {
             }
         } catch (error) {
             console.error('Erreur chargement contextes:', error);
-            DOM.savedContextsDiv.innerHTML = '<p class="text-red-500">Erreur chargement.</p>';
+
+            savedContextsDiv.innerHTML = '<p class="text-red-500">Erreur chargement.</p>';
+
         }
     }
 
@@ -205,7 +214,9 @@ App.api.dataStorage = (function() {
             App.features.seasons.updateDisplay();
 
             alert(`Contexte "${context.name}" chargé.`);
-            DOM.authModal.classList.add('hidden');
+
+            DOM.get('authModal').classList.add('hidden');
+
         } catch (error) {
             console.error("Error loading context:", error);
             alert("Erreur chargement contexte.");
@@ -245,7 +256,9 @@ App.api.dataStorage = (function() {
             known: AppState.activeFilters.known,
             visited: AppState.activeFilters.visited,
             colors: AppState.activeFilters.colors,
-            showRegions: DOM.getElementById('filter-show-regions').checked
+
+            showRegions: DOM.get('filter-show-regions').checked
+
         };
         localStorage.setItem('middleEarthFilters', JSON.stringify(filterState));
     }

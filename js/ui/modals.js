@@ -111,41 +111,45 @@ App.ui.modals = (function() {
 
     function setupEventListeners() {
         // Auth Modal
-        DOM.authBtn.addEventListener('click', (e) => {
+ 
+        DOM.get('auth-btn').addEventListener('click', (e) => {
             e.stopPropagation();
-            DOM.authModal.classList.toggle('hidden');
+            DOM.get('authModal').classList.toggle('hidden');
         });
-        DOM.closeAuthModalBtn.addEventListener('click', () => DOM.authModal.classList.add('hidden'));
-        DOM.googleSigninBtn.addEventListener('click', App.api.auth.handleGoogleSignIn);
-        DOM.saveContextBtn.addEventListener('click', App.api.dataStorage.saveCurrentContext);
+        DOM.get('close-auth-modal').addEventListener('click', () => DOM.get('authModal').classList.add('hidden'));
+        DOM.get('google-signin-btn').addEventListener('click', App.api.auth.handleGoogleSignIn);
+        DOM.get('save-context-btn').addEventListener('click', App.api.dataStorage.saveCurrentContext);
 
         // Add Location Modal
-        DOM.getElementById('confirm-add-location').addEventListener('click', App.features.locations.confirmAdd);
-        DOM.getElementById('cancel-add-location').addEventListener('click', App.features.locations.cancelAdd);
+        DOM.get('confirm-add-location').addEventListener('click', App.features.locations.confirmAdd);
+        DOM.get('cancel-add-location').addEventListener('click', App.features.locations.cancelAdd);
 
         // Add Region Modal
-        DOM.getElementById('confirm-add-region').addEventListener('click', App.features.regions.save);
-        DOM.getElementById('cancel-add-region').addEventListener('click', () => {
-            DOM.addRegionModal.classList.add('hidden');
+        DOM.get('confirm-add-region').addEventListener('click', App.features.regions.save);
+        DOM.get('cancel-add-region').addEventListener('click', () => {
+            DOM.get('addRegionModal').classList.add('hidden');
+ 
             App.features.regions.cancelCreation();
         });
 
         // Settings Modal
-        DOM.settingsBtn.addEventListener('click', () => {
-            DOM.settingsModal.classList.remove('hidden');
+ 
+        DOM.get('settings-btn').addEventListener('click', () => {
+            DOM.get('settingsModal').classList.remove('hidden');
             App.ui.main.loadSettings();
         });
-        DOM.closeSettingsModalBtn.addEventListener('click', () => DOM.settingsModal.classList.add('hidden'));
+        DOM.get('close-settings-modal').addEventListener('click', () => DOM.get('settingsModal').classList.add('hidden'));
 
         // Journey Log Modal
-        DOM.getElementById('close-journey-log').addEventListener('click', () => DOM.journeyLogModal.classList.add('hidden'));
+        DOM.get('close-journey-log').addEventListener('click', () => DOM.get('journeyLogModal').classList.add('hidden'));
 
         // Map Modal
-        DOM.getElementById('add-map-btn')?.addEventListener('click', () => openMapModal());
-        DOM.getElementById('close-map-modal')?.addEventListener('click', closeMapModal);
-        DOM.getElementById('cancel-map-btn')?.addEventListener('click', closeMapModal);
-        DOM.getElementById('save-map-btn')?.addEventListener('click', saveMap);
-        DOM.getElementById('map-file-input')?.addEventListener('change', handleMapFileSelect);
+        DOM.get('add-map-btn')?.addEventListener('click', () => openMapModal());
+        DOM.get('close-map-modal')?.addEventListener('click', closeMapModal);
+        DOM.get('cancel-map-btn')?.addEventListener('click', closeMapModal);
+        DOM.get('save-map-btn')?.addEventListener('click', saveMap);
+        DOM.get('map-file-input')?.addEventListener('change', handleMapFileSelect);
+ 
     }
 
     return {

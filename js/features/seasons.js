@@ -5,8 +5,10 @@ App.features.seasons = (function() {
     // --- Private Functions ---
 
     function updateDaySelector() {
-        const monthSelect = DOM.getElementById('calendar-month-select');
-        const daySelect = DOM.getElementById('calendar-day-select');
+ 
+        const monthSelect = DOM.get('calendar-month-select');
+        const daySelect = DOM.get('calendar-day-select');
+ 
         const monthIndex = parseInt(monthSelect.value);
 
         daySelect.innerHTML = '<option value="">Jour</option>';
@@ -18,8 +20,10 @@ App.features.seasons = (function() {
     }
 
     function updateCalendarDate() {
-        const monthIndex = parseInt(DOM.getElementById('calendar-month-select').value);
-        const day = parseInt(DOM.getElementById('calendar-day-select').value);
+ 
+        const monthIndex = parseInt(DOM.get('calendar-month-select').value);
+        const day = parseInt(DOM.get('calendar-day-select').value);
+ 
 
         if (monthIndex >= 0 && !isNaN(day) && AppState.calendarData[monthIndex]) {
             const month = AppState.calendarData[monthIndex];
@@ -138,10 +142,12 @@ App.features.seasons = (function() {
     // --- Public Functions ---
 
     function setupEventListeners() {
-        DOM.getElementById('season-indicator').addEventListener('click', App.ui.main.openSettingsOnSeasonTab);
-        DOM.getElementById('calendar-date-indicator').addEventListener('click', App.ui.main.openSettingsOnSeasonTab);
+ 
+        DOM.get('season-indicator')?.addEventListener('click', App.ui.main.openSettingsOnSeasonTab);
+        DOM.get('calendar-date-indicator')?.addEventListener('click', App.ui.main.openSettingsOnSeasonTab);
 
-        document.querySelectorAll('input[name="season"]').forEach(radio => {
+        document.querySelectorAll('input[name="season"]')?.forEach(radio => {
+ 
             radio.addEventListener('change', (e) => {
                 if (e.target.checked && !AppState.isCalendarMode) {
                     AppState.currentSeason = e.target.value;
@@ -152,20 +158,23 @@ App.features.seasons = (function() {
             });
         });
 
-        const uploadBtn = DOM.getElementById('upload-calendar-btn');
-        const fileInput = DOM.getElementById('calendar-file-input');
-
+ 
+        const uploadBtn = DOM.get('upload-calendar-btn');
+        const fileInput = DOM.get('calendar-file-input');
+ 
         if (uploadBtn && fileInput) {
             uploadBtn.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', handleCalendarUpload);
         }
 
-        DOM.getElementById('export-calendar-btn')?.addEventListener('click', exportCalendarToCSV);
-        DOM.getElementById('calendar-month-select')?.addEventListener('change', () => {
+ 
+        DOM.get('export-calendar-btn')?.addEventListener('click', exportCalendarToCSV);
+        DOM.get('calendar-month-select')?.addEventListener('change', () => {
             updateDaySelector();
             updateCalendarDate();
         });
-        DOM.getElementById('calendar-day-select')?.addEventListener('change', updateCalendarDate);
+        DOM.get('calendar-day-select')?.addEventListener('change', updateCalendarDate);
+ 
     }
 
     function updateDisplay() {
